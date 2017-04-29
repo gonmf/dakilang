@@ -11,7 +11,7 @@ CFLAGS := -std=c99 -O2 -Wall -Wextra -Wformat=2 -pedantic-errors \
 LDFLAGS += -lm
 
 # For debugging add -g to CFLAGS
-# CFLAGS += -g
+CFLAGS += -g
 
 # GCC > 4.9 only
 CFLAGS += -fdiagnostics-color=auto

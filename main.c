@@ -5,48 +5,111 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_FACTS 100
+
 typedef enum __expr_type_ {
-  constant,
+  constant_atom,
+  constant_number,
   expr, // functor
   variable,
   any,
 } expr_type;
 
-typedef struct __argument_ {
+typedef struct __term_ {
   expr_type type;
+  expr_type tentative_type;
   void * value;
-} argument;
+} term;
 
 typedef struct __functor_ {
   char name[32];
   int arity;
-  argument args[10];
+  term args[10];
 } functor;
 
 typedef struct __fact_ {
   functor func;
-  argument condition;
+  term condition;
 } fact;
 
+static fact * knowledge_base[MAX_FACTS];
+
+static int eval_term(term * t) {
+  printf("--- eval_term %d\n", t->type);
+  return 1;
+}
+
+static int eval_functor(functor * f) {
+  printf("--- eval_functor %s\n", f->name);
+  int i = 0;
+  while(knowledge_base[i] != NULL) {
+    fact * my_fact = knowledge_base[i++];
+
+    functor * saved = &my_fact->func;
+    if (strcmp(saved->name, f->name) == 0 && f->arity == saved->arity) {
+      if (eval_term(&my_fact->condition)){
+        for(int j = 0; j < saved->arity; ++j) {
+          if (saved->args[j].type != f->args[j].type)
+            return 0;
+          if (saved->args[j].type != variable && f->args[j].type == variable){
+            f->args[j].value = saved->args[j].value;
+            saved->args[j].tentative_type = saved->args[j].type;
+            continue;
+          }
+          if (strcmp((char *)saved->args[j].value, (char *)f->args[j].value) != 0)
+            return 0;
+        }
+
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+static int eval_fact(fact * f) {
+  if (eval_term(&f->condition) && eval_functor(&f->func))
+    return 1;
+  return 0;
+}
+
+static void print_fact(fact * f);
+static char * trim(char * s);
+static int parse_fact(char * fact_line, fact * new_fact);
 static void main_loop(){
-  return;
-
-
+  char * buffer = malloc(1024 * 1024);
+  fact query;
 
   while(1){
     printf("?- ");
+    if(fgets(buffer, 1024 * 1024 - 1, stdin) == NULL)
+      break;
 
+    char * s = trim(buffer);
+    int parse_res = parse_fact(s, &query);
+    switch(parse_res) {
+      case -1:
+        printf("Parse error\n");
+      case 0:
+        continue;
+    }
+
+    if (eval_fact(&query) == 1)
+      printf("\nyes\n");
+    else
+      printf("\nno\n");
   }
+  free(buffer);
 }
 
 static char * trim(char * s) {
-  while(*s == ' ' || *s == '\t')
+  while(*s == ' ' || *s == '\t' || *s == '\n')
     ++s;
 
   char * ret = s;
   int len = strlen(s);
   for (int i = len - 1; i >= 0; --i)
-    if (s[i] == ' ' || s[i] == '\t')
+    if (s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r')
       s[i] = 0;
     else
       break;
@@ -77,8 +140,8 @@ static int index_of(char * s, char c) {
 }
 
 static int parse_functor(char * s, functor * f);
-static int _parse_argument(char * s, argument * a);
-static int parse_argument(char * s, argument * a) {
+static int _parse_term(char * s, term * a);
+static int parse_term(char * s, term * a) {
   s = trim(s);
 
   if(strcmp(s, "_") == 0) {
@@ -132,8 +195,8 @@ static int parse_argument(char * s, argument * a) {
     return 0;
 
   if (args_idx == 1) {
-    // simple single argument
-    return _parse_argument(args[0], a);
+    // simple single term
+    return _parse_term(args[0], a);
   }
 
   a->type = expr;
@@ -142,14 +205,14 @@ static int parse_argument(char * s, argument * a) {
   strcpy(f->name, "$and");
 
   for (int i = 0; i < args_idx; ++i){
-    if(!_parse_argument(args[i], &f->args[f->arity++]))
+    if(!_parse_term(args[i], &f->args[f->arity++]))
       return 0;
   }
 
   return 1;
 }
 
-static int _parse_argument(char * s, argument * a) {
+static int _parse_term(char * s, term * a) {
   s = trim(s);
 
   int low_limit = index_of(s, '(');
@@ -157,7 +220,7 @@ static int _parse_argument(char * s, argument * a) {
     if (s[0] >= 'A' && s[0] <= 'Z') {
       a->type = variable;
     } else {
-      a->type = constant;
+      a->type = (s[0] >= '0' && s[0] <= '9') ? constant_number : constant_atom;
     }
     int len = strlen(s);
     a->value = malloc(len + 1);
@@ -180,10 +243,13 @@ static int parse_functor(char * s, functor * f) {
   if (low_limit < 1 || s[len - 1] != ')')
     return 0;
 
-
   memcpy(f->name, s, low_limit);
   f->name[low_limit] = 0;
   f->arity = 0;
+
+  if(s[low_limit + 1] == ')') {
+    return 1;
+  }
 
   s[len - 1] = 0;
   s = s + low_limit + 1;
@@ -194,7 +260,7 @@ static int parse_functor(char * s, functor * f) {
     s = NULL;
     if (arg_str == NULL)
       break;
-    if (parse_argument(arg_str, &f->args[f->arity])){
+    if (parse_term(arg_str, &f->args[f->arity])){
       f->arity++;
     }
   }
@@ -203,10 +269,13 @@ static int parse_functor(char * s, functor * f) {
 }
 
 static void print_functor(functor * f);
-static void print_argument(argument * a) {
+static void print_term(term * a) {
   switch(a->type){
-    case constant:
+    case constant_atom:
       printf("c:%s", (char *)a->value);
+      break;
+    case constant_number:
+      printf("i:%s", (char *)a->value);
       break;
     case expr:
       print_functor((functor *)a->value);
@@ -228,7 +297,7 @@ static void print_functor(functor * f) {
       if (i != 0)
         printf(",");
 
-      print_argument(&f->args[i]);
+      print_term(&f->args[i]);
     }
   }
   printf(")");
@@ -238,23 +307,24 @@ static void print_functor(functor * f) {
 static void print_fact(fact * f) {
   print_functor(&f->func);
   printf(" :- ");
-  print_argument(&f->condition);
+  print_term(&f->condition);
 
   printf("\n\n");
 }
 
 // Returns 1 on success, 0 on ignored, -1 on error
-static int parse_fact(char * fact_line) {
+static int parse_fact(char * fact_line, fact * new_fact) {
   fact_line = trim(fact_line);
   cut_string_at(fact_line, '%');
   int len = strlen(fact_line);
   if (len == 0)
     return 0;
 
-  printf("%s\n", fact_line);
 
   if (fact_line[len - 1] == '.')
     fact_line[len - 1] = 0;
+  else
+    return -1;
 
   char * sep = strstr(fact_line, " :- ");
   char * fact_line1;
@@ -268,15 +338,15 @@ static int parse_fact(char * fact_line) {
     fact_line2 = "1";
   }
 
-  fact new_fact;
-  int is_functor = parse_functor(fact_line1, &new_fact.func);
+  int is_functor = parse_functor(fact_line1, &new_fact->func);
   if (is_functor) {
-    if (!parse_argument(fact_line2, &new_fact.condition))
-      return 0;
-    print_fact(&new_fact);
+    if (!parse_term(fact_line2, &new_fact->condition))
+      return -1;
+    print_fact(new_fact);
+    return 1;
   }
 
-  return 1;
+  return -1;
 }
 
 static int consult(const char * file_name){
@@ -303,21 +373,26 @@ static int consult(const char * file_name){
   char * buffer_ptr = buffer;
   int facts = 0;
   char * saveptr = NULL;
+  fact new_fact;
   while(1) {
     char * line = strtok_r(buffer_ptr, "\n\r", &saveptr);
     buffer_ptr = NULL;
     if (line == NULL)
       break;
 
-    int parse_result = parse_fact(line);
+
+    int parse_result = parse_fact(line, &new_fact);
     if(parse_result < 0){
       printf("Parse error.\n");
       free(buffer);
       return 0;
     }
 
-    if (parse_result > 0)
+    if (parse_result > 0) {
+      knowledge_base[facts] = malloc(sizeof(fact));
+      memcpy(knowledge_base[facts], &new_fact, sizeof(fact));
       ++facts;
+    }
   }
 
   printf("\nLoaded %d facts.\n", facts);
