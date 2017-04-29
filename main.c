@@ -7,8 +7,9 @@
 
 typedef enum __expr_type_ {
   constant,
-  expr,
-  variable
+  expr, // functor
+  variable,
+  any,
 } expr_type;
 
 typedef struct __argument_ {
@@ -76,25 +77,101 @@ static int index_of(char * s, char c) {
 }
 
 static int parse_functor(char * s, functor * f);
-
-// TODO: for now only accept string arguments
+static int _parse_argument(char * s, argument * a);
 static int parse_argument(char * s, argument * a) {
+  s = trim(s);
+
+  if(strcmp(s, "_") == 0) {
+    a->type = any;
+    return 1;
+  }
+
+  char args[10][100];
+  int args_idx = 0;
+
+  int len = strlen(s);
+  int start = -1;
+  int depth = 0;
+  for(int i = 0; i < len; ++i) {
+    switch(s[i]) {
+      case ' ':
+        break;
+      case '(':
+        ++depth;
+        break;
+      case ')':
+        --depth;
+        if (depth == 0) {
+          memcpy(args[args_idx], s + start, i + 1 - start);
+          args[args_idx][i + 1 - start] = 0;
+          args_idx++;
+          start = -1;
+        }
+        break;
+      case ',':
+        if (depth == 0 && start != -1) {
+          memcpy(args[args_idx], s + start, i - start);
+          args[args_idx][i - start] = 0;
+          args_idx++;
+          start = -1;
+        }
+        break;
+      default:
+        if(start == -1)
+          start = i;
+    }
+  }
+
+  if (start != -1) {
+    memcpy(args[args_idx], s + start, len - start);
+    args[args_idx][len - start] = 0;
+    args_idx++;
+  }
+
+  if (args_idx <= 0)
+    return 0;
+
+  if (args_idx == 1) {
+    // simple single argument
+    return _parse_argument(args[0], a);
+  }
+
+  a->type = expr;
+  a->value = malloc(sizeof(functor));
+  functor * f = (functor *)a->value;
+  strcpy(f->name, "$and");
+
+  for (int i = 0; i < args_idx; ++i){
+    if(!_parse_argument(args[i], &f->args[f->arity++]))
+      return 0;
+  }
+
+  return 1;
+}
+
+static int _parse_argument(char * s, argument * a) {
   s = trim(s);
 
   int low_limit = index_of(s, '(');
   if (low_limit < 1) {
-    a->type = constant;
+    if (s[0] >= 'A' && s[0] <= 'Z') {
+      a->type = variable;
+    } else {
+      a->type = constant;
+    }
     int len = strlen(s);
     a->value = malloc(len + 1);
     memcpy(a->value, s, len);
     ((char * )a->value)[len] = 0;
     return 1;
-  } else {
-    a->type = expr;
-    a->value = malloc(sizeof(functor));
-    parse_functor(s, (functor *)a->value);
-    return 1;
   }
+
+  if (s[0] >= 'A' && s[0] <= 'Z')
+    return 0;
+
+  a->type = expr;
+  a->value = malloc(sizeof(functor));
+  return parse_functor(s, (functor *)a->value);
 }
 
 static int parse_functor(char * s, functor * f) {
@@ -126,7 +203,7 @@ static int parse_functor(char * s, functor * f) {
 }
 
 static void print_functor(functor * f);
-static void print_arg(argument * a) {
+static void print_argument(argument * a) {
   switch(a->type){
     case constant:
       printf("c:%s", (char *)a->value);
@@ -134,28 +211,34 @@ static void print_arg(argument * a) {
     case expr:
       print_functor((functor *)a->value);
       break;
+    case variable:
+      printf("v:%s", (char *)a->value);
+      break;
+    case any:
+      printf("v:_");
+      break;
   }
 }
 
 static void print_functor(functor * f) {
   printf("f:%s", f->name);
+  printf("(");
   if (f->arity > 0) {
-    printf("(");
     for (int i = 0; i < f->arity; ++i){
       if (i != 0)
         printf(",");
 
-      print_arg(&f->args[i]);
+      print_argument(&f->args[i]);
     }
-    printf(")");
   }
+  printf(")");
 }
 
 
 static void print_fact(fact * f) {
   print_functor(&f->func);
   printf(" :- ");
-  print_arg(&f->condition);
+  print_argument(&f->condition);
 
   printf("\n\n");
 }
@@ -188,7 +271,8 @@ static int parse_fact(char * fact_line) {
   fact new_fact;
   int is_functor = parse_functor(fact_line1, &new_fact.func);
   if (is_functor) {
-    parse_argument(fact_line2, &new_fact.condition);
+    if (!parse_argument(fact_line2, &new_fact.condition))
+      return 0;
     print_fact(&new_fact);
   }
 

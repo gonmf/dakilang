@@ -3,13 +3,18 @@ Toy Prolog interpreter
 Example
 
 ```prolog
-loves(romeo, juliet).
+make clean && make && ./prolog db.pl
+Read 233 bytes.
 
-loves(juliet, romeo) :- loves(romeo, juliet) .
+parent(john, mary).
+f:parent(c:john,c:mary) :- c:1
 
-?- loves(juliet, X).
+parent(victor, john).
+f:parent(c:victor,c:john) :- c:1
 
-X = romeo
+grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
+f:grandparent(v:X,v:Y) :- f:$and(f:parent(v:X,v:Z),f:parent(v:Z,v:Y))
 
-yes
+
+Loaded 3 facts.
 ```

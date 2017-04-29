@@ -2,11 +2,16 @@
 % listing.
 
 
-teste(a, b).
-teste(b, a).
+% test1(a, b).
 
-loves(romeo, juliet).
-loves(romeo, juliet).
+% test2(b, a).
 
-loves(juliet, romeo) :- loves(romeo, juliet).
-loves(juliet, romeo) :- loves(romeo, juliet).
+parent(john, mary).
+
+parent(victor, john).
+
+grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
+
+% loves(romeo, juliet).
+
+% loves(juliet, romeo) :- loves(romeo, juliet).
