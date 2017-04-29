@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_FACT_VARIABLES 20
 #define MAX_FACTS 100
+#define MAX_FUNCTOR_ARGUMENTS 20
 
 typedef enum __expr_type_ {
   const_atom,
@@ -21,15 +23,15 @@ typedef struct __term_ {
 } term;
 
 typedef struct __functor_ {
-  char name[32];
+  char * name;
   int arity;
-  term args[10];
+  term args[MAX_FUNCTOR_ARGUMENTS];
 } functor;
 
 typedef struct __var_list_ {
-  char * name[64];
-  expr_type type[64];
-  void * value[64];
+  char * name[MAX_FACT_VARIABLES];
+  expr_type type[MAX_FACT_VARIABLES];
+  void * value[MAX_FACT_VARIABLES];
 } var_list;
 
 typedef struct __fact_ {
@@ -81,8 +83,26 @@ static void unset_var(var_list * vars, char * name) {
   exit(EXIT_FAILURE);
 }
 
+static int eval_functor(functor * f, var_list * vars);
 static int eval_term(term * t, var_list * vars) {
-  return 1;
+  int * val;
+
+  switch (t->type) {
+    case const_atom:
+      return 1;
+    case const_num:
+      val = (int *)t->value;
+      return (*val) != 0;
+    case func_type:
+      return eval_functor((functor *)t->value, vars);
+    case variable:
+      return 0; // TODO
+      break;
+    case var_any:
+      return 1;
+  }
+
+  exit(EXIT_FAILURE);
 }
 
 static expr_type final_type(term * t, var_list * vars) {
@@ -116,11 +136,13 @@ static void * final_value(term * t, var_list * vars) {
 
 static int eval_functor(functor * f, var_list * vars) {
   int i = 0;
+  int method_name_found = 0;
   while(knowledge_base[i] != NULL) {
     fact * my_fact = knowledge_base[i++];
 
     functor * saved = &my_fact->func;
     if (strcmp(saved->name, f->name) == 0 && f->arity == saved->arity) {
+      method_name_found = 1;
       if (eval_term(&my_fact->condition, vars)){
         for(int j = 0; j < saved->arity; ++j) {
           if (is_unset_var(vars, &saved->args[j]) && is_unset_var(vars, &f->args[j])) {
@@ -149,6 +171,9 @@ static int eval_functor(functor * f, var_list * vars) {
       }
     }
   }
+
+  if (!method_name_found)
+    printf("Definition \"%s\" not found.\n", f->name);
 
   return 0;
 }
@@ -182,7 +207,7 @@ static void main_loop(){
     int parse_res = parse_fact(s, &query);
     switch(parse_res) {
       case -1:
-        printf("Parse error\n");
+        printf("Parse error.\n\n");
       case 0:
         continue;
     }
@@ -295,6 +320,7 @@ static int parse_term(char * s, term * a, var_list * vars) {
   a->type = func_type;
   a->value = calloc(1, sizeof(functor));
   functor * f = (functor *)a->value;
+  f->name = calloc(1, 6);
   strcpy(f->name, "$and");
 
   for (int i = 0; i < args_idx; ++i){
@@ -311,7 +337,6 @@ static void var_list_init(var_list * vars, char * name) {
       if (vars->name[i] == NULL) {
         vars->name[i] = name;
         vars->value[i] = NULL;
-        vars->name[i + 1] = NULL;
         return;
       }
       if (strcmp(vars->name[i], name) == 0)
@@ -354,6 +379,7 @@ static int parse_functor(char * s, functor * f, var_list * vars) {
   if (low_limit < 1 || s[len - 1] != ')')
     return 0;
 
+  f->name = calloc(1, low_limit + 1);
   memcpy(f->name, s, low_limit);
   f->name[low_limit] = 0;
   f->arity = 0;
@@ -507,7 +533,7 @@ static int consult(const char * file_name){
     }
   }
 
-  printf("\nLoaded %d facts.\n", facts);
+  printf("Loaded %d facts.\n\n", facts);
 
   return 1;
 }
