@@ -17,7 +17,7 @@ typedef enum __expr_type_ {
 
 typedef struct __term_ {
   expr_type type;
-  expr_type tentative_type;
+  char * variable_name;
   void * value;
 } term;
 
@@ -35,12 +35,10 @@ typedef struct __fact_ {
 static fact * knowledge_base[MAX_FACTS];
 
 static int eval_term(term * t) {
-  printf("--- eval_term %d\n", t->type);
   return 1;
 }
 
 static int eval_functor(functor * f) {
-  printf("--- eval_functor %s\n", f->name);
   int i = 0;
   while(knowledge_base[i] != NULL) {
     fact * my_fact = knowledge_base[i++];
@@ -49,13 +47,19 @@ static int eval_functor(functor * f) {
     if (strcmp(saved->name, f->name) == 0 && f->arity == saved->arity) {
       if (eval_term(&my_fact->condition)){
         for(int j = 0; j < saved->arity; ++j) {
-          if (saved->args[j].type != f->args[j].type)
-            return 0;
+          if (saved->args[j].type == variable && f->args[j].type == variable)
+            continue;
           if (saved->args[j].type != variable && f->args[j].type == variable){
             f->args[j].value = saved->args[j].value;
-            saved->args[j].tentative_type = saved->args[j].type;
-            continue;
+            f->args[j].type = saved->args[j].type;
+            if (eval_functor(f))
+              return 1;
+            f->args[j].value = NULL;
+            f->args[j].type = variable;
+            return 0;
           }
+          if (saved->args[j].type != f->args[j].type)
+            return 0;
           if (strcmp((char *)saved->args[j].value, (char *)f->args[j].value) != 0)
             return 0;
         }
@@ -64,12 +68,22 @@ static int eval_functor(functor * f) {
       }
     }
   }
+
   return 0;
 }
 
 static int eval_fact(fact * f) {
-  if (eval_term(&f->condition) && eval_functor(&f->func))
+  if (eval_term(&f->condition) && eval_functor(&f->func)) {
+    for (int i = 0; i < f->func.arity; ++i) {
+      if (f->func.args[i].variable_name != NULL) {
+        if (f->func.args[i].value == NULL)
+          printf("%s = (any)\n", f->func.args[i].variable_name);
+        else
+          printf("%s = %s\n", f->func.args[i].variable_name, (char *)f->func.args[i].value);
+      }
+    }
     return 1;
+  }
   return 0;
 }
 
@@ -219,14 +233,21 @@ static int _parse_term(char * s, term * a) {
   if (low_limit < 1) {
     if (s[0] >= 'A' && s[0] <= 'Z') {
       a->type = variable;
+      int len = strlen(s);
+      a->variable_name = malloc(len + 1);
+      memcpy(a->variable_name, s, len);
+      ((char * )a->variable_name)[len] = 0;
+      a->value = NULL;
+      return 1;
     } else {
       a->type = (s[0] >= '0' && s[0] <= '9') ? constant_number : constant_atom;
+      int len = strlen(s);
+      a->value = malloc(len + 1);
+      memcpy(a->value, s, len);
+      ((char * )a->value)[len] = 0;
+      a->variable_name = NULL;
+      return 1;
     }
-    int len = strlen(s);
-    a->value = malloc(len + 1);
-    memcpy(a->value, s, len);
-    ((char * )a->value)[len] = 0;
-    return 1;
   }
 
   if (s[0] >= 'A' && s[0] <= 'Z')
@@ -281,7 +302,9 @@ static void print_term(term * a) {
       print_functor((functor *)a->value);
       break;
     case variable:
-      printf("v:%s", (char *)a->value);
+      printf("v:%s", a->variable_name);
+      if (a->value != NULL)
+        printf("=%s\n", (char *)a->value);
       break;
     case any:
       printf("v:_");
