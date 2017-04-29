@@ -2,8 +2,11 @@ Toy Prolog interpreter
 
 Example
 
-```prolog
-make clean && make && ./prolog db.pl
+```sh
+$ make clean && make && ./prolog db.pl
+```
+
+```
 Read 233 bytes.
 
 parent(john, mary).
