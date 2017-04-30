@@ -41,6 +41,7 @@ typedef struct __fact_ {
 } fact;
 
 static fact * knowledge_base[MAX_FACTS];
+static int debug = 0;
 
 static int is_unset_var(var_list * vars, term * t) {
   if (t->type != variable && t->type != var_any)
@@ -180,12 +181,16 @@ static int eval_functor(functor * f, var_list * vars) {
 
 static int eval_fact(fact * f) {
   if (eval_term(&f->condition, &f->vars) && eval_functor(&f->func, &f->vars)) {
+    int found = 0;
     for (int i = 0; f->vars.name[i] != NULL; ++i) {
+      found++;
       if (f->vars.value[i] == NULL)
         printf("%s = (any)\n", f->vars.name[i]);
       else
         printf("%s = %s\n", f->vars.name[i], (char *)f->vars.value[i]);
     }
+    if (found > 0)
+      printf("\n");
     return 1;
   }
   return 0;
@@ -203,6 +208,8 @@ static void main_loop(){
     if(fgets(buffer, 1024 * 1024 - 1, stdin) == NULL)
       break;
 
+    printf("\n");
+
     char * s = trim(buffer);
     int parse_res = parse_fact(s, &query);
     switch(parse_res) {
@@ -212,10 +219,7 @@ static void main_loop(){
         continue;
     }
 
-    if (eval_fact(&query) == 1)
-      printf("\nyes\n");
-    else
-      printf("\nno\n");
+    eval_fact(&query);
   }
   free(buffer);
 }
@@ -267,7 +271,7 @@ static int parse_term(char * s, term * a, var_list * vars) {
     return 1;
   }
 
-  char args[10][100];
+  char args[MAX_FUNCTOR_ARGUMENTS][100];
   int args_idx = 0;
 
   int len = strlen(s);
@@ -453,15 +457,15 @@ static void print_fact(fact * f) {
 static int parse_fact(char * fact_line, fact * new_fact) {
   memset(new_fact, 0, sizeof(fact));
 
-  fact_line = trim(fact_line);
   cut_string_at(fact_line, '%');
+  fact_line = trim(fact_line);
   int len = strlen(fact_line);
   if (len == 0)
     return 0;
 
-  if (fact_line[len - 1] == '.')
+  if (fact_line[len - 1] == '.') {
     fact_line[len - 1] = 0;
-  else
+  } else
     return -1;
 
   char * sep = strstr(fact_line, " :- ");
@@ -480,26 +484,82 @@ static int parse_fact(char * fact_line, fact * new_fact) {
   if (is_functor) {
     if (!parse_term(fact_line2, &new_fact->condition, &new_fact->vars))
       return -1;
-    print_fact(new_fact);
+    if (debug)
+      print_fact(new_fact);
     return 1;
   }
 
   return -1;
 }
 
-static int consult(const char * file_name){
+static int eval_file(const char * file_name){
+  printf("Evaluating \"%s\"...\n\n", file_name);
+
   char * buffer = calloc(1, 1024 * 1024);
 
   FILE * fp = fopen(file_name, "r");
   if (fp == NULL) {
     free(buffer);
+    printf("File not found.");
     return 0;
   }
 
   int r = (int)fread(buffer, 1, 1024 * 1024, fp);
   int err = ferror(fp);
   fclose(fp);
-  printf("Read %d bytes.\n\n", r);
+
+  if (err || r <= 0) {
+      free(buffer);
+      return 0;
+  }
+
+  buffer[r] = 0;
+
+  char * buffer_ptr = buffer;
+  char * saveptr = NULL;
+  int last_result = 1;
+  fact new_fact;
+  while(1) {
+    char * line = strtok_r(buffer_ptr, "\n\r", &saveptr);
+    buffer_ptr = NULL;
+    if (line == NULL)
+      break;
+
+    printf("?- %s\n\n", line);
+
+    int parse_result = parse_fact(line, &new_fact);
+    if(parse_result < 0){
+      printf("Parse error.\n");
+      continue;
+    }
+
+    if (parse_result > 0)
+      last_result = eval_fact(&new_fact);
+
+      if (last_result == 1)
+        printf("yes\n\n");
+      else
+        printf("no\n\n");
+  }
+
+  return last_result;
+}
+
+static int consult(const char * file_name){
+  printf("Consulting \"%s\"...\n\n", file_name);
+
+  char * buffer = calloc(1, 1024 * 1024);
+
+  FILE * fp = fopen(file_name, "r");
+  if (fp == NULL) {
+    free(buffer);
+    printf("File not found.");
+    return 0;
+  }
+
+  int r = (int)fread(buffer, 1, 1024 * 1024, fp);
+  int err = ferror(fp);
+  fclose(fp);
 
   if (err || r <= 0) {
       free(buffer);
@@ -517,7 +577,6 @@ static int consult(const char * file_name){
     buffer_ptr = NULL;
     if (line == NULL)
       break;
-
 
     int parse_result = parse_fact(line, &new_fact);
     if(parse_result < 0){
@@ -543,13 +602,27 @@ static void print_usage(const char * program_name){
 }
 
 int main(int argc, char * argv[]){
-  if(argc > 2){
-    print_usage(argv[0]);
-    return EXIT_FAILURE;
+  for (int i = 1; i < argc; ++i) {
+    if (strcmp(argv[i], "--debug") == 0) {
+      debug = 1;
+      break;
+    }
   }
 
-  if(argc == 2){
-    if(!consult(argv[1])){
+  for (int i = 1; i < argc - 1; ++i) {
+    if (strcmp(argv[i], "--consult") == 0) {
+      char * file_name = argv[i + 1];
+      if(!consult(file_name))
+        return EXIT_FAILURE;
+      break;
+    }
+  }
+
+  for (int i = 1; i < argc - 1; ++i) {
+    if (strcmp(argv[i], "--eval") == 0) {
+      char * file_name = argv[i + 1];
+      if (eval_file(file_name))
+        return EXIT_SUCCESS;
       return EXIT_FAILURE;
     }
   }

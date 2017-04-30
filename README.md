@@ -3,21 +3,24 @@ Toy Prolog interpreter
 Example
 
 ```sh
-$ make clean && make && ./prolog db.pl
+make clean && make && ./prolog --consult db.pl --eval db2.pl
 ```
 
 ```
-Read 233 bytes.
-
-parent(john, mary).
-f:parent(c:john,c:mary) :- c:1
-
-parent(victor, john).
-f:parent(c:victor,c:john) :- c:1
-
-grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
-f:grandparent(v:X,v:Y) :- f:$and(f:parent(v:X,v:Z),f:parent(v:Z,v:Y))
-
+Consulting "db.pl"...
 
 Loaded 3 facts.
+
+Evaluating "db2.pl"...
+
+?- parent(A,B).
+
+A = john
+B = mary
+
+yes
+
+?- parent(A,A).
+
+no
 ```
