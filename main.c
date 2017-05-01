@@ -9,9 +9,10 @@
 #define MAX_FACTS 100
 #define MAX_FUNCTOR_ARGUMENTS 20
 
+static char * built_in_funcs[] = { "eq/", "and/2", "or/2", "xor/2", "not/1", "listing/0", "write/1", "print/1", "nl/0", "halt/0", NULL };
+
 typedef enum __expr_type_ {
-  const_atom,
-  const_num,
+  constant,
   func_type,
   variable,
   var_any,
@@ -43,6 +44,13 @@ typedef struct __fact_ {
 
 static fact * knowledge_base[MAX_FACTS];
 static int debug = 0;
+
+static int reserved_name(const char * name) {
+  for(int i = 0; built_in_funcs[i] != NULL; ++i)
+    if (strcmp(name, built_in_funcs[i]) == 0)
+      return 1;
+  return 0;
+}
 
 static void print_term(term * a);
 static int is_unset_var(var_list * vars, term * t) {
@@ -97,9 +105,7 @@ static int eval_term(term * t, var_list * vars) {
   char * val;
 
   switch (t->type) {
-    case const_atom:
-      return 1;
-    case const_num:
+    case constant:
       val = (char *)t->value;
       return strcmp(val, "0") != 0;
     case func_type:
@@ -142,17 +148,63 @@ static void * final_value(term * t, var_list * vars) {
   exit(EXIT_FAILURE);
 }
 
+static void print_fact(fact * f);
 static int eval_functor(functor * f, var_list * vars) {
-  if (strcmp(f->name, "$and") == 0 && f->arity == 2) {
-    return eval_term(&f->args[0], vars) && eval_term(&f->args[1], vars) ? 1 : 0;
+  if (strcmp(f->name, "eq/2") == 0) {
+    if (final_type(&f->args[0], vars) != final_type(&f->args[1], vars))
+      return 0;
+
+    return (strcmp(f->args[0].value, f->args[1].value) == 0);
+  }
+
+  if (strcmp(f->name, "and/2") == 0) {
+    return (eval_term(&f->args[0], vars) && eval_term(&f->args[1], vars)) ? 1 : 0;
+  }
+
+  if (strcmp(f->name, "or/2") == 0) {
+    return (eval_term(&f->args[0], vars) || eval_term(&f->args[1], vars)) ? 1 : 0;
+  }
+
+  if (strcmp(f->name, "xor/2") == 0) {
+    return (eval_term(&f->args[0], vars) != eval_term(&f->args[1], vars)) ? 1 : 0;
+  }
+
+  if (strcmp(f->name, "not/1") == 0) {
+    return eval_term(&f->args[0], vars) ? 0 : 1;
+  }
+
+  if (strcmp(f->name, "listing/0") == 0) {
+    for (int i = 0; knowledge_base[i] != NULL; ++i) {
+      print_fact(knowledge_base[i]);
+    }
+    return 1;
+  }
+
+  if (strcmp(f->name, "write/1") == 0 || strcmp(f->name, "print/1") == 0) {
+    term * t = &f->args[0];
+    if (t->type == func_type)
+      printf("%s", ((functor *)t->value)->name);
+    else
+      printf("%s", (char *)t->value);
+    return 1;
+  }
+
+  if (strcmp(f->name, "nl/0") == 0) {
+    printf("\n");
+    return 1;
+  }
+
+  if (strcmp(f->name, "halt/0") == 0) {
+    exit(EXIT_FAILURE);
+    return 0;
   }
 
   int method_name_found = 0;
   for(int i = 0; knowledge_base[i] != NULL; ++i) {
-    fact * my_fact = knowledge_base[i++];
+    fact * my_fact = knowledge_base[i];
 
     functor * saved = &my_fact->func;
-    if (strcmp(saved->name, f->name) == 0 && f->arity == saved->arity) {
+    if (strcmp(saved->name, f->name) == 0) {
       method_name_found = 1;
       if (eval_term(&my_fact->condition, vars)){
         for(int j = 0; j < saved->arity; ++j) {
@@ -193,7 +245,7 @@ static int eval_functor(functor * f, var_list * vars) {
   }
 
   if (!method_name_found)
-    printf("%% Definition \"%s/%d\" not found.\n", f->name, f->arity);
+    printf("%% Definition \"%s\" not found.\n", f->name);
 
   return 0;
 }
@@ -217,7 +269,6 @@ static int eval_fact(fact * f) {
   return 0;
 }
 
-static void print_fact(fact * f);
 static char * trim(char * s);
 static int parse_fact(char * fact_line, fact * new_fact);
 static void main_loop(){
@@ -350,7 +401,7 @@ static int parse_term(char * s, term * a, var_list * vars) {
   a->value = calloc(1, sizeof(functor));
   functor * f = (functor *)a->value;
   f->name = calloc(1, 6);
-  strcpy(f->name, "$and");
+  strcpy(f->name, "and/2");
 
   for (int i = 0; i < args_idx; ++i){
     if(!_parse_term(args[i], &f->args[f->arity++], vars))
@@ -383,7 +434,7 @@ static int _parse_term(char * s, term * a, var_list * vars) {
     if (s[0] >= 'A' && s[0] <= 'Z') {
       a->type = variable;
     } else {
-      a->type = (s[0] >= '0' && s[0] <= '9') ? const_num : const_atom;
+      a->type = constant;
     }
     int len = strlen(s);
     a->value = calloc(1, len + 1);
@@ -404,50 +455,45 @@ static int _parse_term(char * s, term * a, var_list * vars) {
 }
 
 static int parse_functor(char * s, functor * f, var_list * vars) {
-  int len = strlen(s);
-  int low_limit = index_of(s, '(');
-  if (low_limit < 1 || s[len - 1] != ')') {
-    f->name = calloc(1, len + 1);
-    memcpy(f->name, s, len + 1);
-    f->name[len] = 0;
-    f->arity = 0;
-    return 1;
+  if (s[0] < 'a' || s[0] > 'z') {
+    return 0;
   }
 
-  f->name = calloc(1, low_limit + 1);
-  memcpy(f->name, s, low_limit);
-  f->name[low_limit] = 0;
   f->arity = 0;
 
-  if(s[low_limit + 1] == ')') {
-    return 1;
-  }
+  int len = strlen(s);
+  int low_limit = index_of(s, '(');
+  if (low_limit >= 1 && s[len - 1] == ')') {
+    char * args_str = s + low_limit + 1;
+    s[low_limit] = 0;
+    args_str[strlen(args_str) - 1] = 0;
 
-  s[len - 1] = 0;
-  s = s + low_limit + 1;
-
-  char * saveptr = NULL;
-  while(1) {
-    char * arg_str = strtok_r(s, ",", &saveptr);
-    s = NULL;
-    if (arg_str == NULL)
-      break;
-    if (parse_term(arg_str, &f->args[f->arity], vars)) {
-      f->arity++;
+    char * saveptr = NULL;
+    while(1) {
+      char * arg_str = strtok_r(args_str, ",", &saveptr);
+      args_str = NULL;
+      if (arg_str == NULL)
+        break;
+      if (parse_term(arg_str, &f->args[f->arity], vars)) {
+        f->arity++;
+      } else {
+        return 0;
+      }
     }
+
   }
 
+  int limit = strlen(s) + 4;
+  f->name = calloc(1, limit);
+  snprintf(f->name, limit, "%s/%d", s, f->arity);
   return 1;
 }
 
 static void print_functor(functor * f);
 static void print_term(term * a) {
   switch(a->type){
-    case const_atom:
+    case constant:
       printf("c:%s", (char *)a->value);
-      break;
-    case const_num:
-      printf("i:%s", (char *)a->value);
       break;
     case func_type:
       print_functor((functor *)a->value);
@@ -466,14 +512,15 @@ static void print_term(term * a) {
 
 static void print_functor(functor * f) {
   printf("f:%s", f->name);
-  printf("(");
-  if (f->arity > 0) {
-    for (int i = 0; i < f->arity; ++i){
-      if (i != 0)
-        printf(",");
+  if (f->arity == 0)
+    return;
 
-      print_term(&f->args[i]);
-    }
+  printf("(");
+  for (int i = 0; i < f->arity; ++i){
+    if (i != 0)
+      printf(",");
+
+    print_term(&f->args[i]);
   }
   printf(")");
 }
@@ -564,6 +611,11 @@ static int eval_file(const char * file_name){
     int parse_result = parse_fact(line, &new_fact);
     if(parse_result < 0){
       printf("%% Parse error.\n");
+      continue;
+    }
+
+    if (reserved_name(new_fact.func.name)) {
+      printf("%% Reserved name error.\n");
       continue;
     }
 
