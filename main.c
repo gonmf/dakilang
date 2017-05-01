@@ -9,7 +9,7 @@
 #define MAX_FACTS 100
 #define MAX_FUNCTOR_ARGUMENTS 20
 
-static char * built_in_funcs[] = { "eq/", "and/2", "or/2", "xor/2", "not/1", "listing/0", "write/1", "print/1", "nl/0", "halt/0", NULL };
+static char * built_in_funcs[] = { "assert/1", "eq/", "and/2", "or/2", "xor/2", "not/1", "listing/0", "write/1", "print/1", "nl/0", "halt/0", NULL };
 
 typedef enum __expr_type_ {
   constant,
@@ -148,6 +148,17 @@ static void * final_value(term * t, var_list * vars) {
   exit(EXIT_FAILURE);
 }
 
+static int fact_from_functor(functor * new_func, fact * new_fact) {
+  memcpy(&new_fact->func, new_func, sizeof(functor));
+  for (int i = 0; i < MAX_FACT_VARIABLES; ++i)
+    new_fact->vars.name[i] = NULL;
+  new_fact->condition.type = constant;
+  new_fact->condition.value = calloc(1, 2);
+  ((char *)new_fact->condition.value)[0] = '1';
+  return 1;
+}
+
+static int consult_line(char * text);
 static void print_fact(fact * f);
 static int eval_functor(functor * f, var_list * vars) {
   if (strcmp(f->name, "eq/2") == 0) {
@@ -187,6 +198,32 @@ static int eval_functor(functor * f, var_list * vars) {
     else
       printf("%s", (char *)t->value);
     return 1;
+  }
+
+  if (strcmp(f->name, "assert/1") == 0) {
+    term * t = &f->args[0];
+    if (final_type(t, vars) == func_type) {
+      functor * new_func = final_value(t, vars);
+      if (reserved_name(new_func->name)) {
+        printf("%% Reserved name error: %s\n", new_func->name);
+        return 0;
+      }
+      fact new_fact;
+      int parse_result = fact_from_functor(new_func, &new_fact);
+      for(int i = 0; ; ++i) {
+        if (knowledge_base[i] == NULL) {
+          knowledge_base[i] = calloc(1, sizeof(fact));
+          memcpy(knowledge_base[i], &new_fact, sizeof(fact));
+          return 1;
+        }
+      }
+      exit(EXIT_FAILURE);
+    }
+    if (final_type(t, vars) != constant)
+      return 0;
+
+    char * desc = final_value(t, vars);
+    return consult_line(desc) == 1 ? 1 : 0;
   }
 
   if (strcmp(f->name, "nl/0") == 0) {
@@ -631,7 +668,28 @@ static int eval_file(const char * file_name){
   return last_result;
 }
 
-static int consult(const char * file_name){
+static int consult_line(char * text) {
+  fact new_fact;
+  int parse_result = parse_fact(text, &new_fact);
+  if(parse_result < 0){
+    printf("%% Parse error.\n");
+    return 0;
+  }
+
+  if (parse_result > 0) {
+    for(int i = 0; ; ++i) {
+      if (knowledge_base[i] == NULL) {
+        knowledge_base[i] = calloc(1, sizeof(fact));
+        memcpy(knowledge_base[i], &new_fact, sizeof(fact));
+        return 1;
+      }
+    }
+  }
+
+  return -1;
+}
+
+static int consult(const char * file_name) {
   printf("%% Consulting \"%s\"...\n\n", file_name);
 
   char * buffer = calloc(1, 1024 * 1024);
@@ -657,24 +715,20 @@ static int consult(const char * file_name){
   char * buffer_ptr = buffer;
   int facts = 0;
   char * saveptr = NULL;
-  fact new_fact;
   while(1) {
     char * line = strtok_r(buffer_ptr, "\n\r", &saveptr);
     buffer_ptr = NULL;
     if (line == NULL)
       break;
 
-    int parse_result = parse_fact(line, &new_fact);
-    if(parse_result < 0){
-      printf("%% Parse error.\n");
-      free(buffer);
-      return 0;
-    }
-
-    if (parse_result > 0) {
-      knowledge_base[facts] = calloc(1, sizeof(fact));
-      memcpy(knowledge_base[facts], &new_fact, sizeof(fact));
-      ++facts;
+    switch(consult_line(line)) {
+      case -1:
+        break;
+      case 0:
+        free(buffer);
+        return 0;
+      case 1:
+        ++facts;
     }
   }
 
