@@ -105,8 +105,7 @@ static int eval_term(term * t, var_list * vars) {
     case func_type:
       return eval_functor((functor *)t->value, vars);
     case variable:
-      return 0; // TODO
-      break;
+      return 1;
     case var_any:
       return 1;
   }
@@ -144,9 +143,12 @@ static void * final_value(term * t, var_list * vars) {
 }
 
 static int eval_functor(functor * f, var_list * vars) {
-  int i = 0;
+  if (strcmp(f->name, "$and") == 0 && f->arity == 2) {
+    return eval_term(&f->args[0], vars) && eval_term(&f->args[1], vars) ? 1 : 0;
+  }
+
   int method_name_found = 0;
-  while(knowledge_base[i] != NULL) {
+  for(int i = 0; knowledge_base[i] != NULL; ++i) {
     fact * my_fact = knowledge_base[i++];
 
     functor * saved = &my_fact->func;
@@ -364,6 +366,7 @@ static void var_list_init(var_list * vars, char * name) {
       if (vars->name[i] == NULL) {
         vars->name[i] = name;
         vars->value[i] = NULL;
+        vars->public[i] = 1;
         return;
       }
       if (strcmp(vars->name[i], name) == 0)
