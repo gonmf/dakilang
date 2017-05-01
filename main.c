@@ -32,6 +32,7 @@ typedef struct __var_list_ {
   char * name[MAX_FACT_VARIABLES];
   expr_type type[MAX_FACT_VARIABLES];
   void * value[MAX_FACT_VARIABLES];
+  int public[MAX_FACT_VARIABLES];
 } var_list;
 
 typedef struct __fact_ {
@@ -43,12 +44,13 @@ typedef struct __fact_ {
 static fact * knowledge_base[MAX_FACTS];
 static int debug = 0;
 
+static void print_term(term * a);
 static int is_unset_var(var_list * vars, term * t) {
   if (t->type != variable && t->type != var_any)
     return 0;
 
   char * name = (char *)t->value;
-  for (int i = 0; ; ++i) {
+  for (int i = 0; vars->name[i] != NULL; ++i) {
     if (strcmp(vars->name[i], name) == 0) {
       if (vars->value[i] == NULL) {
         return 1;
@@ -57,24 +59,30 @@ static int is_unset_var(var_list * vars, term * t) {
     }
   }
 
-  exit(EXIT_FAILURE);
+  // Var not in this var list
+  return 1;
 }
 
 static void set_var(var_list * vars, char * name, void * value, expr_type type) {
-  for (int i = 0; ; ++i) {
+  int i;
+  for (i = 0; vars->name[i] != NULL; ++i) {
     if (strcmp(vars->name[i], name) == 0) {
       vars->name[i] = name;
       vars->type[i] = type;
       vars->value[i] = value;
+      vars->public[i] = 1;
       return;
     }
   }
 
-  exit(EXIT_FAILURE);
+  vars->name[i] = name;
+  vars->type[i] = type;
+  vars->value[i] = value;
+  vars->public[i] = 0;
 }
 
 static void unset_var(var_list * vars, char * name) {
-  for (int i = 0; ; ++i) {
+  for (int i = 0; vars->name[i] != NULL; ++i) {
     if (strcmp(vars->name[i], name) == 0) {
       vars->value[i] = NULL;
       return;
@@ -86,14 +94,14 @@ static void unset_var(var_list * vars, char * name) {
 
 static int eval_functor(functor * f, var_list * vars);
 static int eval_term(term * t, var_list * vars) {
-  int * val;
+  char * val;
 
   switch (t->type) {
     case const_atom:
       return 1;
     case const_num:
-      val = (int *)t->value;
-      return (*val) != 0;
+      val = (char *)t->value;
+      return strcmp(val, "0") != 0;
     case func_type:
       return eval_functor((functor *)t->value, vars);
     case variable:
@@ -159,6 +167,15 @@ static int eval_functor(functor * f, var_list * vars) {
             return 0;
           }
 
+          if (is_unset_var(vars, &saved->args[j]) && f->args[j].type != variable) {
+            set_var(vars, (char *)saved->args[j].value, f->args[j].value, f->args[j].type);
+            if (eval_functor(f, vars)) {
+              return 1;
+            }
+            unset_var(vars, (char *)saved->args[j].value);
+            return 0;
+          }
+
           if (final_type(&saved->args[j], vars) != final_type(&f->args[j], vars)) {
             return 0;
           }
@@ -174,7 +191,7 @@ static int eval_functor(functor * f, var_list * vars) {
   }
 
   if (!method_name_found)
-    printf("Definition \"%s\" not found.\n", f->name);
+    printf("%% Definition \"%s/%d\" not found.\n", f->name, f->arity);
 
   return 0;
 }
@@ -183,11 +200,13 @@ static int eval_fact(fact * f) {
   if (eval_term(&f->condition, &f->vars) && eval_functor(&f->func, &f->vars)) {
     int found = 0;
     for (int i = 0; f->vars.name[i] != NULL; ++i) {
-      found++;
-      if (f->vars.value[i] == NULL)
-        printf("%s = (any)\n", f->vars.name[i]);
-      else
-        printf("%s = %s\n", f->vars.name[i], (char *)f->vars.value[i]);
+      if (f->vars.public[i]) {
+        found++;
+        if (f->vars.value[i] == NULL)
+          printf("%s = (any)\n", f->vars.name[i]);
+        else
+          printf("%s = %s\n", f->vars.name[i], (char *)f->vars.value[i]);
+      }
     }
     if (found > 0)
       printf("\n");
@@ -214,12 +233,16 @@ static void main_loop(){
     int parse_res = parse_fact(s, &query);
     switch(parse_res) {
       case -1:
-        printf("Parse error.\n\n");
+        printf("%% Parse error.\n\n");
       case 0:
         continue;
     }
 
-    eval_fact(&query);
+    int res = eval_fact(&query);
+    if (res == 1)
+      printf("yes\n\n");
+    else
+      printf("no\n\n");
   }
   free(buffer);
 }
@@ -380,8 +403,13 @@ static int _parse_term(char * s, term * a, var_list * vars) {
 static int parse_functor(char * s, functor * f, var_list * vars) {
   int len = strlen(s);
   int low_limit = index_of(s, '(');
-  if (low_limit < 1 || s[len - 1] != ')')
-    return 0;
+  if (low_limit < 1 || s[len - 1] != ')') {
+    f->name = calloc(1, len + 1);
+    memcpy(f->name, s, len + 1);
+    f->name[len] = 0;
+    f->arity = 0;
+    return 1;
+  }
 
   f->name = calloc(1, low_limit + 1);
   memcpy(f->name, s, low_limit);
@@ -427,6 +455,9 @@ static void print_term(term * a) {
     case var_any:
       printf("v:_");
       break;
+    default:
+      printf("%% Error printing term.\n");
+      exit(EXIT_FAILURE);
   }
 }
 
@@ -493,14 +524,14 @@ static int parse_fact(char * fact_line, fact * new_fact) {
 }
 
 static int eval_file(const char * file_name){
-  printf("Evaluating \"%s\"...\n\n", file_name);
+  printf("%% Evaluating \"%s\"...\n\n", file_name);
 
   char * buffer = calloc(1, 1024 * 1024);
 
   FILE * fp = fopen(file_name, "r");
   if (fp == NULL) {
     free(buffer);
-    printf("File not found.");
+    printf("%% File not found.");
     return 0;
   }
 
@@ -529,7 +560,7 @@ static int eval_file(const char * file_name){
 
     int parse_result = parse_fact(line, &new_fact);
     if(parse_result < 0){
-      printf("Parse error.\n");
+      printf("%% Parse error.\n");
       continue;
     }
 
@@ -546,14 +577,14 @@ static int eval_file(const char * file_name){
 }
 
 static int consult(const char * file_name){
-  printf("Consulting \"%s\"...\n\n", file_name);
+  printf("%% Consulting \"%s\"...\n\n", file_name);
 
   char * buffer = calloc(1, 1024 * 1024);
 
   FILE * fp = fopen(file_name, "r");
   if (fp == NULL) {
     free(buffer);
-    printf("File not found.");
+    printf("%% File not found.");
     return 0;
   }
 
@@ -580,7 +611,7 @@ static int consult(const char * file_name){
 
     int parse_result = parse_fact(line, &new_fact);
     if(parse_result < 0){
-      printf("Parse error.\n");
+      printf("%% Parse error.\n");
       free(buffer);
       return 0;
     }
@@ -592,7 +623,7 @@ static int consult(const char * file_name){
     }
   }
 
-  printf("Loaded %d facts.\n\n", facts);
+  printf("%% Loaded %d facts.\n\n", facts);
 
   return 1;
 }

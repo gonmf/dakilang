@@ -20,3 +20,5 @@ grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
 
 
 % ?- assert(fact).
+
+a(A).
