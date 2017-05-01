@@ -3,26 +3,47 @@ Toy Prolog interpreter
 Example
 
 ```sh
-make clean && make && ./prolog --consult db.pl --eval db2.pl
+make clean && make && ./prolog --consult db.pl
 ```
 
 ```
-Consulting "db.pl"...
+% Consulting "db.pl"...
 
-Loaded 3 facts.
+% Loaded 4 facts.
 
-Evaluating "db2.pl"...
+?- parent(Father, Child).
 
-?- parent(A,B).
-
-A = john
-B = mary
+Father = john
+Child = mary
 
 yes
 
-?- parent(A,A).
+?- assert(other(A,_)).
 
+% Definition "assert/2" not found.
 no
+
+?- assert(other(A)).
+
+A = (any)
+
+yes
+
+?- listing.
+
+f:parent/2(c:john,c:mary) :- c:1
+
+f:parent/2(c:victor,c:john) :- c:1
+
+f:grandparent/2(v:X,v:Y) :- f:and/2(f:parent/2(v:X,v:Z),f:parent/2(v:Z,v:Y))
+
+f:a/1(v:A) :- c:1
+
+f:other/1(v:A) :- c:1
+
+yes
+
+?- halt.
 ```
 
 
@@ -30,7 +51,7 @@ no
 
 `assert/1`
 
-`eq/`
+`eq/2`
 
 `and/2`
 
