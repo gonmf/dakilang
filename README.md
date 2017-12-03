@@ -1,4 +1,4 @@
-![](https://www.heartlandflags.com/images/yellow-warning.gif) This program is very incomplete and does not meet the most basic of Prolog specificationsy yet.
+![](https://www.heartlandflags.com/images/yellow-warning.gif) This program is very incomplete and does not meet the most basic of Prolog specifications yet.
 
 # Toy Prolog interpreter
 
