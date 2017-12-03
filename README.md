@@ -1,4 +1,6 @@
-Toy Prolog interpreter
+![](https://www.heartlandflags.com/images/yellow-warning.gif) This program is very incomplete and does not meet the most basic of Prolog specificationsy yet.
+
+# Toy Prolog interpreter
 
 Example
 
