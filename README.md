@@ -18,19 +18,19 @@ introduce Datalog as I hope to implement. There is beauty in terseness.
 
 First, some terminology (these are similar but different from Prolog):
 
-term - Either a variable or literal.
+*term* - Either a variable or literal.
 
-variable - Something to be attributed an atom when searching for a solution. Must start with an upper case character.
+*variable* - Something to be attributed an atom when searching for a solution. Must start with an upper case character.
 
-literal - A constant. Like a name, number. Must start with a lower case character or algarism.
+*literal* - A constant. Like a name, number. Must start with a lower case character or algarism.
 
-rule - A declaration, that can be translates as "X such that Y". We want to resolve/satisfy these by finding combinations of variables that satisfy them.
+*rule* - A declaration, that can be translated as "X such that Y". We want to resolve these by finding combinations of variables that satisfy them.
 
-fact - A rule that is so full of itself it needs no Y.
+*fact* - A rule that is so full of itself it needs no Y.
 
-goal - A fact with one or more (non-free) variables, to be resolved.
+*goal* - A fact with one or more (non-free) variables, to be resolved.
 
-free variable - Indicates a variable that for the purposes of the rule it's value doesn't matter. Must be a lower case only.
+*free variable* - Indicates a variable that for the purposes of the rule it's value doesn't matter. Must be a lower case only.
 
 Our goal is to state our rules and facts about a domain, and then indicate goals we wish to solve the constraint problem for.
 
@@ -43,12 +43,12 @@ parent(john, alice).   % This is a comment
 parent(john, bob).     % Bob is the parent of John (we can read this however we want)
 parent(bob, margaret).
 
-grandparent(A, B) :- parent(A, Z), parent(Z, B). % "," means "and"
+grandparent(A, B) :- parent(A, Z) & parent(Z, B). % "&" means "and"
 
 offspring(A, B) :- parent(B, A).
 grandoffspring(A, B) :- offspring(B, A).
-related(A, B) :- parent(A, B); offspring(B, A); grandparent(A, B);
-                 grandoffspring(A, B). % ";" means "or"
+related(A, B) :- parent(A, B) | offspring(B, A) | grandparent(A, B);
+                 grandoffspring(A, B). % "|" means "or"
 ```
 
 And some goals and their responses:
