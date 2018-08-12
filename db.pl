@@ -12,7 +12,7 @@
 
 % hsdf896h
 
-% grandparent(X, Y) :- parent(X, Z) & parent(Z, Y).
+% grandparent(X, Y) :- parent(X, Z); parent(Z, Y).
 
 % loves(romeo, juliet).
 
@@ -28,4 +28,4 @@ beta(exists).
 charlie(exists).
 delta(exists).
 
-parser_test(A, B, C, D) :- alpha(A) | (beta(B) & charlie(C)) | delta(D).
+parser_test(A, B, C, D) :- alpha(A), (beta(B); charlie(C)), delta(D).

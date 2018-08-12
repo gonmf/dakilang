@@ -9,6 +9,12 @@ class Interpreter
     self.clause_database = {}
   end
 
+  def valid_name?(name)
+    valid_chars = ['_'] + ('a'.. 'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a
+
+    (name.chars - valid_chars).empty?
+  end
+
   def parse_functor(text)
     parts = text.split('(').map(&:strip)
     raise "Syntax error at #{text}" if parts.count != 2
@@ -16,6 +22,8 @@ class Interpreter
     name = parts[0]
     parts = parts[1].split(')').map(&:strip)
     raise "Syntax error at #{text}" if parts.count != 1
+
+    raise "Syntax error at #{text}: invalid character" unless valid_name?(name)
 
     args = parts[0].split(',').map(&:strip)
 
@@ -78,7 +86,7 @@ class Interpreter
         next
       end
 
-      if text[i] == '&' || text[i] == '|'
+      if text[i] == ',' || text[i] == ';'
         if relation.nil?
           relation = text[i]
         elsif relation != text[i]
