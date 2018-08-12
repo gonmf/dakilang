@@ -6,13 +6,13 @@
 
 % test2(b, a).
 
-parent(john, mary).
+% parent(john, mary).
 
-parent(victor, john).
+% parent(victor, john).
 
 % hsdf896h
 
-grandparent(X, Y) :- parent(X, Z) & parent(Z, Y).
+% grandparent(X, Y) :- parent(X, Z); parent(Z, Y).
 
 % loves(romeo, juliet).
 
@@ -21,4 +21,11 @@ grandparent(X, Y) :- parent(X, Z) & parent(Z, Y).
 
 % ?- assert(fact).
 
-a(A).
+% a(A).
+
+alpha(exists).
+beta(exists).
+charlie(exists).
+delta(exists).
+
+parser_test(A, B, C, D) :- alpha(A), (beta(B); charlie(C)), delta(D).

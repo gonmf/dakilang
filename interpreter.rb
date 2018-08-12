@@ -9,6 +9,12 @@ class Interpreter
     self.clause_database = {}
   end
 
+  def valid_name?(name)
+    valid_chars = ['_'] + ('a'.. 'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a
+
+    (name.chars - valid_chars).empty?
+  end
+
   def parse_functor(text)
     parts = text.split('(').map(&:strip)
     raise "Syntax error at #{text}" if parts.count != 2
@@ -16,6 +22,8 @@ class Interpreter
     name = parts[0]
     parts = parts[1].split(')').map(&:strip)
     raise "Syntax error at #{text}" if parts.count != 1
+
+    raise "Syntax error at #{text}: invalid character" unless valid_name?(name)
 
     args = parts[0].split(',').map(&:strip)
 
@@ -25,35 +33,94 @@ class Interpreter
     )
   end
 
+  def select_text_until_brace(text, i)
+    initial_i = i
+
+    while i < text.size
+      return [text[initial_i, i + 1 - initial_i], i + 1] if text[i] == ')'
+
+      i += 1
+    end
+
+    nil
+  end
+
   def parse_functor_tree(text)
-    or_parts = text.split('|').map(&:strip)
+    tree, _ = parse_functor_tree_recursive(text, 0, false)
 
-    if or_parts.count > 1
-      return OpenStruct.new(
-        operator: '|',
-        functors: or_parts.map { |part| parse_functor_tree(part) }
-      )
+    tree
+  end
+
+  def parse_functor_tree_recursive(text, i, needs_end_brace)
+    # ... :- ((a(A), b(C, D)); c(X)).
+    relation = nil
+    relations = 0
+    functors = []
+
+    while i < text.size
+      if text[i] == '('
+        subfunctor, new_i = parse_functor_tree_recursive(text, i + 1, true)
+        functors.push(subfunctor)
+        i = new_i
+        next
+      end
+
+      if text[i] == ')'
+        if !needs_end_brace
+          raise "Syntax error parsing #{text}: unexpected character #{text[i]}"
+        end
+
+        raise "Syntax error parsing #{text}: empty braces" if functors.none?
+
+        needs_end_brace = false
+        break
+      end
+
+      if text[i] >= 'a' && text[i] <= 'z'
+        subtext, new_i = select_text_until_brace(text, i)
+        raise "Syntax error parsing #{text}" if subtext.nil?
+
+        functor = parse_functor(subtext)
+        functors.push(functor)
+        i = new_i
+        next
+      end
+
+      if text[i] == ',' || text[i] == ';'
+        if relation.nil?
+          relation = text[i]
+        elsif relation != text[i]
+          raise "Syntax error parsing #{text}: mixing operators without braces"
+        end
+
+        relations += 1
+        i += 1
+        next
+      end
+
+      if text[i] == ' ' || text[i] == "\n" || text[i] == "\t" || text[i] == "\r"
+        i += 1
+        next
+      end
+
+      raise "Syntax error parsing #{text}: unexpected character '#{text[i]}'"
     end
 
-    and_parts = text.split('&').map(&:strip)
-
-    if and_parts.count > 1
-      return OpenStruct.new(
-        operator: '&',
-        functors: and_parts.map { |part| parse_functor_tree(part) }
-      )
+    if needs_end_brace
+      raise "Syntax error parsing #{text}: braces not closed"
     end
 
-    OpenStruct.new(
-      operator: nil,
-      functors: [parse_functor(text)]
-    )
+    if relations + 1 != functors.count
+      raise "Syntax error parsing #{text}: unfinished clause"
+    end
+
+    [OpenStruct.new(operator: relation, functors: functors), i + 1]
   end
 
   def consult_line(text)
     text = text.chomp('.')
 
-    parts = text.split(' :- ')
+    parts = text.split(':-')
     raise "Syntax error at #{text}" if parts.count > 2
 
     head, body = parts.first(2)
