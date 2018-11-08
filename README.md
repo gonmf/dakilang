@@ -1,3 +1,5 @@
+*Early stage warning: not a working product*
+
 # Datalog interpreter
 
 Datalog programming language interpeter
