@@ -10,7 +10,7 @@ Daki is a declarative and logic language based on Horn clauses, aimed at solving
 
 This project implements a stable, iterative and space bound algorithm of unification of free variables, in depth-first search. At this point, the implementation details and algorithm are subject to change.
 
-Regardless of your familarity with Prolog or Datalog, Daki language has significant differences and omissions from both, also being a work in progress, so I have compiled the following language definition, structured by example.
+Regardless of your familarity with Prolog or Datalog, Daki language has significant differences and omissions from both. It is also a work in progress. For this reasion I have compiled the following short language definition, in the form of a tutorial with examples.
 
 ## Tutorial
 
@@ -76,11 +76,39 @@ Clause not found
 
 Finally, **built-in commands** allow for some specific operations related to the interpreter and global table themselves. These are:
 
-- _quit_ / _exit_ - Stop execution and exit the interpreter if in interactive mode
+- _quit_ / _exit_ - Stop execution and exit the interpreter if in interactive mode.
 - _database_set N_ - Changes the global table currently in use. By default, number 0 is active. Passing no argument prints the current table number.
 - _listing_ - Prints all rules kept in the current global table.
+- _consult_ - Read and interpret a .dl file.
+- _version_ - Print version information.
 
 Built-in commands are executed without any trailing "." or "?".
 
+## Manual
 
+You will need to have a Ruby executable installed.
 
+To launch the interpreter in non-interactive mode, execute:
+
+```sh
+ruby dakilang.rb -c example.dl
+```
+
+To launch the interpreter in interactive mode, add the -i flag:
+
+```sh
+ruby dakilang.rb -i
+```
+
+## TODO
+
+- Logical OR operator
+- Improve parsing validation, use of "," and ";" for AND and OR operators
+- Issue with query clause without variables
+- Rule retraction
+- Built-in commands
+- Interactive and non-interactive mode
+- Test suite
+- Command continuation using \
+- Data types for "strings" and numbers, all other symbols becoming variable names
+- Built-in operators for known types

@@ -5,17 +5,29 @@ class DakiLangInterpreter
   def initialize
     @iteration_limit = 1000
     @debug = false
-    @table = []
+    @table = {}
+    @table_nr = 0
     @vari = 0
   end
 
   def consult(filename)
+    print_version
+
     file_read(filename).each do |line|
       consult_line(line)
     end
   end
 
   private
+
+  def table
+    @table[@table_nr] ||= []
+  end
+
+  def print_version
+    puts 'dakilang 0.1'
+    puts
+  end
 
   def deep_clone(obj)
     if obj.is_a? Array
@@ -228,7 +240,7 @@ class DakiLangInterpreter
 
       head = first_solution_clause[0]
 
-      matching_clauses = @table.select do |table_clause|
+      matching_clauses = table.select do |table_clause|
         clauses_match(table_clause[0], head)
       end
 
@@ -273,7 +285,7 @@ class DakiLangInterpreter
     puts "> #{text}"
 
     if text == 'listing'
-      @table.each do |arr|
+      table.each do |arr|
         puts "#{format_head(arr[0])}#{arr[1].any? ? " :- #{arr[1].map { |part| format_head(part) }.join(' & ')}" : ''}."
       end
 
@@ -289,7 +301,7 @@ class DakiLangInterpreter
       head = parse_head(head)
       body = parse_body(body)
 
-      @table.push([head, body])
+      table.push([head, body])
     elsif text.chars.last == '?'
       text = text.tr(' ', '').chomp('?')
 
