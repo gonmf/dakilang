@@ -84,6 +84,8 @@ Finally, **built-in commands** allow for some specific operations related to the
 
 Built-in commands are executed without any trailing "." or "?".
 
+The following characters are reserved and should only appear for their specified uses: "%", "(", ")", "&", "|", ".", "?", "~" and "\". The specific sequence ":-" is also reserved. All others can be used in names of clause terms, variables and contants.
+
 ## Manual
 
 You will need to have a Ruby executable installed.

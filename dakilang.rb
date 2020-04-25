@@ -7,7 +7,6 @@ class DakiLangInterpreter
     @debug = false
     @table = {}
     @table_nr = 0
-    @vari = 0
   end
 
   def consult(filename)
@@ -95,19 +94,6 @@ class DakiLangInterpreter
     (chr >= '0' && chr < '9') || (chr >= 'a' && chr < 'z')
   end
 
-  def heads_match(h1, h2)
-    return false unless h1.name == h2.name && h1.variables.count == h2.variables.count
-
-    h1.variables.each.with_index do |var1, idx|
-      var2 = h2.variables[idx]
-
-      return false if const?(var1) && const?(var2) && var1 != var2
-      return false if !const?(var1) && !const?(var2)
-    end
-
-    true
-  end
-
   def clauses_match(h1, h2)
     return false unless h1.name == h2.name && h1.variables.count == h2.variables.count && h1.variables.uniq.count == h2.variables.uniq.count
 
@@ -115,27 +101,6 @@ class DakiLangInterpreter
       var2 = h2.variables[idx]
 
       return false if const?(var1) && const?(var2) && var1 != var2
-    end
-
-    true
-  end
-
-  def head_search(table, head)
-    solutions = []
-
-    table.each do |arr|
-      if heads_match(arr[0], head)
-        solutions.push(arr[0])
-      end
-    end
-  end
-
-  def rules_can_match(lookup, head)
-    return false unless lookup.name == head.name && lookup.variables.uniq.count == head.variables.uniq.count
-
-    lookup.variables.each.with_index do |name, idx|
-      other_name = head.variables[idx]
-      return false if const?(name) && const?(other_name) && name != other_name
     end
 
     true
@@ -195,7 +160,9 @@ class DakiLangInterpreter
   end
 
   def search(head)
+    @vari = 0
     iteration = 0
+
     solution_set = [unique_var_names([[deep_clone(head), false]], iteration)]
 
     while iteration < @iteration_limit
