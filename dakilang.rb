@@ -317,4 +317,4 @@ end
 
 interpreter = DakiLangInterpreter.new
 
-interpreter.consult('db.pl')
+interpreter.consult('db.dl')
