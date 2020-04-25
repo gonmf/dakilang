@@ -1,13 +1,21 @@
 require 'ostruct'
 require 'pry'
 
-class DatalogInterpreter
+class DakiLangInterpreter
   def initialize
     @iteration_limit = 1000
     @debug = false
     @table = []
     @vari = 0
   end
+
+  def consult(filename)
+    file_read(filename).each do |line|
+      consult_line(line)
+    end
+  end
+
+  private
 
   def deep_clone(obj)
     if obj.is_a? Array
@@ -305,14 +313,8 @@ class DatalogInterpreter
       puts
     end
   end
-
-  def consult(filename)
-    file_read(filename).each do |line|
-      consult_line(line)
-    end
-  end
 end
 
-interpreter = DatalogInterpreter.new
+interpreter = DakiLangInterpreter.new
 
 interpreter.consult('db.pl')
