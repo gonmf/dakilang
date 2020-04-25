@@ -1,6 +1,6 @@
 # Daki Language Interpreter
 
-![Dakilang mascot](/drawing.jpeg)
+![Dakilang mascot](/img/mascot.jpeg)
 
 Daki is a small computer programming language similar to Prolog and Datalog. This is it's first concept implementation, and therefore features an interpreter instead of a compiler.
 
