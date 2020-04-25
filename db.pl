@@ -24,8 +24,19 @@
 % a(A).
 
 alpha(exists).
-beta(exists).
+beta(A) :- test(A).
 charlie(exists).
 delta(exists).
+delta(blob).
 
-parser_test(A, B, C, D) :- alpha(A), (beta(B); charlie(C)), delta(D).
+test(B) :- delta(B).
+
+% listing
+
+% test(A)?
+test(A)?
+test(literal)?
+beta(B)?
+
+
+% parser_test(A, B, C, D) :- alpha(A) & (beta(B) | charlie(C)) & delta(D).
