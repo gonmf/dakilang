@@ -1,0 +1,11 @@
+actor(chaplin).
+athlete(ronaldo).
+athlete(messi).
+politician(ghandi).
+politician(churchill).
+
+famous(X) :- actor(X); athlete(X); politician(X).
+
+listing
+
+% famous(X)?

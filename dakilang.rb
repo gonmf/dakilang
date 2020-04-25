@@ -1,10 +1,22 @@
-require 'ostruct'
 require 'pry'
+
+class Fact
+  attr_accessor :name, :variables
+
+  def initialize(name, variables)
+    @name = name
+    @variables = variables
+  end
+
+  def to_s
+    "#{name}(#{variables.join(', ')})"
+  end
+end
 
 class DakiLangInterpreter
   def initialize
     @iteration_limit = 1000
-    @debug = false
+    @debug = true
     @table = {}
     @table_nr = 0
   end
@@ -35,10 +47,8 @@ class DakiLangInterpreter
       ret = {}
       obj.each { |k, v| ret[k] = deep_clone(v) }
       ret
-    elsif obj.is_a? OpenStruct
-      ret = {}
-      obj.to_h.each { |k, v| ret[k] = deep_clone(v) }
-      OpenStruct.new(ret)
+    elsif obj.is_a? Fact
+      Fact.new(obj.name, deep_clone(obj.variables))
     else
       obj
     end
@@ -55,15 +65,12 @@ class DakiLangInterpreter
       next if line.size == 0
 
       if !line.end_with?('.') && !line.end_with?('?') && !line.end_with?('~') && line != 'listing'
-        remainder += " #{line}"
-        next
+        puts "Syntax error at line #{line_num}"
+        exit(1)
       end
 
-      ret.push("#{remainder} #{line}".strip)
-      remainder = ''
+      ret.push(line.strip)
     end
-
-    raise "Syntax error at #{remainder}" if remainder.size > 0
 
     ret
   end
@@ -73,7 +80,7 @@ class DakiLangInterpreter
     variables, _ = rest.split(')')
     variables = variables.split(',')
 
-    OpenStruct.new(name: name, variables: variables)
+    Fact.new(name, variables)
   end
 
   def parse_body(body)
@@ -82,10 +89,6 @@ class DakiLangInterpreter
     and_parts = body.split('&') # logical and
 
     and_parts.map { |part| parse_head(part) }
-  end
-
-  def format_head(head)
-    "#{head.name}(#{head.variables.join(', ')})"
   end
 
   def const?(str)
@@ -171,7 +174,7 @@ class DakiLangInterpreter
       solution_set.each.with_index do |solution, idx|
         puts "  Solution #{idx + 1}" if @debug
         solution.each do |head|
-          puts "    #{head[1] ? '*' : ''}#{format_head(head[0])}." if @debug
+          puts "    #{head[1] ? '*' : ''}#{head[0]}." if @debug
         end
       end
 
@@ -253,7 +256,7 @@ class DakiLangInterpreter
 
     if text == 'listing'
       table.each do |arr|
-        puts "#{format_head(arr[0])}#{arr[1].any? ? " :- #{arr[1].map { |part| format_head(part) }.join(' & ')}" : ''}."
+        puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].map { |part| part.to_s }.join(' & ')}" : ''}."
       end
 
       puts
@@ -283,7 +286,7 @@ class DakiLangInterpreter
 
       if solutions.any?
         solutions.each do |arr1|
-          puts "#{format_head(arr1)}."
+          puts "#{arr1}."
         end
       else
         puts 'No solution'
@@ -296,4 +299,4 @@ end
 
 interpreter = DakiLangInterpreter.new
 
-interpreter.consult('db.dl')
+interpreter.consult('example2.dl')
