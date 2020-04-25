@@ -93,7 +93,7 @@ def head_search(table, head)
 end
 
 def rules_can_match(lookup, head)
-  return false unless lookup.name == head.name && lookup.variables.count == head.variables.count
+  return false unless lookup.name == head.name && lookup.variables.uniq.count == head.variables.uniq.count
 
   lookup.variables.each.with_index do |name, idx|
     other_name = head.variables[idx]
@@ -115,8 +115,6 @@ def replace_body_part(table, head, body, replacement)
 
       body_part.variables.each.with_index do |var_name, i1|
         if !const?(var_name) && i1 == idx
-          # Replace all instances of variable
-
           head.variables.each.with_index do |other_name, i|
             head.variables[i] = name if other_name == var_name
           end
@@ -146,11 +144,18 @@ def expand_rule(table, lookup, head, body)
     if const?(name)
       old_variable_name = head.variables[idx]
       new_variable_name = name
-      head.variables[idx] = new_variable_name
+
+      head.variables.each.with_index do |n, i1|
+        head.variables[i1] = new_variable_name if n == old_variable_name
+      end
+      # head.variables[idx] = new_variable_name
     else
       old_variable_name = lookup.variables[idx]
       new_variable_name = head.variables[idx]
-      lookup.variables[idx] = new_variable_name
+
+      lookup.variables.each.with_index do |n, i1|
+        lookup.variables[i1] = new_variable_name if n == old_variable_name
+      end
     end
 
     body.each do |tuple|
@@ -230,6 +235,7 @@ def consult_line(table, text)
     else
       puts 'No solution'
     end
+    puts
   end
 end
 

@@ -23,7 +23,7 @@
 
 % a(A).
 
-alpha(exists).
+alpha(hello, world).
 beta(A) :- test(A).
 charlie(exists).
 delta(exists).
@@ -38,5 +38,10 @@ test(A)?
 test(literal)?
 beta(B)?
 
+alpha2(A, B) :- alpha(A, B).
+
+alpha2(A, B)?
+alpha2(goodbye, B)?
+alpha2(A, A)?
 
 % parser_test(A, B, C, D) :- alpha(A) & (beta(B) | charlie(C)) & delta(D).
