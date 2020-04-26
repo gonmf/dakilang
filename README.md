@@ -43,7 +43,16 @@ A .dl file can contain five types of instructions:
 
 Clauses are always terminated by a dot ".". If they are declared with a tail, the tail must be evaluated true for the head to also match.
 
-In contrast with other logic languages, the "&" character is used to denote logical AND.
+In contrast with other logic languages, the "&" character is used to denote logical AND. You can also use the character "|" to denote logical OR, but notice these are equivalent:
+
+```
+> fact(X) :- reason1(X); reason2(X).
+> % is the same as
+> fact(X) :- reason1(X).
+> fact(X) :- reason2(X).
+```
+
+In fact the second form is exactly how they are saved in the global table. If some of the broken down OR clauses already exist they are ignored without raising a warning. Keep this in mind when removing declarations.
 
 The elements of clauses always have open brackets and are declared with one or more strings. Those strings are variables if the first character is a capital letter, or constant values otherwise. Numbers and other special characters not used for other purposes can therefore also be the first characters of valid constants.
 
@@ -104,11 +113,10 @@ ruby dakilang.rb -i
 
 ## TODO
 
-- Logical OR operator
 - Improve parsing validation, use of "," and ";" for AND and OR operators
-- Issue with query clause without variables
+- Issue with query clause without variables, only constants
 - Rule retraction
-- Built-in commands
+- Rest of built-in commands
 - Interactive and non-interactive mode
 - Test suite
 - Command continuation using \

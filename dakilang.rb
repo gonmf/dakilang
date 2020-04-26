@@ -1,22 +1,51 @@
 require 'pry'
 
-class Fact
-  attr_accessor :name, :variables
+class String
+  def const?
+    chr = self[0]
 
-  def initialize(name, variables)
-    @name = name
-    @variables = variables
-  end
-
-  def to_s
-    "#{name}(#{variables.join(', ')})"
+    (chr >= '0' && chr < '9') || (chr >= 'a' && chr < 'z')
   end
 end
 
 class DakiLangInterpreter
+  class Fact
+    attr_accessor :name, :variables
+
+    def initialize(name, variables)
+      @name = name
+      @variables = variables
+    end
+
+    def to_s
+      "#{name}(#{variables.join(', ')})"
+    end
+
+    def eql?(other)
+      other.is_a?(Fact) && name == other.name && hash == other.hash
+    end
+
+    def hash
+      vari = 0
+      vars = variables.map { |s| s }
+      vars.each do |var_name|
+        next if var_name.const?
+
+        vari += 1
+        new_name = "%#{vari.to_s(16)}"
+
+        vars.each.with_index do |name, idx|
+          vars[idx] = new_name if name == var_name
+        end
+      end
+
+      ([name] + vars).join(';').hash
+    end
+  end
+
   def initialize
     @iteration_limit = 1000
-    @debug = true
+    @debug = false
     @table = {}
     @table_nr = 0
   end
@@ -60,12 +89,13 @@ class DakiLangInterpreter
     remainder = ''
 
     File.foreach(name).with_index do |line, line_num|
-      line = line.to_s.strip.split('%').first.to_s.strip
+      original_text = line.to_s.strip
+      line = original_text.split('%').first.to_s.strip
 
       next if line.size == 0
 
       if !line.end_with?('.') && !line.end_with?('?') && !line.end_with?('~') && line != 'listing'
-        puts "Syntax error at line #{line_num}"
+        puts "Syntax error at #{original_text}"
         exit(1)
       end
 
@@ -84,17 +114,23 @@ class DakiLangInterpreter
   end
 
   def parse_body(body)
-    return [] if body.nil? || body.empty?
+    return [[]] if body.nil? || body.empty?
 
-    and_parts = body.split('&') # logical and
+    return nil if body.include?('&') && body.include?('|')
 
-    and_parts.map { |part| parse_head(part) }
-  end
+    if body.include?('&') # logical AND
+      and_parts = body.split('&')
 
-  def const?(str)
-    chr = str[0]
+      body = and_parts.map { |part| parse_head(part) }
 
-    (chr >= '0' && chr < '9') || (chr >= 'a' && chr < 'z')
+      [body]
+    else # logical OR
+      or_parts = body.split('|')
+
+      bodies = or_parts.map { |part| [parse_head(part)] }
+
+      bodies
+    end
   end
 
   def clauses_match(h1, h2)
@@ -103,7 +139,7 @@ class DakiLangInterpreter
     h1.variables.each.with_index do |var1, idx|
       var2 = h2.variables[idx]
 
-      return false if const?(var1) && const?(var2) && var1 != var2
+      return false if var1.const? && var2.const? && var1 != var2
     end
 
     true
@@ -120,7 +156,7 @@ class DakiLangInterpreter
 
     arr.each do |head|
       head[0].variables.each.with_index do |var_name1, i1|
-        next if const?(var_name1) || variables.include?(var_name1)
+        next if var_name1.const? || variables.include?(var_name1)
 
         @vari += 1
         new_var_name = "%#{@vari.to_s(16)}"
@@ -141,17 +177,17 @@ class DakiLangInterpreter
     new_clauses[0].variables.each.with_index do |var_name1, i1|
       var_name2 = removed_clause.variables[i1]
 
-      if const?(var_name1) && !const?(var_name2)
+      if var_name1.const? && !var_name2.const?
         # Replace variable in solution
         solution.map { |l| l[0] }.each do |clause|
           replace_variable(var_name2, var_name1, clause)
         end
-      elsif !const?(var_name1) && const?(var_name2)
+      elsif !var_name1.const? && var_name2.const?
         # Replace variable in new_clauses
         new_clauses.each do |clause|
           replace_variable(var_name1, var_name2, clause)
         end
-      elsif !const?(var_name1) && !const?(var_name2)
+      elsif !var_name1.const? && !var_name2.const?
         # Replace variable in new_clauses
         new_clauses.each do |clause|
           replace_variable(var_name1, var_name2, clause)
@@ -189,7 +225,7 @@ class DakiLangInterpreter
       if first_solution_idx.nil?
         successful_solutions = solution_set.select do |solution|
           !solution.any? do |solution_clause|
-            solution_clause[0].variables.any? { |v| !const?(v) }
+            solution_clause[0].variables.any? { |v| !v.const? }
           end
         end
 
@@ -251,7 +287,34 @@ class DakiLangInterpreter
     []
   end
 
+  def equal_bodies(arr1, arr2)
+    return false if arr1.count != arr2.count
+
+    arr1.each.with_index do |val, idx|
+      return false unless arr2[idx].eql?(val)
+    end
+
+    true
+  end
+
+  def table_add_clause(head, body, warn_if_exists)
+    exists = false
+
+    table.each do |arr|
+      table_head = arr[0]
+      table_body = arr[1]
+
+      if table_head.eql?(head) && equal_bodies(table_body, body)
+        puts 'Clause already exists' if warn_if_exists
+        return
+      end
+    end
+
+    table.push([head, body])
+  end
+
   def consult_line(text)
+    original_text = text.strip
     puts "> #{text}"
 
     if text == 'listing'
@@ -264,19 +327,31 @@ class DakiLangInterpreter
       text = text.tr(' ', '').chomp('.')
 
       parts = text.split(':-')
-      raise "Syntax error at #{text}" if parts.count > 2
+      if parts.count > 2
+        puts "Syntax error at #{original_text}"
+        exit(1)
+      end
 
       head, body = parts.first(2)
 
       head = parse_head(head)
-      body = parse_body(body)
+      bodies = parse_body(body)
+      if bodies.nil?
+        puts "Syntax error at #{original_text}"
+        exit(1)
+      end
 
-      table.push([head, body])
+      bodies.each do |body|
+        table_add_clause(head, body, bodies.count == 1)
+      end
     elsif text.chars.last == '?'
       text = text.tr(' ', '').chomp('?')
 
       parts = text.split(':-')
-      raise "Syntax error at #{text}" if parts.count > 2
+      if parts.count > 2
+        puts "Syntax error at #{original_text}"
+        exit(1)
+      end
 
       head = parts.first
 
@@ -285,7 +360,7 @@ class DakiLangInterpreter
       solutions = search(head)
 
       if solutions.any?
-        solutions.each do |arr1|
+        solutions.uniq.each do |arr1|
           puts "#{arr1}."
         end
       else
