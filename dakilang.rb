@@ -373,5 +373,9 @@ class DakiLangInterpreter
 end
 
 interpreter = DakiLangInterpreter.new
+interpreter.consult('example2.txt')
 
-interpreter.consult('example2.dl')
+# TODO:
+# for arg in ARGV
+#    puts arg
+# end

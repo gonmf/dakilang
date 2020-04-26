@@ -16,9 +16,9 @@ Regardless of your familarity with Prolog or Datalog, Daki language has signific
 
 Daki can be used both in interactive and non-interactive mode. Currently only non-interactive is supported.
 
-In non-interactive mode, the interpreter reads one or more .dl files in sequence, and interpretes each line as if input in interactive mode.
+In non-interactive mode, the interpreter reads one or more text files in sequence, and interpretes each line as if input in interactive mode.
 
-A .dl file can contain five types of instructions:
+A Daki language text file can contain five types of instructions:
 
 1. Comments
 2. New declarations
@@ -88,7 +88,7 @@ Finally, **built-in commands** allow for some specific operations related to the
 - _quit_ / _exit_ - Stop execution and exit the interpreter if in interactive mode.
 - _database_set N_ - Changes the global table currently in use. By default, number 0 is active. Passing no argument prints the current table number.
 - _listing_ - Prints all rules kept in the current global table.
-- _consult_ - Read and interpret a .dl file.
+- _consult_ - Read and interpret a Daki language file.
 - _version_ - Print version information.
 
 Built-in commands are executed without any trailing "." or "?".
@@ -102,7 +102,7 @@ You will need to have a Ruby executable installed.
 To launch the interpreter in non-interactive mode, execute:
 
 ```sh
-ruby dakilang.rb -c example.dl
+ruby dakilang.rb -c example1.txt
 ```
 
 To launch the interpreter in interactive mode, add the -i flag:
