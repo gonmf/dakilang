@@ -102,13 +102,13 @@ You will need to have a Ruby executable installed.
 To launch the interpreter in non-interactive mode, execute:
 
 ```sh
-ruby dakilang.rb -c example1.txt
+./dakilang -c example1.txt
 ```
 
 To launch the interpreter in interactive mode, add the -i flag:
 
 ```sh
-ruby dakilang.rb -i
+./dakilang -i
 ```
 
 ## TODO
