@@ -31,30 +31,43 @@ A Daki language text file can contain five types of instructions:
 ```
 % I am a comment
 
-> func(john, mary). % I am a comment too
+> func("john", "mary", 1). % I am a comment too
 ```
 
 **New declarations** add what is called a _clause_ to a global table of clauses. A clause is composed of a head declaration and an optional tail, separated by the characters `:-`.
 
 ```
-> parent(john, emily).
-> grandparent(A, B) :- parent(A, C) & parent(C, B).
+> parent("john", "emily").
+> grandparent(A, B) :- parent(A, C), parent(C, B).
 ```
 
 Clauses are always terminated by a dot `.`. If they are declared with a tail, the tail must be evaluated true for the head to also match.
 
-In contrast with other logic languages, the `&` character is used to denote logical AND. You can also use the character `|` to denote logical OR, but notice these are equivalent:
+In contrast with other logic languages, the `,` character is used to denote logical AND. You can also use the character `;` to denote logical OR, but notice these are equivalent:
 
 ```
-> fact(X) :- reason1(X); reason2(X).
+> fact(x) :- reason1(x); reason2(x).
 > % is the same as
-> fact(X) :- reason1(X).
-> fact(X) :- reason2(X).
+> fact(x) :- reason1(x).
+> fact(x) :- reason2(x).
 ```
 
 In fact the second form is exactly how they are saved in the global table. If some of the broken down OR clauses already exist they are ignored without raising a warning. Keep this in mind when removing declarations.
 
-The elements of clauses always have open brackets and are declared with one or more strings. Those strings are variables if the first character is a capital letter, or constant values otherwise. Numbers and other special characters not used for other purposes can therefore also be the first characters of valid constants.
+The elements of clauses always have open brackets and are declared with one or more strings. Those strings can be
+constants - if they are enclosed by `""` or if they are a number, like 42. Otherwise they are treated as variables.
+
+Note declaring a constant as number without `""` is just a matter of convenience, these forms are equivalent:
+
+```
+> age("josh", "24").
+> age("josh", 24).
+% Therefore:
+> age(name, 24)?
+age("josh", 24).
+```
+
+Besides these limitations, variables names and `""` delimited constants can contain any character not reserved by the language, like hyphens and underscores. The characters `"` and `%` can be escaped in `""` constants by escaping them with `\`. `\` itself is escaped with `\\`.
 
 A **query** has a similar format to a tailess clause, but is ended with a `?` character instead of `.`. Upon being inputed, it starts a search for all its solutions using the global table of clauses.
 
@@ -63,23 +76,23 @@ The search will try to find solutions for which the original query has no outsta
 The interpreter will print out every solution found or return `No solution`.
 
 ```
-> grandparent(john, B)?
-grandparent(john, mary).
+> grandparent("john", someone)?
+grandparent("john", "mary").
 ```
 
-**Declarations to be removed** to be removed are declared with the same name, constant values and tail of the original clause declarations. The variables can have different names.
+**Declarations to be removed** are declared with the same name, constant values and tail of the original clause declarations. The variables can have different names.
 
 Declaring two clauses with the same name, constants and tail is impossible, and will raise a warning; similarly trying to remove from the global table a clause that does not exist will also raise a warning.
 
 To remove a clause end your command with the `~` character.
 
 ```
-> grandparent(john, Var) :- other(Var, Var).
-> grandparent(john, Var) :- other(Var, Var).
+> grandparent("john", Var) :- other(Var, Var).
+> grandparent("john", Var) :- other(Var, Var).
 Clause already exists
-> grandparent(john, X) :- other(X, X)~
+> grandparent("john", X) :- other(X, X)~
 Clause removed
-> grandparent(john, X) :- other(X, X)~
+> grandparent("john", X) :- other(X, X)~
 Clause not found
 ```
 
@@ -93,7 +106,7 @@ Finally, **built-in commands** allow for some specific operations related to the
 
 Built-in commands are executed without any trailing `.` or `?`.
 
-The following characters are reserved and should only appear for their specified uses: `%`, `,`, `(`, `)`, `&`, `|`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and contants.
+The following characters are reserved and should only appear outside of string contants for their specified uses: `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and contants. All whitespace is ignored.
 
 ## Manual
 
@@ -113,7 +126,8 @@ To launch the interpreter in interactive mode, add the -i flag:
 
 ## TODO
 
-- Improve parsing validation, use of `,` and `;` for AND and OR operators
+- Support '' strings as well as ""
+- String escape using "\"
 - Issue with query clause without variables, only constants
 - Rule retraction
 - Rest of built-in commands

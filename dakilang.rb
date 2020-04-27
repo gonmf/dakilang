@@ -1,8 +1,6 @@
 class String
   def const?
-    chr = self[0]
-
-    (chr >= '0' && chr < '9') || (chr >= 'a' && chr < 'z')
+    self[0] != '%'
   end
 end
 
@@ -16,7 +14,19 @@ class DakiLangInterpreter
     end
 
     def to_s
-      "#{name}(#{variables.join(', ')})"
+      friendly_variables = variables.map do |s|
+        if s.const?
+          if s.chars.all? { |c| c >= '0' && c <= '9' }
+            s
+          else
+            "\"#{s}\""
+          end
+        else
+          s.slice(1, s.size)
+        end
+      end
+
+      "#{name}(#{friendly_variables.join(', ')})"
     end
 
     def eql?(other)
@@ -30,7 +40,7 @@ class DakiLangInterpreter
         next if var_name.const?
 
         vari += 1
-        new_name = "%#{vari.to_s(16)}"
+        new_name = "%#{vari}"
 
         vars.each.with_index do |name, idx|
           vars[idx] = new_name if name == var_name
@@ -52,18 +62,322 @@ class DakiLangInterpreter
     print_version
 
     file_read(filename).each do |line|
-      consult_line(line)
+      puts "> #{line}"
+
+      # TODO: improve built-in support
+      if line == 'listing'
+        built_in_listing
+        puts
+        next
+      end
+
+      tokens = tokenizer(line)
+      next if tokens.empty?
+
+      # TODO: puts tokens.map { |a| a.join(':') }.join(' | ') if @debug
+
+      case tokens.last.first
+      when 'clause_end'
+        add_rule(tokens)
+      when 'query_end'
+        execute_query(tokens)
+      when 'retract_end'
+        retract_rule(tokens)
+      end
     end
   end
 
   private
+
+  def retract_rule(tokens)
+    raise 'NotImplementedError'
+  end
+
+  def execute_query(tokens)
+    head, _ = build_fact(tokens)
+
+    solutions = search(head)
+
+    if solutions.any?
+      solutions.uniq.each do |arr1|
+        puts "#{arr1}."
+      end
+    else
+      puts 'No solution'
+    end
+
+    puts
+  end
+
+  def add_rule(tokens)
+    head, last_idx = build_fact(tokens)
+
+    bodies = []
+    while last_idx != -1
+      body, last_idx = build_fact(tokens, last_idx)
+      bodies.push(body) if body
+    end
+
+    if tokens.include?(['or'])
+      bodies.each do |body|
+        table_add_clause(head, [body], bodies.count == 1)
+      end
+    else
+      table_add_clause(head, bodies.any? ? bodies : [], false)
+    end
+  end
+
+  def build_fact(tokens, start_index = 0)
+    name = nil
+    variables = []
+    end_index = -1
+
+    start_found = false
+    tokens.each.with_index do |token, idx|
+      next if idx < start_index
+
+      if start_found
+        if token[0] == 'varlist_end'
+          end_index = idx
+          break
+        end
+
+        variables.push(token[1])
+      else
+        if token[0] == 'varlist_start'
+          name = tokens[idx - 1]
+
+          if name[0] != 'name'
+            raise 'Parse error 1'
+          end
+
+          start_found = true
+        end
+
+        next
+      end
+    end
+
+    if name && variables.any?
+      [Fact.new(name[1], variables), end_index]
+    else
+      [nil, -1]
+    end
+  end
+
+  def tokenizer(text)
+    text_chars = text.chars
+
+    tokens = []
+
+    var_list = false
+    string_mode = false
+    number_mode = false
+    separator_mode = false
+    string = ''
+    name = ''
+
+    text_chars.each.with_index do |c, idx|
+      if separator_mode
+        if c == '-'
+          tokens.push(['sep'])
+          separator_mode = false
+          next
+        else
+          err("Syntax error at #{text} around", 'expected :-')
+        end
+      end
+
+      if string_mode
+        if c == '"'
+          if string.empty?
+            err("Syntax error at #{text}", 'empty string literal')
+          end
+
+          tokens.push(["string_literal", string])
+          string = ''
+          string_mode = false
+        else
+          string += c
+        end
+
+        next
+      end
+
+      if number_mode
+        if c >= '0' && c <= '9'
+          string += c
+          next
+        end
+
+        tokens.push(["number_literal", string])
+        string = ''
+        number_mode = false
+      end
+
+      if c >= '0' && c <= '9'
+        number_mode = true
+        string = c
+        next
+      end
+
+      if c == '%' # Comment
+        break
+      end
+
+      next if c == ' ' || c == "\t" || c == "\r" # Whitespace are ignored outside of string literals
+
+      if c == '.'
+        if tokens.include?(['clause_end'])
+          err("Syntax error at #{text}", 'unexpected . character')
+        end
+
+        tokens.push(['clause_end'])
+        next
+      end
+
+      if c == '?'
+        if tokens.include?(['query_end'])
+          err("Syntax error at #{text}", 'unexpected ? character')
+        end
+        if tokens.include?(['sep'])
+          err("Syntax error at #{text}", 'unexpected ? character for rule with tail')
+        end
+
+        tokens.push(['query_end'])
+        next
+      end
+
+      if c == '~'
+        if tokens.include?(['retract_end'])
+          err("Syntax error at #{text}", 'unexpected ~ character')
+        end
+
+        tokens.push(['retract_end'])
+        next
+      end
+
+      if c == '"'
+        if name.size > 0
+          err("Syntax error at #{text}", 'unexpected end of name')
+        end
+
+        string_mode = true
+        next
+      end
+
+      if c == '('
+        if name.empty?
+          err("Syntax error at #{text}", 'unexpected start of argument list')
+        end
+
+        var_list = true
+        tokens.push(['name', name])
+        name = ''
+        tokens.push(['varlist_start'])
+        next
+      end
+
+      if c == ')'
+        if !var_list
+          err("Syntax error at #{text}", 'unexpected end of empty argument list')
+        end
+
+        var_list = false
+        if name.size > 0
+          tokens.push(['var', "%#{name}"])
+          name = ''
+        elsif tokens.last == ['varlist_start']
+          err("Syntax error at #{text}", 'unexpected end of empty argument list')
+        end
+
+        tokens.push(['varlist_end'])
+        next
+      end
+
+      if c == ','
+        if var_list
+          if name.size > 0
+            tokens.push(['var', "%#{name}"])
+            name = ''
+          elsif tokens.last == ['varlist_start']
+            err("Syntax error at #{text}", 'invalid , at argument list start')
+          end
+        else
+          if !tokens.include?(['sep'])
+            err("Syntax error at #{text}", 'invalid , character before clause head/tail separator')
+          end
+
+          if tokens.include?(['or'])
+            err("Syntax error at #{text}", 'mixing of ; and , logical operators')
+          end
+
+          if name.size > 0
+            tokens.push(['name', name])
+            name = ''
+          end
+          tokens.push(['and'])
+        end
+        next
+      end
+
+      if c == ';'
+        if !tokens.include?(['sep'])
+          err("Syntax error at #{text}", 'invalid ; character before clause head/tail separator')
+        end
+
+        if tokens.include?(['and'])
+          err("Syntax error at #{text}", 'mixing of ; and , logical operators')
+        end
+
+        if name.size > 0
+          tokens.push(['name', name])
+          name = ''
+        end
+        tokens.push(['or'])
+        next
+      end
+
+      if c == ':' && !separator_mode
+        if var_list
+          err("Syntax error at #{text}", 'duplicate :- separator')
+        end
+
+        if name.size > 0
+          tokens.push(['name', name])
+          name = ''
+        end
+
+        separator_mode = true
+        next
+      end
+
+      name += c
+    end
+
+    if name.size > 0
+      err("Syntax error at #{text}", 'unterminated text')
+    end
+
+    if tokens.any? && !['clause_end', 'query_end', 'retract_end'].include?(tokens.last&.first)
+      err("Syntax error at #{text}", 'unterminated clause')
+    end
+
+    tokens
+  end
+
+  def built_in_listing
+    table.each do |arr|
+      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].map { |part| part.to_s }.join(' & ')}" : ''}."
+    end
+  end
 
   def table
     @table[@table_nr] ||= []
   end
 
   def print_version
-    puts 'dakilang 0.1'
+    puts 'dakilang 0.2'
     puts
   end
 
@@ -87,9 +401,9 @@ class DakiLangInterpreter
     remainder = ''
 
     File.foreach(name).with_index do |line, line_num|
-      original_text = line.to_s.strip
-      line = original_text.split('%').first.to_s.strip
+      line = line.to_s.strip
       if line.size == 0
+        ret.push('')
         remainder = ''
         next
       end
@@ -101,44 +415,11 @@ class DakiLangInterpreter
 
       line = remainder + line
 
-      if !line.end_with?('.') && !line.end_with?('?') && !line.end_with?('~') && line != 'listing'
-        puts "Syntax error at #{original_text}"
-        exit(1)
-      end
-
       ret.push(line.strip)
       remainder = ''
     end
 
     ret
-  end
-
-  def parse_head(head)
-    name, rest = head.split('(')
-    variables, _ = rest.split(')')
-    variables = variables.split(',')
-
-    Fact.new(name, variables)
-  end
-
-  def parse_body(body)
-    return [[]] if body.nil? || body.empty?
-
-    return nil if body.include?('&') && body.include?('|')
-
-    if body.include?('&') # logical AND
-      and_parts = body.split('&')
-
-      body = and_parts.map { |part| parse_head(part) }
-
-      [body]
-    else # logical OR
-      or_parts = body.split('|')
-
-      bodies = or_parts.map { |part| [parse_head(part)] }
-
-      bodies
-    end
   end
 
   def clauses_match(h1, h2)
@@ -167,7 +448,7 @@ class DakiLangInterpreter
         next if var_name1.const? || variables.include?(var_name1)
 
         @vari += 1
-        new_var_name = "%#{@vari.to_s(16)}"
+        new_var_name = "%#{@vari}"
         variables.push(var_name1)
 
         head[0].variables.each.with_index do |var_name2, i2|
@@ -248,8 +529,7 @@ class DakiLangInterpreter
       first_solution_clause = first_solution[first_solution_clause_idx]
 
       unless first_solution_clause
-        puts 'Error 1'
-        break
+        err('Critical error 1')
       end
 
       head = first_solution_clause[0]
@@ -286,8 +566,7 @@ class DakiLangInterpreter
         solution_set = solution_set - first_solution
 
         unless solution_set.any?
-          puts 'Error 2'
-          break
+          err('Critical error 2')
         end
       end
     end
@@ -321,62 +600,14 @@ class DakiLangInterpreter
     table.push([head, body])
   end
 
-  def consult_line(text)
-    original_text = text.strip
-    puts "> #{text}"
-
-    if text == 'listing'
-      table.each do |arr|
-        puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].map { |part| part.to_s }.join(' & ')}" : ''}."
-      end
-
-      puts
-    elsif text.chars.last == '.'
-      text = text.tr(' ', '').chomp('.')
-
-      parts = text.split(':-')
-      if parts.count > 2
-        puts "Syntax error at #{original_text}"
-        exit(1)
-      end
-
-      head, body = parts.first(2)
-
-      head = parse_head(head)
-      bodies = parse_body(body)
-      if bodies.nil?
-        puts "Syntax error at #{original_text}"
-        exit(1)
-      end
-
-      bodies.each do |body|
-        table_add_clause(head, body, bodies.count == 1)
-      end
-    elsif text.chars.last == '?'
-      text = text.tr(' ', '').chomp('?')
-
-      parts = text.split(':-')
-      if parts.count > 2
-        puts "Syntax error at #{original_text}"
-        exit(1)
-      end
-
-      head = parts.first
-
-      head = parse_head(head)
-
-      solutions = search(head)
-
-      if solutions.any?
-        solutions.uniq.each do |arr1|
-          puts "#{arr1}."
-        end
-      else
-        puts 'No solution'
-      end
-
-      puts
+  def err(msg, detail = nil)
+    if detail && detail.size > 0
+      puts msg
+    else
+      puts "#{msg}\n    #{detail}"
     end
+
+    exit(1)
   end
 end
 
