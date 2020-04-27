@@ -26,7 +26,7 @@ A Daki language text file can contain five types of instructions:
 4. Declarations to be removed
 5. Built-in commands
 
-**Comments** start with the "%" character, and everything after this character is ignored
+**Comments** start with the `%` character, and everything after this character is ignored
 
 ```
 % I am a comment
@@ -34,16 +34,16 @@ A Daki language text file can contain five types of instructions:
 > func(john, mary). % I am a comment too
 ```
 
-**New declarations** add what is called a _clause_ to a global table of clauses. A clause is composed of a head declaration and an optional tail, separated by the characters ":-".
+**New declarations** add what is called a _clause_ to a global table of clauses. A clause is composed of a head declaration and an optional tail, separated by the characters `:-`.
 
 ```
 > parent(john, emily).
 > grandparent(A, B) :- parent(A, C) & parent(C, B).
 ```
 
-Clauses are always terminated by a dot ".". If they are declared with a tail, the tail must be evaluated true for the head to also match.
+Clauses are always terminated by a dot `.`. If they are declared with a tail, the tail must be evaluated true for the head to also match.
 
-In contrast with other logic languages, the "&" character is used to denote logical AND. You can also use the character "|" to denote logical OR, but notice these are equivalent:
+In contrast with other logic languages, the `&` character is used to denote logical AND. You can also use the character `|` to denote logical OR, but notice these are equivalent:
 
 ```
 > fact(X) :- reason1(X); reason2(X).
@@ -56,11 +56,11 @@ In fact the second form is exactly how they are saved in the global table. If so
 
 The elements of clauses always have open brackets and are declared with one or more strings. Those strings are variables if the first character is a capital letter, or constant values otherwise. Numbers and other special characters not used for other purposes can therefore also be the first characters of valid constants.
 
-A **query** has a similar format to a tailess clause, but is ended with a "?" character instead of ".". Upon being inputed, it starts a search for all its solutions using the global table of clauses.
+A **query** has a similar format to a tailess clause, but is ended with a `?` character instead of `.`. Upon being inputed, it starts a search for all its solutions using the global table of clauses.
 
 The search will try to find solutions for which the original query has no outstanding variables, showing the contants that have filled it.
 
-The interpreter will print out every solution found or return "No solution".
+The interpreter will print out every solution found or return `No solution`.
 
 ```
 > grandparent(john, B)?
@@ -71,7 +71,7 @@ grandparent(john, mary).
 
 Declaring two clauses with the same name, constants and tail is impossible, and will raise a warning; similarly trying to remove from the global table a clause that does not exist will also raise a warning.
 
-To remove a clause end your command with the "~" character.
+To remove a clause end your command with the `~` character.
 
 ```
 > grandparent(john, Var) :- other(Var, Var).
@@ -91,9 +91,9 @@ Finally, **built-in commands** allow for some specific operations related to the
 - _consult_ - Read and interpret a Daki language file.
 - _version_ - Print version information.
 
-Built-in commands are executed without any trailing "." or "?".
+Built-in commands are executed without any trailing `.` or `?`.
 
-The following characters are reserved and should only appear for their specified uses: "%", "(", ")", "&", "|", ".", "?", "~" and "\". The specific sequence ":-" is also reserved. All others can be used in names of clause terms, variables and contants.
+The following characters are reserved and should only appear for their specified uses: `%`, `,`, `(`, `)`, `&`, `|`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and contants.
 
 ## Manual
 
@@ -113,7 +113,7 @@ To launch the interpreter in interactive mode, add the -i flag:
 
 ## TODO
 
-- Improve parsing validation, use of "," and ";" for AND and OR operators
+- Improve parsing validation, use of `,` and `;` for AND and OR operators
 - Issue with query clause without variables, only constants
 - Rule retraction
 - Rest of built-in commands
