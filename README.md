@@ -2,6 +2,8 @@
 
 ![Dakilang mascot](/img/mascot.jpeg)
 
+_Image courtesy of Maria Teresa C._
+
 Daki is a small computer programming language similar to Prolog and Datalog. This is it's first concept implementation, and therefore features an interpreter instead of a compiler.
 
 **For now this project will be implemented in Ruby for fast prototyping and reiteration.**
