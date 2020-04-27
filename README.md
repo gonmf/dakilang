@@ -1,24 +1,22 @@
 # Daki Language Interpreter
 
+Daki is a small computer programming language similar to Prolog and Datalog. This is it's first version definition, with accompanying language interpreter. The language features are still subject to fast change.
+
 ![Dakilang mascot](/img/mascot.jpeg)
 
 _Image courtesy of Maria Teresa C._
 
-Daki is a small computer programming language similar to Prolog and Datalog. This is it's first concept implementation, and therefore features an interpreter instead of a compiler.
+Daki is a declarative and logic language based on Horn clauses, aimed at solving problems via deduction. This project implements a stable, iterative and space bound algorithm of unification of free variables, in depth-first search.
 
-**For now this project will be implemented in Ruby for fast prototyping and reiteration.**
+**For now the reference interpreter will be implemented in Ruby for fast prototyping and iteration.**
 
-Daki is a declarative and logic language based on Horn clauses, aimed at solving problems via deduction.
-
-This project implements a stable, iterative and space bound algorithm of unification of free variables, in depth-first search. At this point, the implementation details and algorithm are subject to change.
-
-Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences and omissions from both. It is also a work in progress. For this reason I have compiled the following short language definition, in the form of a tutorial with examples.
+Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences from both. It is also a work in progress. For this reason I have compiled the following short language definition, in the form of a tutorial with examples.
 
 ## Tutorial
 
-Daki can be used both in interactive and non-interactive mode. Currently only non-interactive is supported.
+Daki can be used both in interactive and non-interactive mode. In non-interactive mode, the interpreter input, read from files, is also outputted so as to mimic what would appear on a terminal on interactive mode.
 
-In non-interactive mode, the interpreter reads one or more text files in sequence, and interpretes each line as if input in interactive mode.
+In non-interactive mode, the interpreter reads one or more text files in sequence, and interpretes each line fully before advancing. A line can change the global state, which consists of logical assertions.
 
 A Daki language text file can contain five types of instructions:
 
@@ -31,8 +29,8 @@ A Daki language text file can contain five types of instructions:
 **Comments** start with the `%` character, and everything after this character is ignored.
 
 ```
-% I am a comment
-
+> % I am a comment
+>
 > func('john', 'mary', 1). % I am a comment too
 ```
 
@@ -45,7 +43,7 @@ A Daki language text file can contain five types of instructions:
 
 Clauses are always terminated by a dot `.`. If they are declared with a tail, the tail must be evaluated true for the head to also match.
 
-In contrast with other logic languages, the `,` character is used to denote logical AND. You can also use the character `;` to denote logical OR, but notice these are equivalent:
+In accordance with other logic languages, the `,` character is used to denote logical AND. You can also use the character `;` to denote logical OR, but notice these are equivalent:
 
 ```
 > fact(x) :- reason1(x); reason2(x).
@@ -64,7 +62,7 @@ Note that number literals can be declared as string literals as well, the result
 ```
 > age('josh', '24').
 > age("josh", 24).
-% Therefore:
+> % Therefore:
 > age(name, 24)?
 age('josh', 24).
 ```
@@ -127,7 +125,7 @@ To launch the interpreter in interactive mode, add the -i flag:
 ./dakilang -i
 ```
 
-You can mix the modes, you can start the interpreter by including - consulting - one or more files, and afterwards switching to interactive mode:
+You can mix the modes, you can start the interpreter by including - _consulting_ - one or more files, and afterwards switching to interactive mode:
 
 ```sh
 ./dakilang -i -c example1.txt -c example2.txt
