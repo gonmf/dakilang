@@ -67,9 +67,9 @@ Note that number literals can be declared as string literals as well, the result
 age('josh', 24).
 ```
 
-Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. The characters `'`, `"` and `%` can be escaped in string literals by escaping them with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
+Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. The characters `'` and `"` can be escaped in string literals by escaping them with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
 
-A **query** has a similar format to a tailess clause, but is ended with a `?` character instead of `.`. Upon being inputed, it starts a search for all its solutions using the global table of clauses.
+A **query** has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being inputed, it starts a search for all its solutions using the global table of clauses.
 
 The search will try to find solutions for which the original query has no outstanding variables, showing the contants that have filled it.
 
@@ -126,7 +126,6 @@ To launch the interpreter in interactive mode, add the -i flag:
 
 ## TODO
 
-- String escape using "\"
 - Issue with query clause without variables, only constants
 - Rule retraction
 - Rest of built-in commands

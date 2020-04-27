@@ -172,6 +172,7 @@ class DakiLangInterpreter
 
     var_list = false
     string_mode = false
+    escape_mode = false
     number_mode = false
     separator_mode = false
     string_char = nil
@@ -190,6 +191,19 @@ class DakiLangInterpreter
       end
 
       if string_mode
+        if escape_mode
+          if c == "\\" || c == string_char
+            string += c
+            escape_mode = false
+            next
+          else
+            err("Syntax error at #{text}", 'string literal escape of unsupported character')
+          end
+        elsif c == "\\"
+          escape_mode = true
+          next
+        end
+
         if c == string_char
           if string.empty?
             err("Syntax error at #{text}", 'empty string literal')
