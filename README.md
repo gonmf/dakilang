@@ -135,10 +135,17 @@ Switching to interactive mode is always performed only after every consulted fil
 
 The commands -h and -v are also available to show the help and version information. All commands have their long form counterparts: --consult, --interactive, --help and --version.
 
-## TODO
+## FIXME - Known Bugs
 
 - Issue with query clause without variables, only constants
+
+## TODO - Core features missing implementation
+
 - Rule retraction
-- Built-in rules/operators for known types
+- Allow just telling if any solution exists like in prolog, instead of always finding every solution like in datalog
+- Add floating point type
+- Do not coerce numeric types in string
+- Built-in operators for string and numeric types
 - Test suite
 - Help built-in
+- List data type, operators and unification of list elements (head|tail)
