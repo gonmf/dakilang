@@ -13,20 +13,24 @@ class DakiLangInterpreter
       @variables = variables
     end
 
-    def to_s
+    def format(friendly)
       friendly_variables = variables.map do |s|
         if s.const?
-          if s.chars.all? { |c| c >= '0' && c <= '9' }
+          if !friendly && s.chars.all? { |c| c >= '0' && c <= '9' }
             s
           else
             "'#{s}'"
           end
         else
-          s.slice(1, s.size)
+          friendly ? "#{s.slice(1, s.size)}" : s
         end
       end
 
       "#{name}(#{friendly_variables.join(', ')})"
+    end
+
+    def to_s
+      format(true)
     end
 
     def eql?(other)
@@ -55,26 +59,84 @@ class DakiLangInterpreter
     @iteration_limit = 1000
     @debug = false
     @table = {}
-    @table_nr = 0
+    @table_name = '0'
   end
 
-  def consult(filename)
-    print_version
+  def enter_interactive_mode
+    @interactive = true
 
-    file_read(filename).each do |line|
-      puts "> #{line}"
+    while true
+      print '> '
+      input = STDIN.gets.chomp
 
-      # TODO: improve built-in support
+      run_commands([input], [])
+    end
+  end
+
+  def consult_file(filename, consult_chain = [])
+    if consult_chain.include?(filename)
+      puts 'Circular file consult invocation detected'
+    else
+      contents = file_read(filename)
+
+      if contents
+        run_commands(contents, consult_chain + [filename])
+      else
+        puts 'File not found or cannot be read'
+      end
+    end
+
+    puts
+  end
+
+  def print_version
+    puts 'dakilang 0.3'
+    puts
+  end
+
+  def print_help
+    # TODO:
+    raise 'NotImplementedError'
+  end
+
+  private
+
+  def run_commands(lines, consult_chain)
+    lines.each do |line|
+      puts "> #{line}" unless @interactive
+
+      if line == 'quit' || line == 'exit'
+        if @interactive
+          exit(0)
+        else
+          return
+        end
+      end
+      if line == 'select_table' || line.start_with?('select_table ')
+        select_table(line.split(' ')[1])
+        next
+      end
       if line == 'listing'
-        built_in_listing
-        puts
+        table_listing
+        next
+      end
+      if line.start_with?('consult ')
+        consult_file(line.split(' ')[1], consult_chain)
+        next
+      end
+      if line == 'version'
+        print_version
+        next
+      end
+      if line == 'help'
+        print_help
         next
       end
 
       tokens = tokenizer(line)
       next if tokens.empty?
 
-      # TODO: puts tokens.map { |a| a.join(':') }.join(' | ') if @debug
+      puts tokens.map { |a| a.join(':') }.join(', ') if @debug
 
       case tokens.last.first
       when 'clause_end'
@@ -87,9 +149,8 @@ class DakiLangInterpreter
     end
   end
 
-  private
-
   def retract_rule(tokens)
+    # TODO:
     raise 'NotImplementedError'
   end
 
@@ -148,7 +209,7 @@ class DakiLangInterpreter
           name = tokens[idx - 1]
 
           if name[0] != 'name'
-            raise 'Parse error 1'
+            raise 'Unexpected error 1'
           end
 
           start_found = true
@@ -209,7 +270,7 @@ class DakiLangInterpreter
             err("Syntax error at #{text}", 'empty string literal')
           end
 
-          tokens.push(["string_literal", string])
+          tokens.push(["const", string])
           string = ''
           string_mode = false
         else
@@ -225,12 +286,12 @@ class DakiLangInterpreter
           next
         end
 
-        tokens.push(["number_literal", string])
+        tokens.push(["const", string])
         string = ''
         number_mode = false
       end
 
-      if c >= '0' && c <= '9'
+      if c >= '0' && c <= '9' && name.size == 0
         number_mode = true
         string = c
         next
@@ -382,19 +443,27 @@ class DakiLangInterpreter
     tokens
   end
 
-  def built_in_listing
+  def select_table(name)
+    if name && name.size > 0
+      @table_name = name
+      puts "Table changed to #{name}"
+    else
+      puts "Current table is #{@table_name}"
+    end
+
+    puts
+  end
+
+  def table_listing
     table.each do |arr|
       puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].map { |part| part.to_s }.join(' & ')}" : ''}."
     end
+
+    puts
   end
 
   def table
-    @table[@table_nr] ||= []
-  end
-
-  def print_version
-    puts 'dakilang 0.2'
-    puts
+    @table[@table_name] ||= []
   end
 
   def deep_clone(obj)
@@ -436,6 +505,8 @@ class DakiLangInterpreter
     end
 
     ret
+  rescue
+    nil
   end
 
   def clauses_match(h1, h2)
@@ -515,7 +586,7 @@ class DakiLangInterpreter
       solution_set.each.with_index do |solution, idx|
         puts "  Solution #{idx + 1}" if @debug
         solution.each do |head|
-          puts "    #{head[1] ? '*' : ''}#{head[0]}." if @debug
+          puts "    #{head[1] ? '*' : ''}#{head[0].format(false)}." if @debug
         end
       end
 
@@ -545,7 +616,7 @@ class DakiLangInterpreter
       first_solution_clause = first_solution[first_solution_clause_idx]
 
       unless first_solution_clause
-        err('Critical error 1')
+        raise 'Unexpected error 2'
       end
 
       head = first_solution_clause[0]
@@ -582,7 +653,7 @@ class DakiLangInterpreter
         solution_set = solution_set - first_solution
 
         unless solution_set.any?
-          err('Critical error 2')
+          raise 'Unexpected error 3'
         end
       end
     end
@@ -623,14 +694,39 @@ class DakiLangInterpreter
       puts "#{msg}\n    #{detail}"
     end
 
-    exit(1)
+    if @interactive
+      puts
+    else
+      exit(1)
+    end
   end
 end
 
 interpreter = DakiLangInterpreter.new
-interpreter.consult('example2.txt')
+enter_interactive = false
 
-# TODO:
-# for arg in ARGV
-#    puts arg
-# end
+ARGV.each.with_index do |command|
+  if command == '-h' || command == '--help'
+    interpreter.print_help
+    exit(0)
+  end
+
+  if command == '-v' || command == '--version'
+    interpreter.print_version
+    exit(0)
+  end
+
+  if command == '-i' || command == '--interactive'
+    enter_interactive = true
+  end
+end
+
+ARGV.each.with_index do |command, idx|
+  if command == '-c' || command == '--command'
+    interpreter.consult_file(ARGV[idx + 1])
+  end
+end
+
+if enter_interactive
+  interpreter.enter_interactive_mode
+end

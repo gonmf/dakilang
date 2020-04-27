@@ -1,4 +1,5 @@
-alpha("hello", "world").
+version
+
 beta(A) :- test(A).
 charlie("exists").
 delta("exists").
@@ -10,9 +11,14 @@ test(A)?
 test(123)?
 beta(B)?
 
+alpha("hello", "world").
+
 alpha2(A, B) :- alpha(A, B).
 
 alpha2(A, B)?
+
+listing
+
 alpha2("goodbye", B)?
 alpha2(X, "world")?
 alpha2(A, A)?

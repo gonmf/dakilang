@@ -10,7 +10,7 @@ Daki is a declarative and logic language based on Horn clauses, aimed at solving
 
 This project implements a stable, iterative and space bound algorithm of unification of free variables, in depth-first search. At this point, the implementation details and algorithm are subject to change.
 
-Regardless of your familarity with Prolog or Datalog, Daki language has significant differences and omissions from both. It is also a work in progress. For this reasion I have compiled the following short language definition, in the form of a tutorial with examples.
+Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences and omissions from both. It is also a work in progress. For this reason I have compiled the following short language definition, in the form of a tutorial with examples.
 
 ## Tutorial
 
@@ -26,7 +26,7 @@ A Daki language text file can contain five types of instructions:
 4. Declarations to be removed
 5. Built-in commands
 
-**Comments** start with the `%` character, and everything after this character is ignored
+**Comments** start with the `%` character, and everything after this character is ignored.
 
 ```
 % I am a comment
@@ -69,9 +69,9 @@ age('josh', 24).
 
 Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. The characters `'` and `"` can be escaped in string literals by escaping them with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
 
-A **query** has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being inputed, it starts a search for all its solutions using the global table of clauses.
+A **query** has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
 
-The search will try to find solutions for which the original query has no outstanding variables, showing the contants that have filled it.
+The search will try to find solutions for which the original query has no outstanding variables, showing the constants that have filled it.
 
 The interpreter will print out every solution found or return `No solution`.
 
@@ -98,15 +98,16 @@ Clause not found
 
 Finally, **built-in commands** allow for some specific operations related to the interpreter and global table themselves. These are:
 
-- _quit_ / _exit_ - Stop execution and exit the interpreter if in interactive mode.
-- _database_set N_ - Changes the global table currently in use. By default, number 0 is active. Passing no argument prints the current table number.
+- _quit_ / _exit_ - Stop execution and exit the interpreter if in interactive mode. Only stops processing the current file is in non-interactive mode.
+- _select_table N_ - Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
 - _listing_ - Prints all rules kept in the current global table.
 - _consult_ - Read and interpret a Daki language file.
 - _version_ - Print version information.
+- _help_ - Print help information.
 
 Built-in commands are executed without any trailing `.` or `?`.
 
-The following characters are reserved and should only appear outside of string contants for their specified uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and contants. All whitespace is ignored.
+The following characters are reserved and should only appear outside of string constants for their specific uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and constants. All whitespace is ignored.
 
 ## Manual
 
@@ -124,12 +125,20 @@ To launch the interpreter in interactive mode, add the -i flag:
 ./dakilang -i
 ```
 
+You can mix the modes, you can start the interpreter by including - consulting - one or more files, and afterwards switching to interactive mode:
+
+```sh
+./dakilang -i -c example1.txt -c example2.txt
+```
+
+Switching to interactive mode is always performed only after every consulted file is interpreted, in order.
+
+The commands -h and -v are also available to show the help and version information. All commands have their long form counterparts: --consult, --interactive, --help and --version.
+
 ## TODO
 
 - Issue with query clause without variables, only constants
 - Rule retraction
-- Rest of built-in commands
-- Introduce built-in rules
-- Interactive and non-interactive mode
+- Built-in rules/operators for known types
 - Test suite
-- Built-in operators for known types
+- Help built-in
