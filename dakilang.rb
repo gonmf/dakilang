@@ -1,5 +1,3 @@
-require 'pry'
-
 class String
   def const?
     chr = self[0]
@@ -91,8 +89,17 @@ class DakiLangInterpreter
     File.foreach(name).with_index do |line, line_num|
       original_text = line.to_s.strip
       line = original_text.split('%').first.to_s.strip
+      if line.size == 0
+        remainder = ''
+        next
+      end
 
-      next if line.size == 0
+      if line.end_with?("\\")
+        remainder += " #{line.chomp("\\")}"
+        next
+      end
+
+      line = remainder + line
 
       if !line.end_with?('.') && !line.end_with?('?') && !line.end_with?('~') && line != 'listing'
         puts "Syntax error at #{original_text}"
@@ -100,6 +107,7 @@ class DakiLangInterpreter
       end
 
       ret.push(line.strip)
+      remainder = ''
     end
 
     ret

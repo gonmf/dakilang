@@ -6,7 +6,9 @@ politician(arnold).
 actor(arnold).
 athlete(arnold).
 
-famous(X) :- actor(X) | athlete(X) | politician(X).
+famous(X) :- actor(X) | \
+             athlete(X) | \
+             politician(X).
 
 listing
 

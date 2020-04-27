@@ -119,6 +119,5 @@ To launch the interpreter in interactive mode, add the -i flag:
 - Rest of built-in commands
 - Interactive and non-interactive mode
 - Test suite
-- Command continuation using \
 - Data types for "strings" and numbers, all other symbols becoming variable names
 - Built-in operators for known types
