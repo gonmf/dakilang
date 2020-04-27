@@ -31,13 +31,13 @@ A Daki language text file can contain five types of instructions:
 ```
 % I am a comment
 
-> func("john", "mary", 1). % I am a comment too
+> func('john', 'mary', 1). % I am a comment too
 ```
 
 **New declarations** add what is called a _clause_ to a global table of clauses. A clause is composed of a head declaration and an optional tail, separated by the characters `:-`.
 
 ```
-> parent("john", "emily").
+> parent('john', 'emily').
 > grandparent(A, B) :- parent(A, C), parent(C, B).
 ```
 
@@ -55,19 +55,19 @@ In contrast with other logic languages, the `,` character is used to denote logi
 In fact the second form is exactly how they are saved in the global table. If some of the broken down OR clauses already exist they are ignored without raising a warning. Keep this in mind when removing declarations.
 
 The elements of clauses always have open brackets and are declared with one or more strings. Those strings can be
-constants - if they are enclosed by `""` or if they are a number, like 42. Otherwise they are treated as variables.
+constants - if they are enclosed by `''` or `""`, or if they are a number literal, like 42. Otherwise they are treated as variables.
 
-Note declaring a constant as number without `""` is just a matter of convenience, these forms are equivalent:
+Note that number literals can be declared as string literals as well, the result is the same. These forms are equivalent:
 
 ```
-> age("josh", "24").
+> age('josh', '24').
 > age("josh", 24).
 % Therefore:
 > age(name, 24)?
-age("josh", 24).
+age('josh', 24).
 ```
 
-Besides these limitations, variables names and `""` delimited constants can contain any character not reserved by the language, like hyphens and underscores. The characters `"` and `%` can be escaped in `""` constants by escaping them with `\`. `\` itself is escaped with `\\`.
+Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. The characters `'`, `"` and `%` can be escaped in string literals by escaping them with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
 
 A **query** has a similar format to a tailess clause, but is ended with a `?` character instead of `.`. Upon being inputed, it starts a search for all its solutions using the global table of clauses.
 
@@ -77,7 +77,7 @@ The interpreter will print out every solution found or return `No solution`.
 
 ```
 > grandparent("john", someone)?
-grandparent("john", "mary").
+grandparent('john', 'mary').
 ```
 
 **Declarations to be removed** are declared with the same name, constant values and tail of the original clause declarations. The variables can have different names.
@@ -106,7 +106,7 @@ Finally, **built-in commands** allow for some specific operations related to the
 
 Built-in commands are executed without any trailing `.` or `?`.
 
-The following characters are reserved and should only appear outside of string contants for their specified uses: `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and contants. All whitespace is ignored.
+The following characters are reserved and should only appear outside of string contants for their specified uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and contants. All whitespace is ignored.
 
 ## Manual
 
@@ -126,12 +126,11 @@ To launch the interpreter in interactive mode, add the -i flag:
 
 ## TODO
 
-- Support '' strings as well as ""
 - String escape using "\"
 - Issue with query clause without variables, only constants
 - Rule retraction
 - Rest of built-in commands
+- Introduce built-in rules
 - Interactive and non-interactive mode
 - Test suite
-- Data types for "strings" and numbers, all other symbols becoming variable names
 - Built-in operators for known types

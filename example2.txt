@@ -1,6 +1,6 @@
 actor("chaplin").
-athlete("ronaldo").
-athlete("messi").
+athlete('ronaldo').
+athlete('messi').
 politician("ghandi").
 politician("arnold").
 politician(123).

@@ -19,7 +19,7 @@ class DakiLangInterpreter
           if s.chars.all? { |c| c >= '0' && c <= '9' }
             s
           else
-            "\"#{s}\""
+            "'#{s}'"
           end
         else
           s.slice(1, s.size)
@@ -174,6 +174,7 @@ class DakiLangInterpreter
     string_mode = false
     number_mode = false
     separator_mode = false
+    string_char = nil
     string = ''
     name = ''
 
@@ -189,7 +190,7 @@ class DakiLangInterpreter
       end
 
       if string_mode
-        if c == '"'
+        if c == string_char
           if string.empty?
             err("Syntax error at #{text}", 'empty string literal')
           end
@@ -257,11 +258,12 @@ class DakiLangInterpreter
         next
       end
 
-      if c == '"'
+      if c == '"' || c == "'"
         if name.size > 0
           err("Syntax error at #{text}", 'unexpected end of name')
         end
 
+        string_char = c
         string_mode = true
         next
       end
