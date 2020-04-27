@@ -123,7 +123,7 @@ class DakiLangInterpreter
         table_add_clause(head, [body], bodies.count == 1)
       end
     else
-      table_add_clause(head, bodies.any? ? bodies : [], false)
+      table_add_clause(head, bodies.any? ? bodies : [], true)
     end
   end
 
