@@ -22,6 +22,7 @@ listing
 alpha2("goodbye", B)?
 alpha2(X, "world")?
 alpha2(A, A)?
+alpha2(A, B)?
 
 listing
 

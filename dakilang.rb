@@ -75,7 +75,7 @@ class DakiLangInterpreter
   end
 
   def initialize
-    @iteration_limit = 1000
+    @iteration_limit = 500
     @debug = false
     @table = {}
     @table_name = '0'
@@ -663,11 +663,14 @@ class DakiLangInterpreter
 
     while iteration < @iteration_limit
       iteration += 1
-      puts "Iteration #{iteration}" if @debug
-      solution_set.each.with_index do |solution, idx|
-        puts "  Solution #{idx + 1}" if @debug
-        solution.each do |head|
-          puts "    #{head[1] ? '*' : ''}#{head[0].format(false)}." if @debug
+
+      if @debug
+        puts "Iteration #{iteration}"
+        solution_set.each.with_index do |solution, idx|
+          puts "  Solution #{idx + 1}"
+          solution.each do |head|
+            puts "    #{head[1] ? '*' : ''}#{head[0].format(false)}."
+          end
         end
       end
 
@@ -713,13 +716,14 @@ class DakiLangInterpreter
       if matching_clauses.any?
         anything_expanded = true
 
-        new_solutions = matching_clauses.map do |clause|
+        matching_clauses.each do |clause|
           new_solution = deep_clone(first_solution)
 
           new_clauses = substitute_variables(new_solution, first_solution_clause[0], deep_clone(clause))
 
           new_clauses.each.with_index do |line, idx|
             next if idx == 0
+
             new_solution.push([line, false])
           end
 
