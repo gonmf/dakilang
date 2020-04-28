@@ -109,7 +109,7 @@ class DakiLangInterpreter
   end
 
   def print_version
-    puts 'dakilang 0.4'
+    puts 'dakilang 0.5'
     puts
   end
 
@@ -158,11 +158,13 @@ class DakiLangInterpreter
       puts tokens.map { |a| a.join(':') }.join(', ') if @debug
 
       case tokens.last.first
-      when 'clause_end'
+      when 'clause_finish'
         add_rule(tokens)
-      when 'query_end'
-        execute_query(tokens)
-      when 'retract_end'
+      when 'short_query_finish'
+        execute_query(tokens, true)
+      when 'full_query_finish'
+        execute_query(tokens, false)
+      when 'retract_finish'
         retract_rule(tokens)
       end
     end
@@ -203,10 +205,10 @@ class DakiLangInterpreter
     puts 'Clause not found'
   end
 
-  def execute_query(tokens)
+  def execute_query(tokens, stop_early)
     head, _ = build_fact(tokens)
 
-    solutions = search(head)
+    solutions = search(head, stop_early)
 
     if solutions.any?
       solutions.uniq.each do |arr1|
@@ -371,32 +373,44 @@ class DakiLangInterpreter
       next if c == ' ' || c == "\t" || c == "\r" # Whitespace are ignored outside of string literals
 
       if c == '.'
-        if tokens.include?(['clause_end'])
+        if tokens.any? { |a| a[0].end_with?('_finish') }
           err("Syntax error at #{text}", 'unexpected . character')
         end
 
-        tokens.push(['clause_end'])
+        tokens.push(['clause_finish'])
         next
       end
 
       if c == '?'
-        if tokens.include?(['query_end'])
+        if tokens.any? { |a| a[0].end_with?('_finish') }
           err("Syntax error at #{text}", 'unexpected ? character')
         end
         if tokens.include?(['sep'])
           err("Syntax error at #{text}", 'unexpected ? character for rule with tail')
         end
 
-        tokens.push(['query_end'])
+        tokens.push(['full_query_finish'])
+        next
+      end
+
+      if c == '!'
+        if tokens.any? { |a| a[0].end_with?('_finish') }
+          err("Syntax error at #{text}", 'unexpected ! character')
+        end
+        if tokens.include?(['sep'])
+          err("Syntax error at #{text}", 'unexpected ! character for rule with tail')
+        end
+
+        tokens.push(['short_query_finish'])
         next
       end
 
       if c == '~'
-        if tokens.include?(['retract_end'])
+        if tokens.any? { |a| a[0].end_with?('_finish') }
           err("Syntax error at #{text}", 'unexpected ~ character')
         end
 
-        tokens.push(['retract_end'])
+        tokens.push(['retract_finish'])
         next
       end
 
@@ -503,7 +517,7 @@ class DakiLangInterpreter
       err("Syntax error at #{text}", 'unterminated text')
     end
 
-    if tokens.any? && !['clause_end', 'query_end', 'retract_end'].include?(tokens.last&.first)
+    if tokens.any? && !['clause_finish', 'short_query_finish', 'full_query_finish', 'retract_finish'].include?(tokens.last&.first)
       err("Syntax error at #{text}", 'unterminated clause')
     end
 
@@ -641,7 +655,7 @@ class DakiLangInterpreter
     new_clauses
   end
 
-  def search(head)
+  def search(head, stop_early)
     @vari = 0
     iteration = 0
 
@@ -665,12 +679,14 @@ class DakiLangInterpreter
         end
       end
 
-      if first_solution_idx.nil?
+      if first_solution_idx.nil? || (stop_early && first_solution_idx > 0)
         successful_solutions = solution_set.select do |solution|
           !solution.any? do |solution_clause|
             solution_clause[0].variables.any? { |v| !v.const? }
           end
         end
+
+        successful_solutions = [successful_solutions[0]] if stop_early
 
         return successful_solutions.map { |sol| sol[0][0] }
       end

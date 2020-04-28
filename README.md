@@ -85,6 +85,16 @@ The interpreter will print out every solution found or return `No solution`.
 grandparent('john', 'mary').
 ```
 
+These queries that return all the solutions are called _full queries_. If the clause is ended with a `!` instead of `?`, a _short query_ is performed. A short query terminates as soon as the first solution is found. They only return one answer, or `No solution`:
+
+```
+> month('January').
+> month('February').
+> month('March').
+> month(name)!
+month('January').
+```
+
 **Declarations to be removed** are declared with the same name, constant values and tail of the original clause declarations. The variables can have different names.
 
 Declaring two clauses with the same name, constants and tail is impossible, and will raise a warning; similarly trying to remove from the global table a clause that does not exist will also raise a warning.
@@ -147,7 +157,6 @@ The commands -h and -v are also available to show the help and version informati
 
 ## TODO - Core features missing implementation
 
-- Allow just telling if any solution exists like in prolog, instead of always finding every solution like in datalog
 - Built-in operators for string and numeric types
 - Test suite
 - Help built-in
