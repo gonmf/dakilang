@@ -150,8 +150,38 @@ class DakiLangInterpreter
   end
 
   def retract_rule(tokens)
-    # TODO:
-    raise 'NotImplementedError'
+    head, last_idx = build_fact(tokens)
+
+    arr1 = [head].compact
+    while last_idx != -1
+      body, last_idx = build_fact(tokens, last_idx)
+      arr1.push(body) if body
+    end
+
+    table.each.with_index do |rule, idx|
+      arr2 = [rule[0]] + rule[1]
+
+      next if arr1.count != arr2.count
+
+      are_equal = true
+      arr1.each.with_index do |head1, i|
+        head2 = arr2[i]
+
+        unless head1.eql?(head2)
+          are_equal = false
+          break
+        end
+      end
+
+      if are_equal
+        table[idx] = nil
+        @table[@table_name] = table.compact
+        puts 'Clause removed'
+        return
+      end
+    end
+
+    puts 'Clause not found'
   end
 
   def execute_query(tokens)

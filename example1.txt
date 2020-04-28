@@ -31,3 +31,9 @@ grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
 
 grandparent(A, B)?
 grandparent(A, A)?
+
+
+MyRule("john", "mary").
+MyRule("john", "mary")~
+beta(A) :- test(A)~
+beta(A) :- test(A)~

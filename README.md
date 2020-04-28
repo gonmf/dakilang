@@ -142,7 +142,6 @@ The commands -h and -v are also available to show the help and version informati
 
 ## TODO - Core features missing implementation
 
-- Rule retraction
 - Allow just telling if any solution exists like in prolog, instead of always finding every solution like in datalog
 - Add floating point type
 - Do not coerce numeric types in string
