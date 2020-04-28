@@ -55,19 +55,24 @@ In accordance with other logic languages, the `,` character is used to denote lo
 In fact the second form is exactly how they are saved in the global table. If some of the broken down OR clauses already exist they are ignored without raising a warning. Keep this in mind when removing declarations.
 
 The elements of clauses always have open brackets and are declared with one or more strings. Those strings can be
-constants - if they are enclosed by `''` or `""`, or if they are a number literal, like 42. Otherwise they are treated as variables.
+constants - with a specific data type - or variables.
 
-Note that number literals can be declared as string literals as well, the result is the same. These forms are equivalent:
+The Daki data types are strings ('daki'), integers (42) and floating point numbers (3.14). Constant types are not automatically coerced, for example:
 
 ```
-> age('josh', '24').
-> age("josh", 24).
-> % Therefore:
-> age(name, 24)?
-age('josh', 24).
+> value('1').
+> value(1).
+> value(1.0).
+>
+> value('1')?
+value('1').
+> value(1)?
+value(1).
+> value(1.000)?
+value(1.0).
 ```
 
-Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. The characters `'` and `"` can be escaped in string literals by escaping them with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
+Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. String literals can be enclosed both by the characters `'` and `"`, and both of these can be escaped with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
 
 A **query** has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
 
@@ -143,8 +148,6 @@ The commands -h and -v are also available to show the help and version informati
 ## TODO - Core features missing implementation
 
 - Allow just telling if any solution exists like in prolog, instead of always finding every solution like in datalog
-- Add floating point type
-- Do not coerce numeric types in string
 - Built-in operators for string and numeric types
 - Test suite
 - Help built-in

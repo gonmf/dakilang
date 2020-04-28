@@ -37,3 +37,15 @@ MyRule("john", "mary").
 MyRule("john", "mary")~
 beta(A) :- test(A)~
 beta(A) :- test(A)~
+
+MyRule("john", "mary").
+MyRule("john", 1.34, add, ls, 'adg', 45).
+
+
+value('1').
+value(1).
+value(1.0).
+
+value('1')?
+value(1)?
+value(1.000)?

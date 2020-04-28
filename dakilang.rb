@@ -4,6 +4,18 @@ class String
   end
 end
 
+class Integer
+  def const?
+    true
+  end
+end
+
+class Float
+  def const?
+    true
+  end
+end
+
 class DakiLangInterpreter
   class Fact
     attr_accessor :name, :variables
@@ -16,10 +28,11 @@ class DakiLangInterpreter
     def format(friendly)
       friendly_variables = variables.map do |s|
         if s.const?
-          if !friendly && s.chars.all? { |c| c >= '0' && c <= '9' }
-            s
-          else
+          case s
+          when String
             "'#{s}'"
+          when Float, Integer
+            s.to_s
           end
         else
           friendly ? "#{s.slice(1, s.size)}" : s
@@ -39,7 +52,13 @@ class DakiLangInterpreter
 
     def hash
       vari = 0
-      vars = variables.map { |s| s }
+      vars = variables.map do |var_name|
+        if var_name.const?
+          "#{var_name.class.to_s[0]}#{var_name}"
+        else
+          var_name
+        end
+      end
       vars.each do |var_name|
         next if var_name.const?
 
@@ -90,7 +109,7 @@ class DakiLangInterpreter
   end
 
   def print_version
-    puts 'dakilang 0.3'
+    puts 'dakilang 0.4'
     puts
   end
 
@@ -265,6 +284,7 @@ class DakiLangInterpreter
     string_mode = false
     escape_mode = false
     number_mode = false
+    floating_point = false
     separator_mode = false
     string_char = nil
     string = ''
@@ -300,7 +320,7 @@ class DakiLangInterpreter
             err("Syntax error at #{text}", 'empty string literal')
           end
 
-          tokens.push(["const", string])
+          tokens.push(['string_const', string])
           string = ''
           string_mode = false
         else
@@ -311,18 +331,35 @@ class DakiLangInterpreter
       end
 
       if number_mode
-        if c >= '0' && c <= '9'
-          string += c
-          next
+        if floating_point
+          if c == '.'
+            err("Syntax error at #{text}", 'illegal floating point format')
+          elsif c >= '0' && c <= '9'
+            string += c
+            next
+          end
+
+          tokens.push(['float_const', string.to_f])
+        else
+          if c == '.'
+            floating_point = true
+            string += c
+            next
+          elsif c >= '0' && c <= '9'
+            string += c
+            next
+          end
+
+          tokens.push(['integer_const', string.to_i])
         end
 
-        tokens.push(["const", string])
         string = ''
         number_mode = false
       end
 
       if c >= '0' && c <= '9' && name.size == 0
         number_mode = true
+        floating_point = false
         string = c
         next
       end
@@ -545,7 +582,7 @@ class DakiLangInterpreter
     h1.variables.each.with_index do |var1, idx|
       var2 = h2.variables[idx]
 
-      return false if var1.const? && var2.const? && var1 != var2
+      return false if var1.const? && var2.const? && (var1.class != var2.class || var1 != var2)
     end
 
     true
@@ -719,9 +756,9 @@ class DakiLangInterpreter
 
   def err(msg, detail = nil)
     if detail && detail.size > 0
-      puts msg
-    else
       puts "#{msg}\n    #{detail}"
+    else
+      puts msg
     end
 
     if @interactive
