@@ -138,6 +138,7 @@ The commands -h and -v are also available to show the help and version informati
 ## FIXME - Known Bugs
 
 - Issue with query clause without variables, only constants
+- Infinite lookup recursion is still allowed
 
 ## TODO - Core features missing implementation
 
