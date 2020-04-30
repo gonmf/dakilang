@@ -171,15 +171,15 @@ In other words, in Dakiland we prefer to keep the clause format consistent even 
 
 **String operators**
 - `len(Input, Answer)` - Unifies with the number of characters in Input
-- `pos(Input, Answer)` - 
-- `concat(Input, Answer)` - 
-- `slice(Input, Answer)` - 
-- `concat(Input, Answer)` - 
-- `concat(Input, Answer)` - 
-- `concat(Input, Answer)` - 
-- `concat(Input, Answer)` - 
-- `concat(Input, Answer)` - 
-- `concat(Input, Answer)` - 
+- `pos(Input, Answer)` -
+- `concat(Input, Answer)` -
+- `slice(Input, Answer)` -
+- `concat(Input, Answer)` -
+- `concat(Input, Answer)` -
+- `concat(Input, Answer)` -
+- `concat(Input, Answer)` -
+- `concat(Input, Answer)` -
+- `concat(Input, Answer)` -
 
 
 These operators cannot be overwritten or retracted with clauses with the same name and arity. They are also only unifiable when the _Answer_ variable is the only free variable left.
@@ -218,7 +218,6 @@ The commands -h and -v are also available to show the help and version informati
 
 ## TODO - Core features missing implementation
 
-- Negative number literals
 - Built-in operators for string and numeric types
 - Test suite
 - Help built-in

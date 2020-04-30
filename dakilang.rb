@@ -341,6 +341,9 @@ class DakiLangInterpreter
             next
           end
 
+          if ['-', '.'].include?(string.chars.last)
+            err("Syntax error at #{text}", "illegal floating point format at #{string}")
+          end
           tokens.push(['float_const', string.to_f])
         else
           if c == '.'
@@ -352,6 +355,9 @@ class DakiLangInterpreter
             next
           end
 
+          if ['-', '.'].include?(string.chars.last)
+            err("Syntax error at #{text}", "illegal integer format at #{string}")
+          end
           tokens.push(['integer_const', string.to_i])
         end
 
@@ -359,7 +365,7 @@ class DakiLangInterpreter
         number_mode = false
       end
 
-      if c >= '0' && c <= '9' && name.size == 0
+      if c == '-' || (c >= '0' && c <= '9') && name.size == 0
         number_mode = true
         floating_point = false
         string = c
