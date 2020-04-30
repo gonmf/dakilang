@@ -129,9 +129,11 @@ There are also **built-in clauses**, that unify with user-specified clauses and 
 **Warning: This feature is still in development, check the TODO section at the end of this document.**
 
 ```prolog
-fib(1, 1).
-fib(2, 1).
-fib(N, X) :- f1 = fib(N - 1, X1), f2 = fib(N - 2, X2), X is X1 + X2
+> fib(1, 1).
+> fib(2, 1).
+> fib(N, X) :- f1 = fib(N - 1, X1), f2 = fib(N - 2, X2), X is X1 + X2.
+>
+> fib(4, X)?
 ```
 
 While in Dakilang this is performed as:
@@ -140,9 +142,11 @@ While in Dakilang this is performed as:
 > fib(1, 1).
 > fib(2, 1).
 > fib(N, X) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, X).
+>
+> fib(4, X)?
 ```
 
-In other words, in Dakiland we prefer to keep the clause format consistent even for logical and mathematical operations. The full list of built-in _operator_ clauses follows.
+In other words, in the Daki language we prefer to keep the clause format consistent even for logical and mathematical operations. The full list of built-in _operator_ clauses follows.
 
 **Arithmetic operators**
 - `add(Input1, Input2, Answer)` - Unifies with the result of the addition of the two inputs
