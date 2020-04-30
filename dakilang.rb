@@ -1,3 +1,7 @@
+require 'rb-readline'
+require 'pry'
+require 'set'
+
 class String
   def const?
     self[0] != '%'
@@ -35,7 +39,7 @@ class DakiLangInterpreter
             s.to_s
           end
         else
-          friendly ? "#{s.slice(1, s.size)}" : s
+          friendly ? "#{s.slice(1, s.size).sub('>', ' > ').sub('<', ' < ').sub('=', ' = ')}" : s
         end
       end
 
@@ -74,6 +78,35 @@ class DakiLangInterpreter
     end
   end
 
+  BUILT_INS = [
+    # Arithmetic
+    ['add', 3],
+    ['sub', 3],
+    ['mul', 3],
+    ['div', 3],
+    ['mod', 3],
+    ['pow', 3],
+    ['sqrt', 2],
+    ['max', 3],
+    ['min', 3],
+    ['log', 3],
+    ['gt', 3],
+    ['lt', 3],
+    ['eql', 3],
+    ['neq', 3],
+    ['rand', 1],
+    ['round', 3],
+    ['floor', 2],
+    ['ceil', 2],
+    # Casts
+    ['str', 2],
+    ['int', 2],
+    ['float', 2],
+    # Strings
+    ['len', 2],
+    ['concat', 3]
+  ].freeze
+
   def initialize
     @iteration_limit = 500
     @debug = false
@@ -109,7 +142,7 @@ class DakiLangInterpreter
   end
 
   def print_version
-    puts 'dakilang 0.5'
+    puts 'dakilang 0.6'
     puts
   end
 
@@ -249,14 +282,14 @@ class DakiLangInterpreter
       next if idx < start_index
 
       if start_found
-        if token[0] == 'varlist_end'
+        if token[0] == 'vars_end'
           end_index = idx
           break
         end
 
         variables.push(token[1])
       else
-        if token[0] == 'varlist_start'
+        if token[0] == 'vars_start'
           name = tokens[idx - 1]
 
           if name[0] != 'name'
@@ -286,11 +319,10 @@ class DakiLangInterpreter
     string_mode = false
     escape_mode = false
     number_mode = false
-    floating_point = false
+    floating_point_mode = false
     separator_mode = false
-    string_char = nil
+    string_delimiter = nil
     string = ''
-    name = ''
 
     text_chars.each.with_index do |c, idx|
       if separator_mode
@@ -305,7 +337,7 @@ class DakiLangInterpreter
 
       if string_mode
         if escape_mode
-          if c == "\\" || c == string_char
+          if c == "\\" || c == string_delimiter
             string += c
             escape_mode = false
             next
@@ -317,7 +349,7 @@ class DakiLangInterpreter
           next
         end
 
-        if c == string_char
+        if c == string_delimiter
           if string.empty?
             err("Syntax error at #{text}", 'empty string literal')
           end
@@ -333,7 +365,7 @@ class DakiLangInterpreter
       end
 
       if number_mode
-        if floating_point
+        if floating_point_mode
           if c == '.'
             err("Syntax error at #{text}", 'illegal floating point format')
           elsif c >= '0' && c <= '9'
@@ -347,7 +379,7 @@ class DakiLangInterpreter
           tokens.push(['float_const', string.to_f])
         else
           if c == '.'
-            floating_point = true
+            floating_point_mode = true
             string += c
             next
           elsif c >= '0' && c <= '9'
@@ -365,9 +397,9 @@ class DakiLangInterpreter
         number_mode = false
       end
 
-      if c == '-' || (c >= '0' && c <= '9') && name.size == 0
+      if c == '-' || (c >= '0' && c <= '9') && string.size == 0
         number_mode = true
-        floating_point = false
+        floating_point_mode = false
         string = c
         next
       end
@@ -421,24 +453,24 @@ class DakiLangInterpreter
       end
 
       if c == '"' || c == "'"
-        if name.size > 0
-          err("Syntax error at #{text}", 'unexpected end of name')
+        if string.size > 0
+          err("Syntax error at #{text}", 'unexpected end of string')
         end
 
-        string_char = c
+        string_delimiter = c
         string_mode = true
         next
       end
 
       if c == '('
-        if name.empty?
+        if string.empty?
           err("Syntax error at #{text}", 'unexpected start of argument list')
         end
 
         var_list = true
-        tokens.push(['name', name])
-        name = ''
-        tokens.push(['varlist_start'])
+        tokens.push(['name', string])
+        string = ''
+        tokens.push(['vars_start'])
         next
       end
 
@@ -448,23 +480,23 @@ class DakiLangInterpreter
         end
 
         var_list = false
-        if name.size > 0
-          tokens.push(['var', "%#{name}"])
-          name = ''
-        elsif tokens.last == ['varlist_start']
+        if string.size > 0
+          tokens.push(['var', "%#{string}"])
+          string = ''
+        elsif tokens.last == ['vars_start']
           err("Syntax error at #{text}", 'unexpected end of empty argument list')
         end
 
-        tokens.push(['varlist_end'])
+        tokens.push(['vars_end'])
         next
       end
 
       if c == ','
         if var_list
-          if name.size > 0
-            tokens.push(['var', "%#{name}"])
-            name = ''
-          elsif tokens.last == ['varlist_start']
+          if string.size > 0
+            tokens.push(['var', "%#{string}"])
+            string = ''
+          elsif tokens.last == ['vars_start']
             err("Syntax error at #{text}", 'invalid , at argument list start')
           end
         else
@@ -476,9 +508,9 @@ class DakiLangInterpreter
             err("Syntax error at #{text}", 'mixing of ; and , logical operators')
           end
 
-          if name.size > 0
-            tokens.push(['name', name])
-            name = ''
+          if string.size > 0
+            tokens.push(['name', string])
+            string = ''
           end
           tokens.push(['and'])
         end
@@ -494,9 +526,9 @@ class DakiLangInterpreter
           err("Syntax error at #{text}", 'mixing of ; and , logical operators')
         end
 
-        if name.size > 0
-          tokens.push(['name', name])
-          name = ''
+        if string.size > 0
+          tokens.push(['name', string])
+          string = ''
         end
         tokens.push(['or'])
         next
@@ -507,24 +539,28 @@ class DakiLangInterpreter
           err("Syntax error at #{text}", 'duplicate :- separator')
         end
 
-        if name.size > 0
-          tokens.push(['name', name])
-          name = ''
+        if string.size > 0
+          tokens.push(['name', string])
+          string = ''
         end
 
         separator_mode = true
         next
       end
 
-      name += c
+      string += c
     end
 
-    if name.size > 0
+    if string.size > 0
       err("Syntax error at #{text}", 'unterminated text')
     end
 
     if tokens.any? && !['clause_finish', 'short_query_finish', 'full_query_finish', 'retract_finish'].include?(tokens.last&.first)
       err("Syntax error at #{text}", 'unterminated clause')
+    end
+
+    if tokens.any? { |s| s[0] == 'var' && (s[1].count('>') + s[1].count('<') + s[1].count('/')) > 1 }
+      err("Syntax error at #{text}", 'unexpected characters in variable condition')
     end
 
     tokens
@@ -596,42 +632,132 @@ class DakiLangInterpreter
     nil
   end
 
+  def clause_match_built_in_simple(head)
+    name = head.name
+    arity = head.variables.count
+
+    return nil if arity < 1
+
+    BUILT_INS.find { |arr| arr[0] == name && arr[1] == arity }
+  end
+
+  def clause_match_built_in(head)
+    name = head.name
+    arity = head.variables.count
+
+    return nil if arity < 1
+
+    return nil if head.variables.last.const?
+
+    other_variables = head.variables.slice(0, arity - 1)
+    return nil if other_variables.any? { |var| !var.const? }
+
+    res = BUILT_INS.find { |arr| arr[0] == name && arr[1] == arity }
+    return nil unless res
+
+    value = send("oper_#{name}", deep_clone(other_variables))
+
+    value ? [Fact.new(name, deep_clone(other_variables) + [value])] : nil
+  end
+
   def clauses_match(h1, h2)
-    return false unless h1.name == h2.name && h1.variables.count == h2.variables.count && h1.variables.uniq.count == h2.variables.uniq.count
+    return false unless h1.name == h2.name && h1.variables.count == h2.variables.count
 
     h1.variables.each.with_index do |var1, idx|
       var2 = h2.variables[idx]
 
       return false if var1.const? && var2.const? && (var1.class != var2.class || var1 != var2)
+
+      if var1.const? != var2.const?
+        const = var1.const? ? var1 : var2
+        var = var1.const? ? var2 : var1
+        var = var.slice(1, var.size)
+
+        next unless var.split('>').count == 2 || var.split('<').count == 2 || var.split('/').count == 2
+
+        if var.split('>').count == 2
+          _, comp = var.split('>')
+
+          return false unless const.to_f > comp.to_f
+        elsif var.split('<').count == 2
+          _, comp = var.split('<')
+
+          return false unless const.to_f < comp.to_f
+        elsif var.split('/').count == 2
+          _, comp = var.split('/')
+
+          return false unless const.to_f != comp.to_f
+        end
+      end
+    end
+
+    # Ensure there are no incompatible substitutions, like
+    # a(A, A).
+    # matching
+    # a(A, B).
+
+    h1 = deep_clone(h1)
+    h2 = deep_clone(h2)
+    dummy_count = 0
+    h1.variables.each.with_index do |var1, idx1|
+      var2 = h2.variables[idx1]
+
+      if var1.const?
+        replace_variable(var2, var1, h2) unless var2.const?
+      elsif var2.const?
+        replace_variable(var1, var2, h1)
+      else
+        dummy_count += 1
+        dummy_value = "_#{dummy_count}"
+
+        replace_variable(var1, dummy_value, h1)
+        replace_variable(var2, dummy_value, h2)
+      end
+    end
+
+    h1.variables.each.with_index do |var, idx|
+      return false if var != h2.variables[idx]
     end
 
     true
   end
 
   def replace_variable(var_name, literal, head)
+    var_name = var_name.split('>').first.split('<').first.split('/').first
+
     head.variables.each.with_index do |var1, idx|
-      head.variables[idx] = literal if var1 == var_name
+      head.variables[idx] = literal if !var1.const? && var1.split('>').first.split('<').first.split('/').first == var_name
     end
   end
 
-  def unique_var_names(arr, iteration)
-    variables = []
+  def unique_var_names(clauses)
+    variables = Set.new
 
-    arr.each do |head|
-      head[0].variables.each.with_index do |var_name1, i1|
+    clauses.each do |head|
+      head = head[0]
+      head.variables.each.with_index do |var_name1, i1|
         next if var_name1.const? || variables.include?(var_name1)
+
+        if var_name1[1] >= '0' && var_name1[1] <= '9'
+          variables.add(var_name1)
+          next
+        end
 
         @vari += 1
         new_var_name = "%#{@vari}"
-        variables.push(var_name1)
+        variables.add(var_name1)
 
-        head[0].variables.each.with_index do |var_name2, i2|
-          head[0].variables[i2] = new_var_name if var_name1 == var_name2
+        clauses.each do |head1|
+          head1 = head1[0]
+
+          head1.variables.each.with_index do |var_name2, i2|
+            head1.variables[i2] = new_var_name if var_name1 == var_name2
+          end
         end
       end
     end
 
-    arr
+    clauses
   end
 
   def substitute_variables(solution, removed_clause, new_clauses)
@@ -665,7 +791,7 @@ class DakiLangInterpreter
     @vari = 0
     iteration = 0
 
-    solution_set = [unique_var_names([[deep_clone(head), false]], iteration)]
+    solution_set = [unique_var_names([[deep_clone(head), false]])]
 
     while iteration < @iteration_limit
       iteration += 1
@@ -703,7 +829,10 @@ class DakiLangInterpreter
       first_solution = solution_set[first_solution_idx]
 
       first_solution_clause_idx = first_solution.find_index do |solution_clause|
-        !solution_clause[1]
+        !solution_clause[1] && clause_match_built_in(solution_clause[0])
+      end
+      first_solution_clause_idx ||= first_solution.find_index do |solution_clause|
+        !solution_clause[1] && !clause_match_built_in_simple(solution_clause[0])
       end
       first_solution_clause = first_solution[first_solution_clause_idx]
 
@@ -713,11 +842,13 @@ class DakiLangInterpreter
 
       head = first_solution_clause[0]
 
-      matching_clauses = table.select do |table_clause|
+      first_solution_clause[1] = true
+
+      built_in_matched = clause_match_built_in(head)
+
+      matching_clauses = built_in_matched ? [built_in_matched] : table.select do |table_clause|
         clauses_match(table_clause[0], head)
       end
-
-      first_solution_clause[1] = true
 
       if matching_clauses.any?
         anything_expanded = true
@@ -733,7 +864,7 @@ class DakiLangInterpreter
             new_solution.push([line, false])
           end
 
-          solution_set.push(new_solution)
+          solution_set.push(unique_var_names(new_solution))
         end
 
         solution_set[first_solution_idx] = nil
@@ -778,6 +909,212 @@ class DakiLangInterpreter
     end
 
     table.push([head, body])
+  end
+
+  def oper_add(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      a.to_f + b.to_f
+    else
+      a.to_i + b.to_i
+    end
+  end
+
+  def oper_sub(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      a.to_f - b.to_f
+    else
+      a.to_i - b.to_i
+    end
+  end
+
+  def oper_mul(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      a.to_f * b.to_f
+    else
+      a.to_i * b.to_i
+    end
+  end
+
+  def oper_div(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      b = b.to_f
+
+      b != 0.0 ? (a.to_f / b) : nil
+    else
+      b = b.to_i
+
+      b != 0 ? (a.to_i / b) : nil
+    end
+  end
+
+  def oper_mod(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      b = b.to_f
+
+      b != 0.0 ? (a.to_f % b) : nil
+    else
+      b = b.to_i
+
+      b != 0 ? (a.to_i % b) : nil
+    end
+  end
+
+  def oper_pow(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      a.to_f ** b.to_f
+    else
+      a.to_i ** b.to_i
+    end
+  end
+
+  def oper_sqrt(args)
+    a, _ = args
+
+    if a.is_a?(Float)
+      a = a.to_f
+
+      a >= 0.0 ? Math.sqrt(a) : nil
+    else
+      a = a.to_i
+
+      a >= 0 ? Math.sqrt(a) : nil
+    end
+  end
+
+  def oper_max(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      [a.to_f, b.to_f].max
+    else
+      [a.to_i, b.to_i].max
+    end
+  end
+
+  def oper_min(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      [a.to_f, b.to_f].min
+    else
+      [a.to_i, b.to_i].min
+    end
+  end
+
+  def oper_log(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      Math.log(a.to_f, b.to_f)
+    else
+      Math.log(a.to_i, b.to_i)
+    end
+  end
+
+  def oper_gt(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      a.to_f > b.to_f ? 'yes' : nil
+    else
+      a.to_i > b.to_i ? 'yes' : nil
+    end
+  end
+
+  def oper_lt(args)
+    a, b = args
+
+    if a.is_a?(Float) || b.is_a?(Float)
+      a.to_f < b.to_f ? 'yes' : nil
+    else
+      a.to_i < b.to_i ? 'yes' : nil
+    end
+  end
+
+  def oper_eql(args)
+    a, b = args
+
+    a == b ? 'yes' : nil
+  end
+
+  def oper_neq(args)
+    oper_eql(args) ? nil : 'yes'
+  end
+
+  def oper_rand(args)
+    rand
+  end
+
+  def oper_round(args)
+    a, b = args
+
+    if a.is_a?(Float)
+      a.to_f.round(b.to_i)
+    else
+      a.to_i
+    end
+  end
+
+  def oper_floor(args)
+    a, _ = args
+
+    if a.is_a?(Float)
+      a.to_f.floor
+    else
+      a.to_i
+    end
+  end
+
+  def oper_ceil(args)
+    a, _ = args
+
+    if a.is_a?(Float)
+      a.to_f.ceil
+    else
+      a.to_i
+    end
+  end
+
+  def oper_str(args)
+    a, _ = args
+
+    a.to_s
+  end
+
+  def oper_int(args)
+    a, _ = args
+
+    a.to_i
+  end
+
+  def oper_float(args)
+    a, _ = args
+
+    a.to_f
+  end
+
+  def oper_len(args)
+    a, _ = args
+
+    a.to_s.size
+  end
+
+  def oper_concat(args)
+    a, b = args
+
+    "#{a}#{b}"
   end
 
   def err(msg, detail = nil)

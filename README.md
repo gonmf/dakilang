@@ -158,15 +158,16 @@ In other words, in the Daki language we prefer to keep the clause format consist
 - `sqrt(Input, Answer)` - Unifies with the result of the square root of Input
 - `max(Input1, Input2, Answer)` - Unifies with the maximum value between Input1 and Input2
 - `min(Input1, Input2, Answer)` - Unifies with the minimum value between Input1 and Input2
-- `log(Input, Answer)` - Unifies with the logarithmic base 10 of Input
-- `lg(Input, Answer)` - Unifies with the logarithmic base E of Input
+- `log(Input1, Input2, Answer)` - Unifies with the logarithmic base Input2 of Input1
 - `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2
 - `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2
 - `eql(Input1, Input2, Answer)` - Unifies if the values are equal
 - `neq(Input1, Input2, Answer)` - Unifies if the values are not equal
-- `rnd(Answer)` - Unifies with a random floating point value between 0 and 1
-- `round(Input, Answer)` - Unifies with the rounded value of Input
+- `rand(Answer)` - Unifies with a random floating point value between 0 and 1
+- `round(Input, Answer)` - Unifies with the rounded value of Input1 to Input2 decimal cases
 - `trunc(Input, Answer)` - Unifies with the truncated value of Input
+
+Illegal arguments, like dividing by 0, do not unify.
 
 **Data type casting**
 - `str(Input, Answer)` - Unifies with the text value of Input
@@ -189,6 +190,30 @@ In other words, in the Daki language we prefer to keep the clause format consist
 These operators cannot be overwritten or retracted with clauses with the same name and arity. They are also only unifiable when the _Answer_ variable is the only free variable left.
 
 Most operators are type agnostic, that is, expect to be unified with values of different data types, and try to generate a response that makes sense. In general the rule is that operations between integer literals and floating point literals yield a floating point response, and between a string literal and a integer literal yield an integer literal.
+
+Let's try to implement a program that returns the value of the Fibonnaci sequence at position N. At first glance the solution would be:
+
+```
+fib(1, 1).
+fib(2, 1).
+fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+```
+
+However **this doesn't work**: when a clause operator is used, in the tail of a clause, it will be evaluated like any other clause - it doesn't prevent the clause expansion in the first place. Daki tries to discover all the solutions, so recursively `fib(1, 1)` will match both `fib(1, 1).` and `fib(N, Res) :- ...`. This will exceed the iteration limits of the interpreter.
+
+For cases like these, where we want to have multiple homonymous clauses, or a recursive chain, instead of using _clause operators_ we can use **clause conditions**.
+
+Clause conditions are evaluated before a clause is expanded, and provide a few further control on the literal values that they can match. With clause conditions our Fibonnaci program becomes:
+
+```
+fib(1, 1).
+fib(2, 1).
+fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+```
+
+The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than) and `/` (different than). _Equal to_ semanthics are already the default matching strategy used.
+
+Clause conditionals are exclusively numeric. String literals are coerced silently.
 
 ## Manual
 
@@ -222,7 +247,6 @@ The commands -h and -v are also available to show the help and version informati
 
 ## TODO - Core features missing implementation
 
-- Built-in operators for string and numeric types
 - Test suite
 - Help built-in
 - List data type, operators and unification of list elements (head|tail)
