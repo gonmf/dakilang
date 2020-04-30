@@ -74,6 +74,8 @@ value(1.0).
 
 Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. String literals can be enclosed both by the characters `'` and `"`, and both of these can be escaped with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
 
+The following characters are reserved and should only appear outside of string constants for their specific uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and constants. All whitespace is ignored.
+
 A **query** has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
 
 The search will try to find solutions for which the original query has no outstanding variables, showing the constants that have filled it.
@@ -120,9 +122,69 @@ Finally, **built-in commands** allow for some specific operations related to the
 - _version_ - Print version information.
 - _help_ - Print help information.
 
-Built-in commands are executed without any trailing `.` or `?`.
+Built-in commands are executed without any trailing `.`, `?` or `!`.
 
-The following characters are reserved and should only appear outside of string constants for their specific uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and constants. All whitespace is ignored.
+There are also **built-in clauses**, that unify with user-specified clauses and perform some form of calculation. In languages like Prolog, for instance, calculating a number of the Fibonacci sequence may look like:
+
+**Warning: This feature is still in development, check the TODO section at the end of this document.**
+
+```prolog
+fib(1, 1).
+fib(2, 1).
+fib(N, X) :- f1 = fib(N - 1, X1), f2 = fib(N - 2, X2), X is X1 + X2
+```
+
+While in Dakilang this is performed as:
+
+```
+> fib(1, 1).
+> fib(2, 1).
+> fib(N, X) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, X).
+```
+
+In other words, in Dakiland we prefer to keep the clause format consistent even for logical and mathematical operations. The full list of built-in _operator_ clauses follows.
+
+**Arithmetic operators**
+- `add(Input1, Input2, Answer)` - Unifies with the result of the addition of the two inputs
+- `sub(Input1, Input2, Answer)` - Unifies with the result of the subtraction of Input1 with Input2
+- `mul(Input1, Input2, Answer)` - Unifies with the result of the multiplication of the two inputs
+- `div(Input1, Input2, Answer)` - Unifies with the result of the division of the two inputs
+- `mod(Input1, Input2, Answer)` - Unifies with the rest of the integer division of the two inputs
+- `pow(Input1, Input2, Answer)` - Unifies with the result of Input1 to the power of Input2
+- `sqrt(Input, Answer)` - Unifies with the result of the square root of Input
+- `max(Input1, Input2, Answer)` - Unifies with the maximum value between Input1 and Input2
+- `min(Input1, Input2, Answer)` - Unifies with the minimum value between Input1 and Input2
+- `log(Input, Answer)` - Unifies with the logarithmic base 10 of Input
+- `lg(Input, Answer)` - Unifies with the logarithmic base E of Input
+- `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2
+- `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2
+- `eql(Input1, Input2, Answer)` - Unifies if the values are equal
+- `neq(Input1, Input2, Answer)` - Unifies if the values are not equal
+- `rnd(Answer)` - Unifies with a random floating point value between 0 and 1
+- `round(Input, Answer)` - Unifies with the rounded value of Input
+- `trunc(Input, Answer)` - Unifies with the truncated value of Input
+
+**Data type casting**
+- `str(Input, Answer)` - Unifies with the text value of Input
+- `int(Input, Answer)` - Unifies with the integer value of Input
+- `float(Input, Answer)` - Unifies with the floating point value of Input
+
+**String operators**
+- `len(Input, Answer)` - Unifies with the number of characters in Input
+- `pos(Input, Answer)` - 
+- `concat(Input, Answer)` - 
+- `slice(Input, Answer)` - 
+- `concat(Input, Answer)` - 
+- `concat(Input, Answer)` - 
+- `concat(Input, Answer)` - 
+- `concat(Input, Answer)` - 
+- `concat(Input, Answer)` - 
+- `concat(Input, Answer)` - 
+
+
+These operators cannot be overwritten or retracted with clauses with the same name and arity. They are also only unifiable when the _Answer_ variable is the only free variable left.
+
+Most operators are type agnostic, that is, expect to be unified with values of different data types, and try to generate a response that makes sense. In general the rule is that operations between integer literals and floating point literals yield a floating point response, and between a string literal and a integer literal yield an integer literal.
 
 ## Manual
 
@@ -156,6 +218,7 @@ The commands -h and -v are also available to show the help and version informati
 
 ## TODO - Core features missing implementation
 
+- Negative number literals
 - Built-in operators for string and numeric types
 - Test suite
 - Help built-in
