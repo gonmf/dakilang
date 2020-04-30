@@ -350,10 +350,6 @@ class DakiLangInterpreter
         end
 
         if c == string_delimiter
-          if string.empty?
-            err("Syntax error at #{text}", 'empty string literal')
-          end
-
           tokens.push(['string_const', string])
           string = ''
           string_mode = false
@@ -641,6 +637,10 @@ class DakiLangInterpreter
     BUILT_INS.find { |arr| arr[0] == name && arr[1] == arity }
   end
 
+  def numeric_cast(str)
+    str.include?('.') ? str.to_f : str.to_i
+  end
+
   def clause_match_built_in(head)
     name = head.name
     arity = head.variables.count
@@ -678,15 +678,15 @@ class DakiLangInterpreter
         if var.split('>').count == 2
           _, comp = var.split('>')
 
-          return false unless const.to_f > comp.to_f
+          return false if const.is_a?(String) || const <= numeric_cast(comp)
         elsif var.split('<').count == 2
           _, comp = var.split('<')
 
-          return false unless const.to_f < comp.to_f
+          return false if const.is_a?(String) || const >= numeric_cast(comp)
         elsif var.split('/').count == 2
           _, comp = var.split('/')
 
-          return false unless const.to_f != comp.to_f
+          return false if const.is_a?(String) || const == numeric_cast(comp)
         end
       end
     end
@@ -996,7 +996,9 @@ class DakiLangInterpreter
   def oper_max(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
+    if a.is_a?(String) || b.is_a?(String)
+      [a.to_s, b.to_s].min
+    elsif a.is_a?(Float) || b.is_a?(Float)
       [a.to_f, b.to_f].max
     else
       [a.to_i, b.to_i].max
@@ -1006,7 +1008,9 @@ class DakiLangInterpreter
   def oper_min(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
+    if a.is_a?(String) || b.is_a?(String)
+      [a.to_s, b.to_s].min
+    elsif a.is_a?(Float) || b.is_a?(Float)
       [a.to_f, b.to_f].min
     else
       [a.to_i, b.to_i].min
@@ -1026,7 +1030,9 @@ class DakiLangInterpreter
   def oper_gt(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
+    if a.is_a?(String) || b.is_a?(String)
+      a.to_s > b.to_s ? 'yes' : nil
+    elsif a.is_a?(Float) || b.is_a?(Float)
       a.to_f > b.to_f ? 'yes' : nil
     else
       a.to_i > b.to_i ? 'yes' : nil
@@ -1036,7 +1042,9 @@ class DakiLangInterpreter
   def oper_lt(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
+    if a.is_a?(String) || b.is_a?(String)
+      a.to_s < b.to_s ? 'yes' : nil
+    elsif a.is_a?(Float) || b.is_a?(Float)
       a.to_f < b.to_f ? 'yes' : nil
     else
       a.to_i < b.to_i ? 'yes' : nil
@@ -1105,6 +1113,7 @@ class DakiLangInterpreter
     a.to_f
   end
 
+  # String operators
   def oper_len(args)
     a, _ = args
 
@@ -1115,6 +1124,30 @@ class DakiLangInterpreter
     a, b = args
 
     "#{a}#{b}"
+  end
+
+  def oper_slice(args)
+    a, b, c = args
+
+    a.to_s.slice(b.to_i, c.to_i)
+  end
+
+  def oper_index(args)
+    a, b, c = args
+
+    a.to_s.index(b.to_s, c.to_i)
+  end
+
+  def oper_ord(args)
+    a, _ = args
+
+    a.to_s[0]&.ord
+  end
+
+  def oper_char(args)
+    a, _ = args
+
+    a.to_i.chr
   end
 
   def err(msg, detail = nil)

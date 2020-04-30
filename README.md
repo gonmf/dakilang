@@ -156,11 +156,11 @@ In other words, in the Daki language we prefer to keep the clause format consist
 - `mod(Input1, Input2, Answer)` - Unifies with the rest of the integer division of the two inputs
 - `pow(Input1, Input2, Answer)` - Unifies with the result of Input1 to the power of Input2
 - `sqrt(Input, Answer)` - Unifies with the result of the square root of Input
-- `max(Input1, Input2, Answer)` - Unifies with the maximum value between Input1 and Input2
-- `min(Input1, Input2, Answer)` - Unifies with the minimum value between Input1 and Input2
+- `max(Input1, Input2, Answer)` - Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
+- `min(Input1, Input2, Answer)` - Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
 - `log(Input1, Input2, Answer)` - Unifies with the logarithmic base Input2 of Input1
-- `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2
-- `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2
+- `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric
+- `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric
 - `eql(Input1, Input2, Answer)` - Unifies if the values are equal
 - `neq(Input1, Input2, Answer)` - Unifies if the values are not equal
 - `rand(Answer)` - Unifies with a random floating point value between 0 and 1
@@ -170,21 +170,17 @@ In other words, in the Daki language we prefer to keep the clause format consist
 Illegal arguments, like dividing by 0, do not unify.
 
 **Data type casting**
-- `str(Input, Answer)` - Unifies with the text value of Input
+- `str(Input, Answer)` - Unifies with the text representation of Input
 - `int(Input, Answer)` - Unifies with the integer value of Input
 - `float(Input, Answer)` - Unifies with the floating point value of Input
 
 **String operators**
 - `len(Input, Answer)` - Unifies with the number of characters in Input
-- `pos(Input, Answer)` -
-- `concat(Input, Answer)` -
-- `slice(Input, Answer)` -
-- `concat(Input, Answer)` -
-- `concat(Input, Answer)` -
-- `concat(Input, Answer)` -
-- `concat(Input, Answer)` -
-- `concat(Input, Answer)` -
-- `concat(Input, Answer)` -
+- `concat(Input1, Input2, Answer)` - Unifies with the concatenation of the two inputs
+- `slice(Input1, Input2, Input3, Answer)` - Unifies with the remainder of Input1 starting at Input2 and ending at Input3
+- `index(Input1, Input2, Input3, Answer)` - Unifies with the first position of Input2 in Input1, starting the search from Input3
+- `ord(Input, Answer)` - Unifies with the numeric ASCII value of the first character in the Input string
+- `char(Input, Answer)` - Unifies with the ASCII character found for the numeric value of Input
 
 
 These operators cannot be overwritten or retracted with clauses with the same name and arity. They are also only unifiable when the _Answer_ variable is the only free variable left.
@@ -199,11 +195,11 @@ fib(2, 1).
 fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
-However **this doesn't work**: when a clause operator is used, in the tail of a clause, it will be evaluated like any other clause - it doesn't prevent the clause expansion in the first place. Daki tries to discover all the solutions, so recursively `fib(1, 1)` will match both `fib(1, 1).` and `fib(N, Res) :- ...`. This will exceed the iteration limits of the interpreter.
+However **this doesn't work**: when a clause operator is used - in the tail of a clause - it will be evaluated like any other clause; it doesn't prevent the clause expansion in the first place. The Daki interpreter tries to discover all the solutions, so recursively `fib(1, 1)` will match both `fib(1, 1).` and `fib(N, Res) :- ...`. This will exceed the iteration limits of the interpreter.
 
 For cases like these, where we want to have multiple homonymous clauses, or a recursive chain, instead of using _clause operators_ we can use **clause conditions**.
 
-Clause conditions are evaluated before a clause is expanded, and provide a few further control on the literal values that they can match. With clause conditions our Fibonnaci program becomes:
+Clause conditions are evaluated before a clause is expanded, and provide a few further controls on the literal values that they can match. With clause conditions our Fibonnaci program becomes:
 
 ```
 fib(1, 1).
@@ -213,7 +209,7 @@ fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X
 
 The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than) and `/` (different than). _Equal to_ semanthics are already the default matching strategy used.
 
-Clause conditionals are exclusively numeric. String literals are coerced silently.
+Clause conditionals are exclusively numeric, with the constant value for the comparison always on the right side - `func(0 < X) :- ...` is not valid. String literals are coerced silently.
 
 ## Manual
 
@@ -243,10 +239,11 @@ The commands -h and -v are also available to show the help and version informati
 
 ## FIXME - Known Bugs
 
-- Issue with query clause without variables, only constants
+- Query clause without variables matches immediately
 
-## TODO - Core features missing implementation
+## TODO - Planned features or improvements
 
+- Improve parser
 - Test suite
 - Help built-in
 - List data type, operators and unification of list elements (head|tail)
