@@ -212,6 +212,11 @@ class DakiLangInterpreter
   def retract_rule(tokens)
     head, last_idx = build_fact(tokens)
 
+    if head && clause_match_built_in_simple(head)
+      puts 'Built-in operator clause cannot be removed'
+      return
+    end
+
     arr1 = [head].compact
     while last_idx != -1
       body, last_idx = build_fact(tokens, last_idx)
@@ -262,6 +267,11 @@ class DakiLangInterpreter
 
   def add_rule(tokens)
     head, last_idx = build_fact(tokens)
+
+    if clause_match_built_in_simple(head)
+      puts 'Built-in operator clause already exists'
+      return
+    end
 
     bodies = []
     while last_idx != -1

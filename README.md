@@ -244,7 +244,7 @@ The commands `-h` and `-v` are also available to show the help and version infor
 
 ## TODO - Planned features or improvements
 
-- Detect and prevent declaration of clauses over built-ins (same name and arity)
+- More clause conditions and more flexibility in their definition
 - Improve parser
 - Test suite
 - Help built-in

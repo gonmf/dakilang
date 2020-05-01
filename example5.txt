@@ -15,3 +15,6 @@ listing
 
 empty("").
 empty(X)?
+
+add(X, Y, Z).
+add(X, Y, Z)~
