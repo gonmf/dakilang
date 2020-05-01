@@ -285,12 +285,11 @@ You can mix the modes, you can start the interpreter by including - _consulting_
 
 Switching to interactive mode is always performed only after every consulted file is interpreted, in order.
 
-The commands `-h` and `-v` are also available to show the help and version information. All commands have their long form counterparts: `--consult`, `--interactive`, `--help` and `--version`.
+The commands `-h`, `-v` and `-d` are also available to show instructions, the program version, and activate debug mode. All commands have their long form counterparts: `--consult`, `--interactive`, `--help`, `--version` and `--debug`. Debug mode shows extra debug messages and disables some performance improvements.
 
 ## TODO - Planned features or improvements
 
 - Add condition for testing variable type, like "="
-- Add verbose option; add CLI flags for iteration depth and debug mode
 - Test suite - cover the parser
 - Improve parser
 - Improve clause conditions formats

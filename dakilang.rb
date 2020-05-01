@@ -11,7 +11,7 @@ require_relative 'fact'
 class DakiLangInterpreter
   include OperatorClauses
 
-  VERSION = '0.9'
+  VERSION = '0.10'
 
   BUILT_INS = Set.new([
     # Arithmetic
@@ -59,6 +59,10 @@ class DakiLangInterpreter
     @debug = false
     @table = {}
     @table_name = '0'
+  end
+
+  def activate_debug
+    @debug = true
   end
 
   def enter_interactive_mode
@@ -935,6 +939,10 @@ ARGV.each do |command|
   if command == '-v' || command == '--version'
     interpreter.print_version
     exit(0)
+  end
+
+  if command == '-d' || command == '--debug'
+    interpreter.activate_debug
   end
 
   if command == '-i' || command == '--interactive'
