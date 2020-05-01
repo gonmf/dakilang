@@ -229,7 +229,7 @@ fib(2, 1).
 fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
-The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than) and `/` (different than). _Equal to_ semantics are already the default matching strategy used.
+The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than), `<=` (lower or equal to), `>=` (greater or equal to) and `/` (different than). _Equal to_ semantics are already the default matching strategy used.
 
 Clause conditions are exclusively numeric, must have a constant comparison value (`func(X < B, ...` is invalid) and the constant value for the comparison always on the right side (`func(0 < X, ...` is also invalid). Variables bounded by clause conditions are never unified with string literals.
 
@@ -258,7 +258,7 @@ As a last example, we can also benchmark how fast our Fibonnaci function is, by 
 % Having fib declared before
 > time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 > time_fib(10, Val, Elapsed)?
-time_fib(10, 55, 42). % Finished in 42 milliseconds
+time_fib(10, 55, 35). % Finished in 35 milliseconds
 ```
 
 ## Manual
@@ -289,6 +289,7 @@ The commands `-h` and `-v` are also available to show the help and version infor
 
 ## TODO - Planned features or improvements
 
+- Add condition for testing variable type, like "="
 - Add verbose option; add CLI flags for iteration depth and debug mode
 - Test suite - cover the parser
 - Improve parser

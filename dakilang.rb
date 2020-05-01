@@ -512,8 +512,14 @@ class DakiLangInterpreter
       err("Syntax error at #{text}", 'unterminated clause')
     end
 
-    if tokens.any? { |s| s[0] == 'var' && (s[1].count('>') + s[1].count('<') + s[1].count('/')) > 1 }
-      err("Syntax error at #{text}", 'unexpected characters in variable condition')
+    tokens.each do |s|
+      next unless s[0] == 'var'
+
+      if s[1].count('>') + s[1].count('<') + s[1].count('/') > 1
+        err("Syntax error at #{text}", 'unexpected characters in variable condition')
+      end
+
+      s[1] = s[1].sub('>=', '%>=%').sub('<=', '%<=%').sub('>', '%>%').sub('<', '%<%').sub('/', '%/%')
     end
 
     tokens
@@ -614,17 +620,27 @@ class DakiLangInterpreter
   end
 
   def parse_variable_condition(varname)
-    parts = varname.split('>')
+    parts = varname.split('%>%')
     if parts.count == 2
       return [parts[0], '>', numeric_cast(parts[1])]
     end
 
-    parts = varname.split('<')
+    parts = varname.split('%>=%')
+    if parts.count == 2
+      return [parts[0], '>=', numeric_cast(parts[1])]
+    end
+
+    parts = varname.split('%<=%')
+    if parts.count == 2
+      return [parts[0], '<=', numeric_cast(parts[1])]
+    end
+
+    parts = varname.split('%<%')
     if parts.count == 2
       return [parts[0], '<', numeric_cast(parts[1])]
     end
 
-    parts = varname.split('/')
+    parts = varname.split('%/%')
     if parts.count == 2
       return [parts[0], '!=', numeric_cast(parts[1])]
     end
@@ -701,10 +717,10 @@ class DakiLangInterpreter
   end
 
   def replace_variable(var_name, literal, head)
-    var_name = var_name.split('>').first.split('<').first.split('/').first
+    var_name = var_name.split('%')[1]
 
     head.variables.each.with_index do |var1, idx|
-      if !var1.const? && var1.split('>').first.split('<').first.split('/').first == var_name
+      if !var1.const? && var1.split('%')[1] == var_name
         head.variables[idx] = literal
       end
     end
