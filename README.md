@@ -244,8 +244,8 @@ As a last example, we can also benchmark how fast our Fibonnaci function is, by 
 ```
 % Having fib declared before
 > time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
-> time_fib(7, Val, Elapsed)?
-time_fib(7, 13, 32).
+> time_fib(10, Val, Elapsed)?
+time_fib(10, 55, 175). % Finished in 175 milliseconds
 ```
 
 ## Manual
@@ -280,7 +280,6 @@ The commands `-h` and `-v` are also available to show the help and version infor
 
 ## TODO - Planned features or improvements
 
-- Remove expanded clauses outside of debug mode for performance
 - Improve parser
 - Test suite
 - Help built-in

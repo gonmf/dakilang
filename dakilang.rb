@@ -118,7 +118,7 @@ class DakiLangInterpreter
   ].freeze
 
   def initialize
-    @iteration_limit = 500
+    @iteration_limit = 1000
     @debug = false
     @table = {}
     @table_name = '0'
@@ -908,7 +908,14 @@ class DakiLangInterpreter
             new_solution.push([line, false])
           end
 
-          solution_set.push(unique_var_names(new_solution))
+          new_solution = unique_var_names(new_solution)
+
+          if !@debug
+            # Truncate solution to first clause and clauses still to be resolved
+            new_solution = new_solution.select.with_index { |rule, idx| idx == 0 || !rule[1] }
+          end
+
+          solution_set.push(new_solution)
         end
 
         solution_set[first_solution_idx] = nil
