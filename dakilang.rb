@@ -11,7 +11,7 @@ require_relative 'fact'
 class DakiLangInterpreter
   include OperatorClauses
 
-  VERSION = '0.8'
+  VERSION = '0.9'
 
   BUILT_INS = Set.new([
     # Arithmetic
@@ -551,7 +551,7 @@ class DakiLangInterpreter
       obj.each { |k, v| ret[k] = deep_clone(v) }
       ret
     when Fact
-      Fact.new(obj.name, deep_clone(obj.variables))
+      Fact.new(obj.name, obj.variables.dup)
     else
       obj
     end
@@ -852,14 +852,12 @@ class DakiLangInterpreter
             new_solution.push([line, false])
           end
 
-          new_solution = unique_var_names(new_solution)
-
           if !@debug
             # Truncate solution to first clause and clauses still to be resolved
             new_solution = new_solution.select.with_index { |rule, idx| idx == 0 || !rule[1] }
           end
 
-          solution_set.push(new_solution)
+          solution_set.push(unique_var_names(new_solution))
         end
       end
 
