@@ -31,7 +31,7 @@ A Daki language text file can contain five types of instructions:
 ```
 > % I am a comment
 >
-> func('john', 'mary', 1). % I am a comment too
+> fact('john', 'mary', 1). % I am a comment too
 ```
 
 **New declarations** add what is called a _clause_ to a global table of clauses. A clause is composed of a head declaration and an optional tail, separated by the characters `:-`.
@@ -41,15 +41,15 @@ A Daki language text file can contain five types of instructions:
 > grandparent(A, B) :- parent(A, C), parent(C, B).
 ```
 
-Clauses are always terminated by a dot `.`. If they are declared with a tail, the tail must be evaluated true for the head to also match.
+Clauses are always terminated by a dot `.`. If they are declared with a tail, the tail must be evaluated true for the head to also match. Clauses with a tail are called _rules_, while clauses without it are called _facts_.
 
 In accordance with other logic languages, the `,` character is used to denote logical AND. You can also use the character `;` to denote logical OR, but notice these are equivalent:
 
 ```
-> fact(x) :- reason1(x); reason2(x).
+> rule(x) :- reason1(x); reason2(x).
 > % is the same as
-> fact(x) :- reason1(x).
-> fact(x) :- reason2(x).
+> rule(x) :- reason1(x).
+> rule(x) :- reason2(x).
 ```
 
 In fact the second form is exactly how they are saved in the global table. If some of the broken down OR clauses already exist they are ignored without raising a warning. Keep this in mind when removing declarations.
@@ -57,7 +57,7 @@ In fact the second form is exactly how they are saved in the global table. If so
 The elements of clauses always have open brackets and are declared with one or more strings. Those strings can be
 constants - with a specific data type - or variables.
 
-The Daki data types are strings ('daki'), integers (42) and floating point numbers (3.14). Constant types are not automatically coerced, for example:
+The Daki data types are strings (`'daki'`), integers (`42`) and floating point numbers (`3.14`). Constant types are not automatically coerced, for example:
 
 ```
 > value('1').
@@ -74,11 +74,11 @@ value(1.0).
 
 Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. String literals can be enclosed both by the characters `'` and `"`, and both of these can be escaped with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
 
-The following characters are reserved and should only appear outside of string constants for their specific uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~` and `\`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and constants. All whitespace is ignored.
+The following characters are reserved and should only appear outside of string constants for their specific uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~`, `\`, `>`, `<` and `/`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and constants. All whitespace outside of string constants is ignored.
 
 A **query** has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
 
-The search will try to find solutions for which the original query has no outstanding variables, showing the constants that have filled it.
+The search will try to find all solutions for which the original query has no outstanding variables, showing the constants that have filled it.
 
 The interpreter will print out every solution found or return `No solution`.
 
@@ -117,14 +117,14 @@ Finally, **built-in commands** allow for some specific operations related to the
 
 - _quit_ / _exit_ - Stop execution and exit the interpreter if in interactive mode. Only stops processing the current file is in non-interactive mode.
 - _select_table N_ - Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
-- _listing_ - Prints all rules kept in the current global table.
+- _listing_ - Prints all clauses kept in the current global table.
 - _consult_ - Read and interpret a Daki language file.
 - _version_ - Print version information.
 - _help_ - Print help information.
 
 Built-in commands are executed without any trailing `.`, `?` or `!`.
 
-There are also **built-in clauses**, that unify with user-specified clauses and perform some form of calculation. In languages like Prolog, for instance, calculating a number of the Fibonacci sequence may look like:
+There are also **built-in clauses**, that unify with user-specified clauses and perform some form of calculation. To see why these are important, let's look at a practical example. In a language like Prolog, for instance, calculating a number of the Fibonacci sequence may look like:
 
 ```prolog
 > fib(1, 1).
@@ -133,49 +133,62 @@ There are also **built-in clauses**, that unify with user-specified clauses and 
 >
 > fib(4, X)?
 ```
-(this is Prolog, not Daki)
 
-In the Daki language, however, we prefer to keep the clause format consistent even for logical and mathematical operations. We call these **operator clauses**:
+In Prolog we find arithmetic and conditional logic mixed with the clause itself. In the Daki language, however, we prefer to keep the clause format consistent even for these operations. We use instead what we call **operator clauses**:
+
+Operator clauses are always unifiable only when the input variables are present and the Answer missing, and for performance they are always unified before user-defined clauses where possible.
 
 **Arithmetic operator clauses**
-- `add(Input1, Input2, Answer)` - Unifies with the result of the addition of the two inputs
-- `sub(Input1, Input2, Answer)` - Unifies with the result of the subtraction of Input1 with Input2
-- `mul(Input1, Input2, Answer)` - Unifies with the result of the multiplication of the two inputs
-- `div(Input1, Input2, Answer)` - Unifies with the result of the division of the two inputs
-- `mod(Input1, Input2, Answer)` - Unifies with the rest of the integer division of the two inputs
-- `pow(Input1, Input2, Answer)` - Unifies with the result of Input1 to the power of Input2
-- `sqrt(Input, Answer)` - Unifies with the result of the square root of Input
-- `max(Input1, Input2, Answer)` - Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
-- `min(Input1, Input2, Answer)` - Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
-- `log(Input1, Input2, Answer)` - Unifies with the logarithmic base Input2 of Input1
-- `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric
-- `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric
+
+_The inputs must be numeric to unify._
+
+- `add(Numeric1, Numeric2, Answer)` - Unifies with the result of the addition of the two inputs
+- `sub(Numeric1, Numeric2, Answer)` - Unifies with the result of the subtraction of Numeric1 with Numeric2
+- `mul(Numeric1, Numeric2, Answer)` - Unifies with the result of the multiplication of the two inputs
+- `div(Numeric1, Numeric2, Answer)` - Unifies with the result of the division of the two inputs; integer division is used if both inputs are integer
+- `mod(Numeric1, Numeric2, Answer)` - Unifies with the rest of the integer division of the two inputs
+- `pow(Numeric1, Numeric2, Answer)` - Unifies with the result of Numeric1 to the power of Numeric2
+- `sqrt(Numeric, Answer)` - Unifies with the result of the square root of Numeric
+- `log(Numeric1, Numeric2, Answer)` - Unifies with the logarithmic base Numeric2 of Numeric1
+- `rand(Answer)` - Unifies with a random floating point value between 0 and 1
+- `round(Numeric, Answer)` - Unifies with the rounded value of Numeric1 to Numeric2 decimal cases
+- `trunc(Numeric, Answer)` - Unifies with the value of Numeric without decimal part
+- `floor(Numeric, Answer)` - Unifies with the largest integer value that is less or equal to the input
+- `ceil(Numeric, Answer)` - Unifies with the smallest integer value that is greater or equal to the input
+
+**Equality/order operator clauses**
+
+_The inputs must be of the same data type to unify._
+
 - `eql(Input1, Input2, Answer)` - Unifies if the values are equal
 - `neq(Input1, Input2, Answer)` - Unifies if the values are not equal
-- `rand(Answer)` - Unifies with a random floating point value between 0 and 1
-- `round(Input, Answer)` - Unifies with the rounded value of Input1 to Input2 decimal cases
-- `trunc(Input, Answer)` - Unifies with the truncated value of Input
-
-Illegal arguments, like dividing by 0, do not unify.
+- `max(Input1, Input2, Answer)` - Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
+- `min(Input1, Input2, Answer)` - Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
+- `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric
+- `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric
 
 **Type casting operator clauses**
+
+_These always unify._
+
 - `str(Input, Answer)` - Unifies with the text representation of Input
-- `int(Input, Answer)` - Unifies with the integer value of Input
+- `int(Input, Answer)` - Unifies with the integer value of Input; will truncate floating point inputs
 - `float(Input, Answer)` - Unifies with the floating point value of Input
 
 **String operator clauses**
-- `len(Input, Answer)` - Unifies with the number of characters in Input
-- `concat(Input1, Input2, Answer)` - Unifies with the concatenation of the two inputs
-- `slice(Input1, Input2, Input3, Answer)` - Unifies with the remainder of Input1 starting at Input2 and ending at Input3
-- `index(Input1, Input2, Input3, Answer)` - Unifies with the first position of Input2 in Input1, starting the search from Input3
-- `ord(Input, Answer)` - Unifies with the numeric ASCII value of the first character in the Input string
-- `char(Input, Answer)` - Unifies with the ASCII character found for the numeric value of Input
 
-These clauses cannot be overwritten or retracted with clauses with the same name and arity. They are also only unifiable when the _Answer_ variable is the only free variable left. For performance, operator clauses are always unified before user-defined clausers.
+_The inputs must be of the correct data type to unify._
 
-These clauses, just like user-defined clauses, are type agnostic, i.e. expect to be unified with values of different data types, and try to generate a response that makes sense. Some clauses do not unify with some data types though. In general the rule is that operations between integer literals and floating point literals yield a floating point response, and between a string literal and a integer literal yield an integer literal.
+- `len(String, Answer)` - Unifies with the number of characters in String
+- `concat(String1, String2, Answer)` - Unifies with the concatenation of the two inputs
+- `slice(String, Integer1, Integer2, Answer)` - Unifies with the remainder of String starting at Integer1 and ending at Integer2
+- `index(String, Integer1, Integer2, Answer)` - Unifies with the first position of Integer1 in String, starting the search from Integer2
+- `ord(String, Answer)` - Unifies with the numeric ASCII value of the first character in the String string
+- `char(Integer, Answer)` - Unifies with the ASCII character found for the numeric value of Integer
 
-Let's go back to how to implement a program that returns the value of the Fibonnaci sequence at position N. At first glance the solution would be:
+Operator clauses cannot be overwritten or retracted with clauses with the same name and arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.
+
+Let's now go back to how to implement a program that returns the value of the Fibonnaci sequence at position N. At first glance the solution would be:
 
 ```
 fib(1, 1).
@@ -183,9 +196,9 @@ fib(2, 1).
 fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
-However **this doesn't work**: when a operator clause is used - in the tail of a clause - it will be evaluated like any other clause; it doesn't prevent the clause expansion in the first place. The Daki interpreter tries to discover all the solutions, so recursively `fib(1, 1)` will match both `fib(1, 1).` and `fib(N, Res) :- ...`. This will exceed the iteration limits of the interpreter.
+However **this doesn't work**: when a operator clause is used - in the tail of a rule - it will be evaluated like any other clause; it doesn't prevent the clause expansion in the first place. The Daki interpreter tries to discover all the solutions, so recursively `fib(1, 1)` will match both `fib(1, 1).` and `fib(N, Res) :- ...`. Depending on the execution order, this can exceed the memory limits of the interpreter.
 
-For cases like these, where we want to have multiple homonymous clauses, or a recursive chain, and we need to distinguish disjoint rules; instead of using _operator clauses_ we can use **clause conditions**.
+For cases like these, where we want to have multiple homonymous clauses, or a recursive chain, and we need to distinguish disjoint clauses; instead of using _operator clauses_ we can use **clause conditions**.
 
 Clause conditions are evaluated before a clause is expanded, providing finer control. With clause conditions our Fibonnaci program becomes:
 

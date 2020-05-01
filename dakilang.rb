@@ -96,6 +96,7 @@ class DakiLangInterpreter
     ['neq', 3],
     ['rand', 1],
     ['round', 3],
+    ['trunc', 2],
     ['floor', 2],
     ['ceil', 2],
     # Casts
@@ -1074,24 +1075,39 @@ class DakiLangInterpreter
       a.to_i
     end
   end
+  trunc
+
+  def oper_trunc(args)
+    a, _ = args
+
+    if a.is_a?(String)
+      nil
+    else
+      a.to_i
+    end
+  end
 
   def oper_floor(args)
     a, _ = args
 
-    if a.is_a?(Float)
-      a.to_f.floor
+    if a.is_a?(String)
+      nil
+    elsif a.is_a?(Float)
+      a.floor
     else
-      a.to_i
+      a
     end
   end
 
   def oper_ceil(args)
     a, _ = args
 
-    if a.is_a?(Float)
-      a.to_f.ceil
+    if a.is_a?(String)
+      nil
+    elsif a.is_a?(Float)
+      a.ceil
     else
-      a.to_i
+      a
     end
   end
 
