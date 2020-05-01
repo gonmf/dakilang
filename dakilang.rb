@@ -1,6 +1,10 @@
+# frozen_string_literal: true
+
 require 'rb-readline'
 require 'pry'
 require 'set'
+
+require_relative 'built_in_operators'
 
 class String
   def const?
@@ -21,6 +25,8 @@ class Float
 end
 
 class DakiLangInterpreter
+  include OperatorClauses
+
   class Fact
     attr_accessor :name, :variables
 
@@ -39,7 +45,7 @@ class DakiLangInterpreter
             s.to_s
           end
         else
-          friendly ? "#{s.slice(1, s.size).sub('>', ' > ').sub('<', ' < ').sub('/', ' / ')}" : s
+          friendly ? s.slice(1, s.size).sub('>', ' > ').sub('<', ' < ').sub('/', ' / ') : s
         end
       end
 
@@ -116,7 +122,7 @@ class DakiLangInterpreter
     'type/2',
     'print/2',
     'time/1',
-    'time/2',
+    'time/2'
   ]).freeze
 
   def initialize
@@ -129,7 +135,7 @@ class DakiLangInterpreter
   def enter_interactive_mode
     @interactive = true
 
-    while true
+    loop do
       print '> '
       input = STDIN.gets.chomp
 
@@ -346,7 +352,7 @@ class DakiLangInterpreter
     string_delimiter = nil
     string = ''
 
-    text_chars.each.with_index do |c, idx|
+    text_chars.each do |c|
       if separator_mode
         if c == '-'
           tokens.push(['sep'])
@@ -359,14 +365,14 @@ class DakiLangInterpreter
 
       if string_mode
         if escape_mode
-          if c == "\\" || c == string_delimiter
+          if c == '\\' || c == string_delimiter
             string += c
             escape_mode = false
             next
           else
             err("Syntax error at #{text}", 'string literal escape of unsupported character')
           end
-        elsif c == "\\"
+        elsif c == '\\'
           escape_mode = true
           next
         end
@@ -597,7 +603,7 @@ class DakiLangInterpreter
 
   def table_listing
     table.each do |arr|
-      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].map { |part| part.to_s }.join(' & ')}" : ''}."
+      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(' & ')}" : ''}."
     end
 
     puts
@@ -608,13 +614,14 @@ class DakiLangInterpreter
   end
 
   def deep_clone(obj)
-    if obj.is_a? Array
+    case obj
+    when Array
       obj.map { |o| deep_clone(o) }
-    elsif obj.is_a? Hash
+    when Hash
       ret = {}
       obj.each { |k, v| ret[k] = deep_clone(v) }
       ret
-    elsif obj.is_a? Fact
+    when Fact
       Fact.new(obj.name, deep_clone(obj.variables))
     else
       obj
@@ -626,7 +633,7 @@ class DakiLangInterpreter
 
     remainder = ''
 
-    File.foreach(name).with_index do |line, line_num|
+    File.foreach(name) do |line|
       line = line.to_s.strip
       if line.size == 0
         ret.push('')
@@ -634,8 +641,8 @@ class DakiLangInterpreter
         next
       end
 
-      if line.end_with?("\\")
-        remainder += " #{line.chomp("\\")}"
+      if line.end_with?('\\')
+        remainder += " #{line.chomp('\\')}"
         next
       end
 
@@ -646,7 +653,7 @@ class DakiLangInterpreter
     end
 
     ret
-  rescue
+  rescue StandardError
     nil
   end
 
@@ -672,28 +679,28 @@ class DakiLangInterpreter
     other_variables = head.variables.slice(0, arity - 1)
     return nil if other_variables.any? { |var| !var.const? }
 
-    variables = deep_clone(other_variables)
     value = send("oper_#{name}", other_variables)
 
     value ? [Fact.new(name, other_variables + [value])] : nil
   end
 
   def parse_variable_condition(varname)
-    if varname.split('>').count == 2
-      name, cond = varname.split('>')
-
-      [name, '>', numeric_cast(cond)]
-    elsif varname.split('<').count == 2
-      name, cond = varname.split('<')
-
-      [name, '<', numeric_cast(cond)]
-    elsif varname.split('/').count == 2
-      name, cond = varname.split('/')
-
-      [name, '!=', numeric_cast(cond)]
-    else
-      [varname]
+    parts = varname.split('>')
+    if parts.count == 2
+      return [parts[0], '>', numeric_cast(parts[1])]
     end
+
+    parts = varname.split('<')
+    if parts.count == 2
+      return [parts[0], '<', numeric_cast(parts[1])]
+    end
+
+    parts = varname.split('/')
+    if parts.count == 2
+      return [parts[0], '!=', numeric_cast(parts[1])]
+    end
+
+    [varname]
   end
 
   def clauses_match(h1, h2)
@@ -707,13 +714,13 @@ class DakiLangInterpreter
       if var1.const? != var2.const?
         const = var1.const? ? var1 : var2
         var = var1.const? ? var2 : var1
-        var, oper, comp = parse_variable_condition(var)
+        var, oper = parse_variable_condition(var)
 
         next if oper.nil?
 
         return false if const.is_a?(String)
 
-        h1.variables.each.with_index do |var3|
+        h1.variables.each do |var3|
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
@@ -722,7 +729,7 @@ class DakiLangInterpreter
           end
         end
 
-        h2.variables.each.with_index do |var3|
+        h2.variables.each do |var3|
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
@@ -768,7 +775,9 @@ class DakiLangInterpreter
     var_name = var_name.split('>').first.split('<').first.split('/').first
 
     head.variables.each.with_index do |var1, idx|
-      head.variables[idx] = literal if !var1.const? && var1.split('>').first.split('<').first.split('/').first == var_name
+      if !var1.const? && var1.split('>').first.split('<').first.split('/').first == var_name
+        head.variables[idx] = literal
+      end
     end
   end
 
@@ -777,7 +786,7 @@ class DakiLangInterpreter
 
     clauses.each do |head|
       head = head[0]
-      head.variables.each.with_index do |var_name1, i1|
+      head.variables.each do |var_name1|
         next if var_name1.const? || variables.include?(var_name1)
 
         if var_name1[1] >= '0' && var_name1[1] <= '9'
@@ -792,8 +801,8 @@ class DakiLangInterpreter
         clauses.each do |head1|
           head1 = head1[0]
 
-          head1.variables.each.with_index do |var_name2, i2|
-            head1.variables[i2] = new_var_name if var_name1 == var_name2
+          head1.variables.each.with_index do |var_name2, idx|
+            head1.variables[idx] = new_var_name if var_name1 == var_name2
           end
         end
       end
@@ -808,17 +817,19 @@ class DakiLangInterpreter
     new_clauses[0].variables.each.with_index do |var_name1, i1|
       var_name2 = removed_clause.variables[i1]
 
-      if var_name1.const? && !var_name2.const?
-        # Replace variable in solution
-        solution.map { |l| l[0] }.each do |clause|
-          replace_variable(var_name2, var_name1, clause)
+      if var_name1.const?
+        if !var_name2.const?
+          # Replace variable in solution
+          solution.each do |arr|
+            replace_variable(var_name2, var_name1, arr[0])
+          end
         end
-      elsif !var_name1.const? && var_name2.const?
+      elsif var_name2.const?
         # Replace variable in new_clauses
         new_clauses.each do |clause|
           replace_variable(var_name1, var_name2, clause)
         end
-      elsif !var_name1.const? && !var_name2.const?
+      else
         # Replace variable in new_clauses
         new_clauses.each do |clause|
           replace_variable(var_name1, var_name2, clause)
@@ -842,13 +853,11 @@ class DakiLangInterpreter
         puts "Iteration #{iteration}"
         solution_set.each.with_index do |solution, idx|
           puts "  Solution #{idx + 1}"
-          solution.each do |head|
-            puts "    #{head[1] ? '*' : ''}#{head[0].format(false)}."
+          solution.each do |head1|
+            puts "    #{head1[1] ? '*' : ''}#{head1[0].format(false)}."
           end
         end
       end
-
-      anything_expanded = false
 
       first_solution_idx = solution_set.find_index do |solution|
         solution.any? do |solution_clause|
@@ -901,8 +910,6 @@ class DakiLangInterpreter
       end
 
       if matching_clauses.any?
-        anything_expanded = true
-
         matching_clauses.each do |clause|
           new_solution = deep_clone(first_solution)
 
@@ -926,11 +933,7 @@ class DakiLangInterpreter
 
         solution_set[first_solution_idx] = nil
         solution_set = solution_set.compact
-
-        next
-      end
-
-      unless anything_expanded
+      else
         return []
       end
     end
@@ -949,8 +952,6 @@ class DakiLangInterpreter
   end
 
   def table_add_clause(head, body, warn_if_exists)
-    exists = false
-
     table.each do |arr|
       table_head = arr[0]
       table_body = arr[1]
@@ -962,346 +963,6 @@ class DakiLangInterpreter
     end
 
     table.push([head, body])
-  end
-
-  # Arithmetic operator clauses
-  def oper_add(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      nil
-    else
-      a + b
-    end
-  end
-
-  def oper_sub(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      nil
-    else
-      a - b
-    end
-  end
-
-  def oper_mul(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      nil
-    else
-      a * b
-    end
-  end
-
-  def oper_div(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      nil
-    else
-      b == 0 ? nil : a / b
-    end
-  end
-
-  def oper_mod(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      nil
-    else
-      b == 0 ? nil : a % b
-    end
-  end
-
-  def oper_pow(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      nil
-    else
-      a ** b
-    end
-  end
-
-  def oper_sqrt(args)
-    a, _ = args
-
-    if a.is_a?(String)
-      nil
-    else
-      a >= 0 ? Math.sqrt(a) : nil
-    end
-  end
-
-  def oper_log(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      nil
-    else
-      Math.log(a, b)
-    end
-  end
-
-  def oper_round(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      nil
-    else
-      a.round(b)
-    end
-  end
-
-  def oper_trunc(args)
-    a, _ = args
-
-    if a.is_a?(String)
-      nil
-    else
-      a.to_i
-    end
-  end
-
-  def oper_floor(args)
-    a, _ = args
-
-    if a.is_a?(String)
-      nil
-    else
-      a.floor
-    end
-  end
-
-  def oper_ceil(args)
-    a, _ = args
-
-    if a.is_a?(String)
-      nil
-    else
-      a.ceil
-    end
-  end
-
-  def oper_abs(args)
-    a, _ = args
-
-    if a.is_a?(String)
-      nil
-    else
-      a.abs
-    end
-  end
-
-  #Bitwise operator clauses
-  def bit_and(args)
-    a, b = args
-
-    if a.is_a?(Integer) && b.is_a?(Integer)
-      a & b
-    else
-      nil
-    end
-  end
-
-  def bit_or(args)
-    a, b = args
-
-    if a.is_a?(Integer) && b.is_a?(Integer)
-      a | b
-    else
-      nil
-    end
-  end
-
-  def bit_xor(args)
-    a, b = args
-
-    if a.is_a?(Integer) && b.is_a?(Integer)
-      a ^ b
-    else
-      nil
-    end
-  end
-
-  def bit_neg(args)
-    a, _ = args
-
-    if a.is_a?(Integer)
-      ~a
-    else
-      nil
-    end
-  end
-
-  def bit_shift_left(args)
-    a, b = args
-
-    if a.is_a?(Integer) && b.is_a?(Integer)
-      a << b
-    else
-      nil
-    end
-  end
-
-  def bit_shift_right(args)
-    a, b = args
-
-    if a.is_a?(Integer) && b.is_a?(Integer)
-      a >> b
-    else
-      nil
-    end
-  end
-
-  # Equality/order operator clauses
-  def oper_eql(args)
-    a, b = args
-
-    return nil if a.class != b.class
-
-    a == b ? 'yes' : nil
-  end
-
-  def oper_neq(args)
-    oper_eql(args) ? nil : 'yes'
-  end
-
-  def oper_max(args)
-    a, b = args
-
-    return nil if a.class != b.class
-
-    [a, b].max
-  end
-
-  def oper_min(args)
-    a, b = args
-
-    return nil if a.class != b.class
-
-    [a, b].min
-  end
-
-  def oper_gt(args)
-    a, b = args
-
-    return nil if a.class != b.class
-
-    a > b ? 'yes' : nil
-  end
-
-  def oper_lt(args)
-    a, b = args
-
-    return nil if a.class != b.class
-
-    a < b ? 'yes' : nil
-  end
-
-  # Type casting operator clauses
-  def oper_str(args)
-    a, _ = args
-
-    a.to_s
-  end
-
-  def oper_int(args)
-    a, _ = args
-
-    a.to_i
-  end
-
-  def oper_float(args)
-    a, _ = args
-
-    a.to_f
-  end
-
-  # String operators
-  def oper_len(args)
-    a, _ = args
-
-    if a.is_a?(String)
-      a.size
-    else
-      nil
-    end
-  end
-
-  def oper_concat(args)
-    a, b = args
-
-    if a.is_a?(String) && b.is_a?(String)
-      "#{a}#{b}"
-    else
-      nil
-    end
-  end
-
-  def oper_slice(args)
-    a, b, c = args
-
-    if a.is_a?(String) && !b.is_a?(String) && !c.is_a?(String)
-      a.slice(b, c)
-    else
-      nil
-    end
-  end
-
-  def oper_index(args)
-    a, b, c = args
-
-    if a.is_a?(String) && b.is_a?(String) && !c.is_a?(String)
-      a.index(b, c)
-    else
-      nil
-    end
-  end
-
-  def oper_ord(args)
-    a, _ = args
-
-    if a.is_a?(String)
-      a[0]&.ord
-    else
-      nil
-    end
-  end
-
-  def oper_char(args)
-    a, _ = args
-
-    if a.is_a?(Integer)
-      a.to_i.chr
-    else
-      nil
-    end
-  end
-
-  # Other operator clauses
-  def oper_rand(args)
-    rand
-  end
-
-  def oper_type(args)
-    a, _ = args
-
-    a.class.to_s.downcase
-  end
-
-  def oper_print(args)
-    a, _ = args
-
-    puts a
-
-    'yes'
-  end
-
-  def oper_time(args)
-    (Time.now.to_f * 1000).to_i
   end
 
   def err(msg, detail = nil)
@@ -1322,7 +983,7 @@ end
 interpreter = DakiLangInterpreter.new
 enter_interactive = false
 
-ARGV.each.with_index do |command|
+ARGV.each do |command|
   if command == '-h' || command == '--help'
     interpreter.print_help
     exit(0)
