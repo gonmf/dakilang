@@ -126,8 +126,6 @@ Built-in commands are executed without any trailing `.`, `?` or `!`.
 
 There are also **built-in clauses**, that unify with user-specified clauses and perform some form of calculation. In languages like Prolog, for instance, calculating a number of the Fibonacci sequence may look like:
 
-**Warning: This feature is still in development, check the TODO section at the end of this document.**
-
 ```prolog
 > fib(1, 1).
 > fib(2, 1).
@@ -135,20 +133,11 @@ There are also **built-in clauses**, that unify with user-specified clauses and 
 >
 > fib(4, X)?
 ```
+(this is Prolog, not Daki)
 
-While in Dakilang this is performed as:
+In the Daki language, however, we prefer to keep the clause format consistent even for logical and mathematical operations. We call these **operator clauses**:
 
-```
-> fib(1, 1).
-> fib(2, 1).
-> fib(N, X) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, X).
->
-> fib(4, X)?
-```
-
-In other words, in the Daki language we prefer to keep the clause format consistent even for logical and mathematical operations. The full list of built-in _operator_ clauses follows.
-
-**Arithmetic operators**
+**Arithmetic operator clauses**
 - `add(Input1, Input2, Answer)` - Unifies with the result of the addition of the two inputs
 - `sub(Input1, Input2, Answer)` - Unifies with the result of the subtraction of Input1 with Input2
 - `mul(Input1, Input2, Answer)` - Unifies with the result of the multiplication of the two inputs
@@ -169,12 +158,12 @@ In other words, in the Daki language we prefer to keep the clause format consist
 
 Illegal arguments, like dividing by 0, do not unify.
 
-**Data type casting**
+**Type casting operator clauses**
 - `str(Input, Answer)` - Unifies with the text representation of Input
 - `int(Input, Answer)` - Unifies with the integer value of Input
 - `float(Input, Answer)` - Unifies with the floating point value of Input
 
-**String operators**
+**String operator clauses**
 - `len(Input, Answer)` - Unifies with the number of characters in Input
 - `concat(Input1, Input2, Answer)` - Unifies with the concatenation of the two inputs
 - `slice(Input1, Input2, Input3, Answer)` - Unifies with the remainder of Input1 starting at Input2 and ending at Input3
@@ -182,12 +171,11 @@ Illegal arguments, like dividing by 0, do not unify.
 - `ord(Input, Answer)` - Unifies with the numeric ASCII value of the first character in the Input string
 - `char(Input, Answer)` - Unifies with the ASCII character found for the numeric value of Input
 
+These clauses cannot be overwritten or retracted with clauses with the same name and arity. They are also only unifiable when the _Answer_ variable is the only free variable left. For performance, operator clauses are always unified before user-defined clausers.
 
-These operators cannot be overwritten or retracted with clauses with the same name and arity. They are also only unifiable when the _Answer_ variable is the only free variable left.
+These clauses, just like user-defined clauses, are type agnostic, i.e. expect to be unified with values of different data types, and try to generate a response that makes sense. Some clauses do not unify with some data types though. In general the rule is that operations between integer literals and floating point literals yield a floating point response, and between a string literal and a integer literal yield an integer literal.
 
-Most operators are type agnostic, that is, expect to be unified with values of different data types, and try to generate a response that makes sense. In general the rule is that operations between integer literals and floating point literals yield a floating point response, and between a string literal and a integer literal yield an integer literal.
-
-Let's try to implement a program that returns the value of the Fibonnaci sequence at position N. At first glance the solution would be:
+Let's go back to how to implement a program that returns the value of the Fibonnaci sequence at position N. At first glance the solution would be:
 
 ```
 fib(1, 1).
@@ -195,11 +183,11 @@ fib(2, 1).
 fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
-However **this doesn't work**: when a clause operator is used - in the tail of a clause - it will be evaluated like any other clause; it doesn't prevent the clause expansion in the first place. The Daki interpreter tries to discover all the solutions, so recursively `fib(1, 1)` will match both `fib(1, 1).` and `fib(N, Res) :- ...`. This will exceed the iteration limits of the interpreter.
+However **this doesn't work**: when a operator clause is used - in the tail of a clause - it will be evaluated like any other clause; it doesn't prevent the clause expansion in the first place. The Daki interpreter tries to discover all the solutions, so recursively `fib(1, 1)` will match both `fib(1, 1).` and `fib(N, Res) :- ...`. This will exceed the iteration limits of the interpreter.
 
-For cases like these, where we want to have multiple homonymous clauses, or a recursive chain, instead of using _clause operators_ we can use **clause conditions**.
+For cases like these, where we want to have multiple homonymous clauses, or a recursive chain, and we need to distinguish disjoint rules; instead of using _operator clauses_ we can use **clause conditions**.
 
-Clause conditions are evaluated before a clause is expanded, and provide a few further controls on the literal values that they can match. With clause conditions our Fibonnaci program becomes:
+Clause conditions are evaluated before a clause is expanded, providing finer control. With clause conditions our Fibonnaci program becomes:
 
 ```
 fib(1, 1).
@@ -207,9 +195,9 @@ fib(2, 1).
 fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
-The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than) and `/` (different than). _Equal to_ semanthics are already the default matching strategy used.
+The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than) and `/` (different than). _Equal to_ semantics are already the default matching strategy used.
 
-Clause conditionals are exclusively numeric, with the constant value for the comparison always on the right side - `func(0 < X) :- ...` is not valid. String literals are coerced silently.
+Clause conditions are exclusively numeric, must have a constant comparison value (`func(X < B, ...` is invalid) and the constant value for the comparison always on the right side (`func(0 < X, ...` is also invalid). Variables bounded by clause conditions are never unified with string literals.
 
 ## Manual
 
@@ -243,6 +231,7 @@ The commands -h and -v are also available to show the help and version informati
 
 ## TODO - Planned features or improvements
 
+- Detect and prevent declaration of clauses over built-ins (same name and arity)
 - Improve parser
 - Test suite
 - Help built-in
