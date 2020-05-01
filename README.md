@@ -245,7 +245,7 @@ As a last example, we can also benchmark how fast our Fibonnaci function is, by 
 % Having fib declared before
 > time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 > time_fib(10, Val, Elapsed)?
-time_fib(10, 55, 153). % Finished in 153 milliseconds
+time_fib(10, 55, 51). % Finished in 51 milliseconds
 ```
 
 ## Manual
