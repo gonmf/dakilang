@@ -80,32 +80,37 @@ class DakiLangInterpreter
 
   BUILT_INS = [
     # Arithmetic
-    ['add', 3],
-    ['sub', 3],
-    ['mul', 3],
-    ['div', 3],
-    ['mod', 3],
-    ['pow', 3],
-    ['sqrt', 2],
-    ['max', 3],
-    ['min', 3],
-    ['log', 3],
-    ['gt', 3],
-    ['lt', 3],
-    ['eql', 3],
-    ['neq', 3],
-    ['rand', 1],
-    ['round', 3],
-    ['trunc', 2],
-    ['floor', 2],
-    ['ceil', 2],
+    ['add',    3],
+    ['sub',    3],
+    ['mul',    3],
+    ['div',    3],
+    ['mod',    3],
+    ['pow',    3],
+    ['sqrt',   2],
+    ['log',    3],
+    ['rand',   1],
+    ['round',  3],
+    ['trunc',  2],
+    ['floor',  2],
+    ['ceil',   2],
+    # Equality/order
+    ['eql',    3],
+    ['neq',    3],
+    ['max',    3],
+    ['min',    3],
+    ['gt',     3],
+    ['lt',     3],
     # Casts
-    ['str', 2],
-    ['int', 2],
-    ['float', 2],
+    ['str',    2],
+    ['int',    2],
+    ['float',  2],
     # Strings
-    ['len', 2],
-    ['concat', 3]
+    ['len',    2],
+    ['concat', 3],
+    ['slice',  4],
+    ['index',  4],
+    ['ord',    2],
+    ['char',   2]
   ].freeze
 
   def initialize
@@ -912,154 +917,85 @@ class DakiLangInterpreter
     table.push([head, body])
   end
 
+  # Arithmetic operator clauses
   def oper_add(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
-      a.to_f + b.to_f
+    if a.is_a?(String) || b.is_a?(String)
+      nil
     else
-      a.to_i + b.to_i
+      a + b
     end
   end
 
   def oper_sub(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
-      a.to_f - b.to_f
+    if a.is_a?(String) || b.is_a?(String)
+      nil
     else
-      a.to_i - b.to_i
+      a - b
     end
   end
 
   def oper_mul(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
-      a.to_f * b.to_f
+    if a.is_a?(String) || b.is_a?(String)
+      nil
     else
-      a.to_i * b.to_i
+      a * b
     end
   end
 
   def oper_div(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
-      b = b.to_f
-
-      b != 0.0 ? (a.to_f / b) : nil
+    if a.is_a?(String) || b.is_a?(String)
+      nil
     else
-      b = b.to_i
-
-      b != 0 ? (a.to_i / b) : nil
+      b == 0 ? nil : a / b
     end
   end
 
   def oper_mod(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
-      b = b.to_f
-
-      b != 0.0 ? (a.to_f % b) : nil
+    if a.is_a?(String) || b.is_a?(String)
+      nil
     else
-      b = b.to_i
-
-      b != 0 ? (a.to_i % b) : nil
+      b == 0 ? nil : a % b
     end
   end
 
   def oper_pow(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
-      a.to_f ** b.to_f
+    if a.is_a?(String) || b.is_a?(String)
+      nil
     else
-      a.to_i ** b.to_i
+      a ** b
     end
   end
 
   def oper_sqrt(args)
     a, _ = args
 
-    if a.is_a?(Float)
-      a = a.to_f
-
-      a >= 0.0 ? Math.sqrt(a) : nil
+    if a.is_a?(String)
+      nil
     else
-      a = a.to_i
-
       a >= 0 ? Math.sqrt(a) : nil
-    end
-  end
-
-  def oper_max(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      [a.to_s, b.to_s].min
-    elsif a.is_a?(Float) || b.is_a?(Float)
-      [a.to_f, b.to_f].max
-    else
-      [a.to_i, b.to_i].max
-    end
-  end
-
-  def oper_min(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      [a.to_s, b.to_s].min
-    elsif a.is_a?(Float) || b.is_a?(Float)
-      [a.to_f, b.to_f].min
-    else
-      [a.to_i, b.to_i].min
     end
   end
 
   def oper_log(args)
     a, b = args
 
-    if a.is_a?(Float) || b.is_a?(Float)
-      Math.log(a.to_f, b.to_f)
-    else
-      Math.log(a.to_i, b.to_i)
-    end
-  end
-
-  def oper_gt(args)
-    a, b = args
-
     if a.is_a?(String) || b.is_a?(String)
-      a.to_s > b.to_s ? 'yes' : nil
-    elsif a.is_a?(Float) || b.is_a?(Float)
-      a.to_f > b.to_f ? 'yes' : nil
+      nil
     else
-      a.to_i > b.to_i ? 'yes' : nil
+      Math.log(a, b)
     end
-  end
-
-  def oper_lt(args)
-    a, b = args
-
-    if a.is_a?(String) || b.is_a?(String)
-      a.to_s < b.to_s ? 'yes' : nil
-    elsif a.is_a?(Float) || b.is_a?(Float)
-      a.to_f < b.to_f ? 'yes' : nil
-    else
-      a.to_i < b.to_i ? 'yes' : nil
-    end
-  end
-
-  def oper_eql(args)
-    a, b = args
-
-    a == b ? 'yes' : nil
-  end
-
-  def oper_neq(args)
-    oper_eql(args) ? nil : 'yes'
   end
 
   def oper_rand(args)
@@ -1069,13 +1005,12 @@ class DakiLangInterpreter
   def oper_round(args)
     a, b = args
 
-    if a.is_a?(Float)
-      a.to_f.round(b.to_i)
+    if a.is_a?(String) || b.is_a?(String)
+      nil
     else
-      a.to_i
+      a.round(b)
     end
   end
-  trunc
 
   def oper_trunc(args)
     a, _ = args
@@ -1092,10 +1027,8 @@ class DakiLangInterpreter
 
     if a.is_a?(String)
       nil
-    elsif a.is_a?(Float)
-      a.floor
     else
-      a
+      a.floor
     end
   end
 
@@ -1104,13 +1037,57 @@ class DakiLangInterpreter
 
     if a.is_a?(String)
       nil
-    elsif a.is_a?(Float)
-      a.ceil
     else
-      a
+      a.ceil
     end
   end
 
+  # Equality/order operator clauses
+  def oper_eql(args)
+    a, b = args
+
+    return nil if a.class != b.class
+
+    a == b ? 'yes' : nil
+  end
+
+  def oper_neq(args)
+    oper_eql(args) ? nil : 'yes'
+  end
+
+  def oper_max(args)
+    a, b = args
+
+    return nil if a.class != b.class
+
+    [a, b].max
+  end
+
+  def oper_min(args)
+    a, b = args
+
+    return nil if a.class != b.class
+
+    [a, b].min
+  end
+
+  def oper_gt(args)
+    a, b = args
+
+    return nil if a.class != b.class
+
+    a > b ? 'yes' : nil
+  end
+
+  def oper_lt(args)
+    a, b = args
+
+    return nil if a.class != b.class
+
+    a < b ? 'yes' : nil
+  end
+
+  # Type casting operator clauses
   def oper_str(args)
     a, _ = args
 
@@ -1133,37 +1110,61 @@ class DakiLangInterpreter
   def oper_len(args)
     a, _ = args
 
-    a.to_s.size
+    if a.is_a?(String)
+      a.size
+    else
+      nil
+    end
   end
 
   def oper_concat(args)
     a, b = args
 
-    "#{a}#{b}"
+    if a.is_a?(String) && b.is_a?(String)
+      "#{a}#{b}"
+    else
+      nil
+    end
   end
 
   def oper_slice(args)
     a, b, c = args
 
-    a.to_s.slice(b.to_i, c.to_i)
+    if a.is_a?(String) && !b.is_a?(String) && !c.is_a?(String)
+      a.slice(b, c)
+    else
+      nil
+    end
   end
 
   def oper_index(args)
     a, b, c = args
 
-    a.to_s.index(b.to_s, c.to_i)
+    if a.is_a?(String) && b.is_a?(String) && !c.is_a?(String)
+      a.index(b, c)
+    else
+      nil
+    end
   end
 
   def oper_ord(args)
     a, _ = args
 
-    a.to_s[0]&.ord
+    if a.is_a?(String)
+      a[0]&.ord
+    else
+      nil
+    end
   end
 
   def oper_char(args)
     a, _ = args
 
-    a.to_i.chr
+    if a.is_a?(Integer)
+      a.to_i.chr
+    else
+      nil
+    end
   end
 
   def err(msg, detail = nil)

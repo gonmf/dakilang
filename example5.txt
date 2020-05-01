@@ -13,6 +13,5 @@ fib(7, Val)?
 listing
 
 
-aop("").
-
-listing
+empty("").
+empty(X)?

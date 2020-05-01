@@ -151,7 +151,7 @@ _The inputs must be numeric to unify._
 - `sqrt(Numeric, Answer)` - Unifies with the result of the square root of Numeric
 - `log(Numeric1, Numeric2, Answer)` - Unifies with the logarithmic base Numeric2 of Numeric1
 - `rand(Answer)` - Unifies with a random floating point value between 0 and 1
-- `round(Numeric, Answer)` - Unifies with the rounded value of Numeric1 to Numeric2 decimal cases
+- `round(Numeric1, Numeric2, Answer)` - Unifies with the rounded value of Numeric1 to Numeric2 decimal cases
 - `trunc(Numeric, Answer)` - Unifies with the value of Numeric without decimal part
 - `floor(Numeric, Answer)` - Unifies with the largest integer value that is less or equal to the input
 - `ceil(Numeric, Answer)` - Unifies with the smallest integer value that is greater or equal to the input
@@ -181,8 +181,8 @@ _The inputs must be of the correct data type to unify._
 
 - `len(String, Answer)` - Unifies with the number of characters in String
 - `concat(String1, String2, Answer)` - Unifies with the concatenation of the two inputs
-- `slice(String, Integer1, Integer2, Answer)` - Unifies with the remainder of String starting at Integer1 and ending at Integer2
-- `index(String, Integer1, Integer2, Answer)` - Unifies with the first position of Integer1 in String, starting the search from Integer2
+- `slice(String, Numeric1, Numeric2, Answer)` - Unifies with the remainder of String starting at Numeric1 and ending at Numeric2
+- `index(String, Numeric1, Numeric2, Answer)` - Unifies with the first position of Numeric1 in String, starting the search from Numeric2
 - `ord(String, Answer)` - Unifies with the numeric ASCII value of the first character in the String string
 - `char(Integer, Answer)` - Unifies with the ASCII character found for the numeric value of Integer
 
@@ -236,7 +236,7 @@ You can mix the modes, you can start the interpreter by including - _consulting_
 
 Switching to interactive mode is always performed only after every consulted file is interpreted, in order.
 
-The commands -h and -v are also available to show the help and version information. All commands have their long form counterparts: --consult, --interactive, --help and --version.
+The commands `-h` and `-v` are also available to show the help and version information. All commands have their long form counterparts: `--consult`, `--interactive`, `--help` and `--version`.
 
 ## FIXME - Known Bugs
 
