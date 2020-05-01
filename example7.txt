@@ -1,0 +1,32 @@
+
+parent("john", "mary").
+parent("victor", "john").
+grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
+
+grandparent(A, B)? % OK
+grandparent(A, A)? % No solution
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+natural_except_five2(N > 0, N / 5).
+natural_except_five(N) :- natural_except_five2(N, N).
+
+natural_except_five(4)? % OK
+natural_except_five(5)? % No solution
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+fib(1, 1).
+fib(2, 1).
+fib(Pos > 2, Res) :- sub(Pos, 1, N1), sub(Pos, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+
+time_fib(10, Val, Elapsed)? % OK
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+not_found('true')? % No solution
+
+found('true').
+
+found('true')? % OK

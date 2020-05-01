@@ -833,6 +833,8 @@ class DakiLangInterpreter
       else
         head = first_solution_clause[0]
 
+        # binding.pry if iteration == 2
+
         matching_clauses = table.select do |table_clause|
           clauses_match(table_clause[0], head)
         end
@@ -859,10 +861,10 @@ class DakiLangInterpreter
 
           solution_set.push(new_solution)
         end
-
-        solution_set[first_solution_idx] = nil
-        solution_set = solution_set.compact
       end
+
+      solution_set[first_solution_idx] = nil
+      solution_set = solution_set.compact
     end
 
     []
