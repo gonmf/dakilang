@@ -862,8 +862,6 @@ class DakiLangInterpreter
 
         solution_set[first_solution_idx] = nil
         solution_set = solution_set.compact
-      else
-        return []
       end
     end
 
