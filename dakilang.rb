@@ -39,7 +39,7 @@ class DakiLangInterpreter
             s.to_s
           end
         else
-          friendly ? "#{s.slice(1, s.size).sub('>', ' > ').sub('<', ' < ').sub('=', ' = ')}" : s
+          friendly ? "#{s.slice(1, s.size).sub('>', ' > ').sub('<', ' < ').sub('/', ' / ')}" : s
         end
       end
 
@@ -148,7 +148,7 @@ class DakiLangInterpreter
   end
 
   def print_version
-    puts 'dakilang 0.6'
+    puts 'dakilang 0.7'
     puts
   end
 
@@ -676,6 +676,24 @@ class DakiLangInterpreter
     value ? [Fact.new(name, deep_clone(other_variables) + [value])] : nil
   end
 
+  def parse_variable_condition(varname)
+    if varname.split('>').count == 2
+      name, cond = varname.split('>')
+
+      [name, '>', numeric_cast(cond)]
+    elsif varname.split('<').count == 2
+      name, cond = varname.split('<')
+
+      [name, '<', numeric_cast(cond)]
+    elsif varname.split('/').count == 2
+      name, cond = varname.split('/')
+
+      [name, '/', numeric_cast(cond)]
+    else
+      [varname]
+    end
+  end
+
   def clauses_match(h1, h2)
     return false unless h1.name == h2.name && h1.variables.count == h2.variables.count
 
@@ -687,22 +705,28 @@ class DakiLangInterpreter
       if var1.const? != var2.const?
         const = var1.const? ? var1 : var2
         var = var1.const? ? var2 : var1
-        var = var.slice(1, var.size)
+        var, oper, comp = parse_variable_condition(var)
 
-        next unless var.split('>').count == 2 || var.split('<').count == 2 || var.split('/').count == 2
+        next if oper.nil?
 
-        if var.split('>').count == 2
-          _, comp = var.split('>')
+        return false if const.is_a?(String)
 
-          return false if const.is_a?(String) || const <= numeric_cast(comp)
-        elsif var.split('<').count == 2
-          _, comp = var.split('<')
+        h1.variables.each.with_index do |var3|
+          next if var3.const?
 
-          return false if const.is_a?(String) || const >= numeric_cast(comp)
-        elsif var.split('/').count == 2
-          _, comp = var.split('/')
+          var3, oper2, comp2 = parse_variable_condition(var3)
+          if var3 == var && oper2
+            return false if !const.send(oper2.sub('/', '!='), comp2)
+          end
+        end
 
-          return false if const.is_a?(String) || const == numeric_cast(comp)
+        h2.variables.each.with_index do |var3|
+          next if var3.const?
+
+          var3, oper2, comp2 = parse_variable_condition(var3)
+          if var3 == var && oper2
+            return false if !const.send(oper2.sub('/', '!='), comp2)
+          end
         end
       end
     end

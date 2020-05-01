@@ -212,6 +212,25 @@ The clause condition `fib(N > 2, Res)` restricts matching N to values greater th
 
 Clause conditions are exclusively numeric, must have a constant comparison value (`func(X < B, ...` is invalid) and the constant value for the comparison always on the right side (`func(0 < X, ...` is also invalid). Variables bounded by clause conditions are never unified with string literals.
 
+Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:
+
+```
+> natural_except_five1(N > 0, N / 5, R) :- eql(N, N, R).
+> natural_except_five(N, R) :- natural_except_five1(N, N, R).
+>
+> natural_except_five(3, T)?
+natural_except_five(3, 'yes').
+
+> natural_except_five(5, T)?
+No solution
+
+> natural_except_five(-3, T)?
+No solution
+
+> natural_except_five('1', T)?
+No solution
+```
+
 ## Manual
 
 You will need to have a Ruby executable installed.
@@ -244,7 +263,8 @@ The commands `-h` and `-v` are also available to show the help and version infor
 
 ## TODO - Planned features or improvements
 
-- More clause conditions and more flexibility in their definition
+- Add a time built-in for testing performance
+- Remove expanded clauses outside of debug mode for performance
 - Improve parser
 - Test suite
 - Help built-in
