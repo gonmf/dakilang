@@ -92,6 +92,7 @@ class DakiLangInterpreter
     'trunc/2',
     'floor/2',
     'ceil/2',
+    'abs/2',
     # Equality/order
     'eql/3',
     'neq/3',
@@ -1081,6 +1082,77 @@ class DakiLangInterpreter
       nil
     else
       a.ceil
+    end
+  end
+
+  def oper_abs(args)
+    a, _ = args
+
+    if a.is_a?(String)
+      nil
+    else
+      a.abs
+    end
+  end
+
+  #Bitwise operator clauses
+  def bit_and(args)
+    a, b = args
+
+    if a.is_a?(Integer) && b.is_a?(Integer)
+      a & b
+    else
+      nil
+    end
+  end
+
+  def bit_or(args)
+    a, b = args
+
+    if a.is_a?(Integer) && b.is_a?(Integer)
+      a | b
+    else
+      nil
+    end
+  end
+
+  def bit_xor(args)
+    a, b = args
+
+    if a.is_a?(Integer) && b.is_a?(Integer)
+      a ^ b
+    else
+      nil
+    end
+  end
+
+  def bit_neg(args)
+    a, _ = args
+
+    if a.is_a?(Integer)
+      ~a
+    else
+      nil
+    end
+  end
+
+  def bit_shift_left(args)
+    a, b = args
+
+    if a.is_a?(Integer) && b.is_a?(Integer)
+      a << b
+    else
+      nil
+    end
+  end
+
+  def bit_shift_right(args)
+    a, b = args
+
+    if a.is_a?(Integer) && b.is_a?(Integer)
+      a >> b
+    else
+      nil
     end
   end
 

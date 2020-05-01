@@ -41,7 +41,7 @@ A Daki language text file can contain five types of instructions:
 > grandparent(A, B) :- parent(A, C), parent(C, B).
 ```
 
-Clauses are always terminated by a dot `.`. If they are declared with a tail, the tail must be evaluated true for the head to also match. Clauses with a tail are called _rules_, while clauses without it are called _facts_.
+Clauses are always terminated by a dot `.`. If they are declared with a tail, the tail must be evaluated true for the head to match. Clauses with a tail are called _rules_, while clauses without it are called _facts_.
 
 In accordance with other logic languages, the `,` character is used to denote logical AND. You can also use the character `;` to denote logical OR, but notice these are equivalent:
 
@@ -57,7 +57,7 @@ In fact the second form is exactly how they are saved in the global table. If so
 The elements of clauses always have open brackets and are declared with one or more strings. Those strings can be
 constants - with a specific data type - or variables.
 
-The Daki data types are strings (`'daki'`), integers (`42`) and floating point numbers (`3.14`). Constant types are not automatically coerced, for example:
+The Daki data types are **string** (`'daki'`), **integer** (`42`) and **float**, for IEEE 754 floating point numbers (`3.14`). Constant types are not automatically coerced or matched, for example:
 
 ```
 > value('1').
@@ -154,6 +154,18 @@ _The inputs must be numeric to unify._
 - `trunc(Numeric, Answer)` - Unifies with the value of Numeric without decimal part
 - `floor(Numeric, Answer)` - Unifies with the largest integer value that is less or equal to the input
 - `ceil(Numeric, Answer)` - Unifies with the smallest integer value that is greater or equal to the input
+- `abs(Numeric, Answer)` - Unifies with the absolute value of the input
+
+**Bitwise operator clauses**
+
+_The inputs must be of type Integer to unify._
+
+- `bit_and(Integer1, Integer2, Answer)` - Unifies with the bitwise AND of the two inputs
+- `bit_or(Integer1, Integer2, Answer)` - Unifies with the bitwise OR of the two inputs
+- `bit_xor(Integer1, Integer2, Answer)` - Unifies with the bitwise XOR of the two inputs
+- `bit_neg(Integer, Answer)` - Unifies with the bitwise inversion of the bits of the input
+- `bit_shift_left(Integer1, Integer2, Answer)` - Unifies with the left shifted value of Integer1 by Integer2
+- `bit_shift_right(Integer1, Integer2, Answer)` - Unifies with the right shifted value of Integer1 by Integer2
 
 **Equality/order operator clauses**
 
