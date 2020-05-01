@@ -88,7 +88,6 @@ class DakiLangInterpreter
     ['pow',    3],
     ['sqrt',   2],
     ['log',    3],
-    ['rand',   1],
     ['round',  3],
     ['trunc',  2],
     ['floor',  2],
@@ -110,7 +109,12 @@ class DakiLangInterpreter
     ['slice',  4],
     ['index',  4],
     ['ord',    2],
-    ['char',   2]
+    ['char',   2],
+    # Other
+    ['rand',   1],
+    ['print',  2],
+    ['time',   1],
+    ['time',   2]
   ].freeze
 
   def initialize
@@ -657,7 +661,7 @@ class DakiLangInterpreter
     str.include?('.') ? str.to_f : str.to_i
   end
 
-  def clause_match_built_in(head)
+  def clause_match_built_in(head, allow_side_effects = false)
     name = head.name
     arity = head.variables.count
 
@@ -671,7 +675,7 @@ class DakiLangInterpreter
     res = BUILT_INS.find { |arr| arr[0] == name && arr[1] == arity }
     return nil unless res
 
-    value = send("oper_#{name}", deep_clone(other_variables))
+    value = send("oper_#{name}", deep_clone(other_variables), allow_side_effects)
 
     value ? [Fact.new(name, deep_clone(other_variables) + [value])] : nil
   end
@@ -884,7 +888,7 @@ class DakiLangInterpreter
 
       first_solution_clause[1] = true
 
-      built_in_matched = clause_match_built_in(head)
+      built_in_matched = clause_match_built_in(head, true)
 
       matching_clauses = built_in_matched ? [built_in_matched] : table.select do |table_clause|
         clauses_match(table_clause[0], head)
@@ -952,7 +956,7 @@ class DakiLangInterpreter
   end
 
   # Arithmetic operator clauses
-  def oper_add(args)
+  def oper_add(args, allow_side_effects)
     a, b = args
 
     if a.is_a?(String) || b.is_a?(String)
@@ -962,7 +966,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_sub(args)
+  def oper_sub(args, allow_side_effects)
     a, b = args
 
     if a.is_a?(String) || b.is_a?(String)
@@ -972,7 +976,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_mul(args)
+  def oper_mul(args, allow_side_effects)
     a, b = args
 
     if a.is_a?(String) || b.is_a?(String)
@@ -982,7 +986,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_div(args)
+  def oper_div(args, allow_side_effects)
     a, b = args
 
     if a.is_a?(String) || b.is_a?(String)
@@ -992,7 +996,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_mod(args)
+  def oper_mod(args, allow_side_effects)
     a, b = args
 
     if a.is_a?(String) || b.is_a?(String)
@@ -1002,7 +1006,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_pow(args)
+  def oper_pow(args, allow_side_effects)
     a, b = args
 
     if a.is_a?(String) || b.is_a?(String)
@@ -1012,7 +1016,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_sqrt(args)
+  def oper_sqrt(args, allow_side_effects)
     a, _ = args
 
     if a.is_a?(String)
@@ -1022,7 +1026,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_log(args)
+  def oper_log(args, allow_side_effects)
     a, b = args
 
     if a.is_a?(String) || b.is_a?(String)
@@ -1032,11 +1036,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_rand(args)
-    rand
-  end
-
-  def oper_round(args)
+  def oper_round(args, allow_side_effects)
     a, b = args
 
     if a.is_a?(String) || b.is_a?(String)
@@ -1046,7 +1046,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_trunc(args)
+  def oper_trunc(args, allow_side_effects)
     a, _ = args
 
     if a.is_a?(String)
@@ -1056,7 +1056,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_floor(args)
+  def oper_floor(args, allow_side_effects)
     a, _ = args
 
     if a.is_a?(String)
@@ -1066,7 +1066,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_ceil(args)
+  def oper_ceil(args, allow_side_effects)
     a, _ = args
 
     if a.is_a?(String)
@@ -1077,7 +1077,7 @@ class DakiLangInterpreter
   end
 
   # Equality/order operator clauses
-  def oper_eql(args)
+  def oper_eql(args, allow_side_effects)
     a, b = args
 
     return nil if a.class != b.class
@@ -1085,11 +1085,11 @@ class DakiLangInterpreter
     a == b ? 'yes' : nil
   end
 
-  def oper_neq(args)
+  def oper_neq(args, allow_side_effects)
     oper_eql(args) ? nil : 'yes'
   end
 
-  def oper_max(args)
+  def oper_max(args, allow_side_effects)
     a, b = args
 
     return nil if a.class != b.class
@@ -1097,7 +1097,7 @@ class DakiLangInterpreter
     [a, b].max
   end
 
-  def oper_min(args)
+  def oper_min(args, allow_side_effects)
     a, b = args
 
     return nil if a.class != b.class
@@ -1105,7 +1105,7 @@ class DakiLangInterpreter
     [a, b].min
   end
 
-  def oper_gt(args)
+  def oper_gt(args, allow_side_effects)
     a, b = args
 
     return nil if a.class != b.class
@@ -1113,7 +1113,7 @@ class DakiLangInterpreter
     a > b ? 'yes' : nil
   end
 
-  def oper_lt(args)
+  def oper_lt(args, allow_side_effects)
     a, b = args
 
     return nil if a.class != b.class
@@ -1122,26 +1122,26 @@ class DakiLangInterpreter
   end
 
   # Type casting operator clauses
-  def oper_str(args)
+  def oper_str(args, allow_side_effects)
     a, _ = args
 
     a.to_s
   end
 
-  def oper_int(args)
+  def oper_int(args, allow_side_effects)
     a, _ = args
 
     a.to_i
   end
 
-  def oper_float(args)
+  def oper_float(args, allow_side_effects)
     a, _ = args
 
     a.to_f
   end
 
   # String operators
-  def oper_len(args)
+  def oper_len(args, allow_side_effects)
     a, _ = args
 
     if a.is_a?(String)
@@ -1151,7 +1151,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_concat(args)
+  def oper_concat(args, allow_side_effects)
     a, b = args
 
     if a.is_a?(String) && b.is_a?(String)
@@ -1161,7 +1161,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_slice(args)
+  def oper_slice(args, allow_side_effects)
     a, b, c = args
 
     if a.is_a?(String) && !b.is_a?(String) && !c.is_a?(String)
@@ -1171,7 +1171,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_index(args)
+  def oper_index(args, allow_side_effects)
     a, b, c = args
 
     if a.is_a?(String) && b.is_a?(String) && !c.is_a?(String)
@@ -1181,7 +1181,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_ord(args)
+  def oper_ord(args, allow_side_effects)
     a, _ = args
 
     if a.is_a?(String)
@@ -1191,7 +1191,7 @@ class DakiLangInterpreter
     end
   end
 
-  def oper_char(args)
+  def oper_char(args, allow_side_effects)
     a, _ = args
 
     if a.is_a?(Integer)
@@ -1199,6 +1199,25 @@ class DakiLangInterpreter
     else
       nil
     end
+  end
+
+  # Other operator clauses
+  def oper_rand(args, allow_side_effects)
+    rand
+  end
+
+  def oper_print(args, allow_side_effects)
+    a, _ = args
+
+    if allow_side_effects
+      puts a
+    end
+
+    'yes'
+  end
+
+  def oper_time(args, allow_side_effects)
+    (Time.now.to_f * 1000).to_i
   end
 
   def err(msg, detail = nil)

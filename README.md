@@ -150,7 +150,6 @@ _The inputs must be numeric to unify._
 - `pow(Numeric1, Numeric2, Answer)` - Unifies with the result of Numeric1 to the power of Numeric2
 - `sqrt(Numeric, Answer)` - Unifies with the result of the square root of Numeric
 - `log(Numeric1, Numeric2, Answer)` - Unifies with the logarithmic base Numeric2 of Numeric1
-- `rand(Answer)` - Unifies with a random floating point value between 0 and 1
 - `round(Numeric1, Numeric2, Answer)` - Unifies with the rounded value of Numeric1 to Numeric2 decimal cases
 - `trunc(Numeric, Answer)` - Unifies with the value of Numeric without decimal part
 - `floor(Numeric, Answer)` - Unifies with the largest integer value that is less or equal to the input
@@ -160,12 +159,12 @@ _The inputs must be numeric to unify._
 
 _The inputs must be of the same data type to unify._
 
-- `eql(Input1, Input2, Answer)` - Unifies if the values are equal
-- `neq(Input1, Input2, Answer)` - Unifies if the values are not equal
+- `eql(Input1, Input2, Answer)` - Unifies if the values are equal; with the string literal `'yes'`
+- `neq(Input1, Input2, Answer)` - Unifies if the values are not equal; with the string literal `'yes'`
 - `max(Input1, Input2, Answer)` - Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
 - `min(Input1, Input2, Answer)` - Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
-- `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric
-- `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric
+- `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
+- `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
 
 **Type casting operator clauses**
 
@@ -185,6 +184,15 @@ _The inputs must be of the correct data type to unify._
 - `index(String, Numeric1, Numeric2, Answer)` - Unifies with the first position of Numeric1 in String, starting the search from Numeric2
 - `ord(String, Answer)` - Unifies with the numeric ASCII value of the first character in the String string
 - `char(Integer, Answer)` - Unifies with the ASCII character found for the numeric value of Integer
+
+**Other operator clauses**
+
+_These always unify._
+
+- `rand(Answer)` - Unifies with a random floating point value between 0 and 1
+- `print(Input, Answer)` - Print the Input to the console; unifies with the string literal `'yes'`
+- `time(Answer)` - Unifies with the number of milliseconds since the UNIX epoch
+- `time(Input, Answer)` - Unifies with the number of milliseconds since the UNIX epoch; the input is just used as a requirement to enforce order of execution
 
 Operator clauses cannot be overwritten or retracted with clauses with the same name and arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.
 
@@ -231,6 +239,15 @@ No solution
 No solution
 ```
 
+As a last example, we can also benchmark how fast our Fibonnaci function is, by making use of the `time` operator clause:
+
+```
+% Having fib declared before
+> time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+> time_fib(7, Val, Elapsed)?
+time_fib(7, 13, 32).
+```
+
 ## Manual
 
 You will need to have a Ruby executable installed.
@@ -263,7 +280,6 @@ The commands `-h` and `-v` are also available to show the help and version infor
 
 ## TODO - Planned features or improvements
 
-- Add a time built-in for testing performance
 - Remove expanded clauses outside of debug mode for performance
 - Improve parser
 - Test suite
