@@ -4,85 +4,14 @@ require 'rb-readline'
 require 'pry'
 require 'set'
 
+require_relative 'monkey_patches'
 require_relative 'built_in_operators'
-
-class String
-  def const?
-    self[0] != '%'
-  end
-end
-
-class Integer
-  def const?
-    true
-  end
-end
-
-class Float
-  def const?
-    true
-  end
-end
+require_relative 'fact'
 
 class DakiLangInterpreter
   include OperatorClauses
 
-  class Fact
-    attr_accessor :name, :variables
-
-    def initialize(name, variables)
-      @name = name
-      @variables = variables
-    end
-
-    def format(friendly)
-      friendly_variables = variables.map do |s|
-        if s.const?
-          case s
-          when String
-            "'#{s}'"
-          when Float, Integer
-            s.to_s
-          end
-        else
-          friendly ? s.slice(1, s.size).sub('>', ' > ').sub('<', ' < ').sub('/', ' / ') : s
-        end
-      end
-
-      "#{name}(#{friendly_variables.join(', ')})"
-    end
-
-    def to_s
-      format(true)
-    end
-
-    def eql?(other)
-      other.is_a?(Fact) && name == other.name && hash == other.hash
-    end
-
-    def hash
-      vari = 0
-      vars = variables.map do |var_name|
-        if var_name.const?
-          "#{var_name.class.to_s[0]}#{var_name}"
-        else
-          var_name
-        end
-      end
-      vars.each do |var_name|
-        next if var_name.const?
-
-        vari += 1
-        new_name = "%#{vari}"
-
-        vars.each.with_index do |name, idx|
-          vars[idx] = new_name if name == var_name
-        end
-      end
-
-      ([name] + vars).join(';').hash
-    end
-  end
+  VERSION = '0.8'
 
   BUILT_INS = Set.new([
     # Arithmetic
@@ -160,7 +89,7 @@ class DakiLangInterpreter
   end
 
   def print_version
-    puts 'dakilang 0.7'
+    puts "dakilang #{VERSION}"
     puts
   end
 
@@ -1008,3 +937,4 @@ end
 if enter_interactive
   interpreter.enter_interactive_mode
 end
+

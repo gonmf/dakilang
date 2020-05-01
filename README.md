@@ -289,7 +289,11 @@ The commands `-h` and `-v` are also available to show the help and version infor
 
 ## TODO - Planned features or improvements
 
+- Add verbose option; add CLI flags for iteration depth and debug mode
+- Test suite - cover the parser
 - Improve parser
-- Test suite
+- Improve clause conditions formats
+- Support other formats for numeric values, like hex
+- Test suite - cover the solver
 - Help built-in
 - List data type, operators and unification of list elements (head|tail)
