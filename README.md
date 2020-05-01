@@ -223,19 +223,19 @@ Clause conditions are exclusively numeric, must have a constant comparison value
 Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:
 
 ```
-> natural_except_five1(N > 0, N / 5, R) :- eql(N, N, R).
-> natural_except_five(N, R) :- natural_except_five1(N, N, R).
+> natural_except_five1(N > 0, N / 5).
+> natural_except_five(N) :- natural_except_five1(N, N).
 >
-> natural_except_five(3, T)?
-natural_except_five(3, 'yes').
+> natural_except_five(3)?
+natural_except_five(3).
 
-> natural_except_five(5, T)?
+> natural_except_five(5)?
 No solution
 
-> natural_except_five(-3, T)?
+> natural_except_five(-3)?
 No solution
 
-> natural_except_five('1', T)?
+> natural_except_five('1')?
 No solution
 ```
 
@@ -245,7 +245,7 @@ As a last example, we can also benchmark how fast our Fibonnaci function is, by 
 % Having fib declared before
 > time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 > time_fib(10, Val, Elapsed)?
-time_fib(10, 55, 175). % Finished in 175 milliseconds
+time_fib(10, 55, 153). % Finished in 153 milliseconds
 ```
 
 ## Manual
@@ -273,10 +273,6 @@ You can mix the modes, you can start the interpreter by including - _consulting_
 Switching to interactive mode is always performed only after every consulted file is interpreted, in order.
 
 The commands `-h` and `-v` are also available to show the help and version information. All commands have their long form counterparts: `--consult`, `--interactive`, `--help` and `--version`.
-
-## FIXME - Known Bugs
-
-- Query clause without variables matches immediately
 
 ## TODO - Planned features or improvements
 

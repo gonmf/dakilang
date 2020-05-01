@@ -78,44 +78,44 @@ class DakiLangInterpreter
     end
   end
 
-  BUILT_INS = [
+  BUILT_INS = Set.new([
     # Arithmetic
-    ['add',    3],
-    ['sub',    3],
-    ['mul',    3],
-    ['div',    3],
-    ['mod',    3],
-    ['pow',    3],
-    ['sqrt',   2],
-    ['log',    3],
-    ['round',  3],
-    ['trunc',  2],
-    ['floor',  2],
-    ['ceil',   2],
+    'add/3',
+    'sub/3',
+    'mul/3',
+    'div/3',
+    'mod/3',
+    'pow/3',
+    'sqrt/2',
+    'log/3',
+    'round/3',
+    'trunc/2',
+    'floor/2',
+    'ceil/2',
     # Equality/order
-    ['eql',    3],
-    ['neq',    3],
-    ['max',    3],
-    ['min',    3],
-    ['gt',     3],
-    ['lt',     3],
+    'eql/3',
+    'neq/3',
+    'max/3',
+    'min/3',
+    'gt/3',
+    'lt/3',
     # Casts
-    ['str',    2],
-    ['int',    2],
-    ['float',  2],
+    'str/2',
+    'int/2',
+    'float/2',
     # Strings
-    ['len',    2],
-    ['concat', 3],
-    ['slice',  4],
-    ['index',  4],
-    ['ord',    2],
-    ['char',   2],
+    'len/2',
+    'concat/3',
+    'slice/4',
+    'index/4',
+    'ord/2',
+    'char/2',
     # Other
-    ['rand',   1],
-    ['print',  2],
-    ['time',   1],
-    ['time',   2]
-  ].freeze
+    'rand/1',
+    'print/2',
+    'time/1',
+    'time/2',
+  ]).freeze
 
   def initialize
     @iteration_limit = 1000
@@ -654,7 +654,7 @@ class DakiLangInterpreter
 
     return nil if arity < 1
 
-    BUILT_INS.find { |arr| arr[0] == name && arr[1] == arity }
+    BUILT_INS.include?("#{name}/#{arity}")
   end
 
   def numeric_cast(str)
@@ -672,8 +672,7 @@ class DakiLangInterpreter
     other_variables = head.variables.slice(0, arity - 1)
     return nil if other_variables.any? { |var| !var.const? }
 
-    res = BUILT_INS.find { |arr| arr[0] == name && arr[1] == arity }
-    return nil unless res
+    return nil unless BUILT_INS.include?("#{name}/#{arity}")
 
     value = send("oper_#{name}", deep_clone(other_variables), allow_side_effects)
 
@@ -692,7 +691,7 @@ class DakiLangInterpreter
     elsif varname.split('/').count == 2
       name, cond = varname.split('/')
 
-      [name, '/', numeric_cast(cond)]
+      [name, '!=', numeric_cast(cond)]
     else
       [varname]
     end
@@ -720,7 +719,7 @@ class DakiLangInterpreter
 
           var3, oper2, comp2 = parse_variable_condition(var3)
           if var3 == var && oper2
-            return false if !const.send(oper2.sub('/', '!='), comp2)
+            return false if !const.send(oper2, comp2)
           end
         end
 
@@ -729,7 +728,7 @@ class DakiLangInterpreter
 
           var3, oper2, comp2 = parse_variable_condition(var3)
           if var3 == var && oper2
-            return false if !const.send(oper2.sub('/', '!='), comp2)
+            return false if !const.send(oper2, comp2)
           end
         end
       end
@@ -880,10 +879,6 @@ class DakiLangInterpreter
       end
       first_solution_clause = first_solution[first_solution_clause_idx]
 
-      unless first_solution_clause
-        raise 'Unexpected error 2'
-      end
-
       head = first_solution_clause[0]
 
       first_solution_clause[1] = true
@@ -925,11 +920,7 @@ class DakiLangInterpreter
       end
 
       unless anything_expanded
-        solution_set = solution_set - first_solution
-
-        unless solution_set.any?
-          raise 'Unexpected error 3'
-        end
+        return []
       end
     end
 
