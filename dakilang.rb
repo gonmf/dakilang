@@ -112,6 +112,7 @@ class DakiLangInterpreter
     'char/2',
     # Other
     'rand/1',
+    'type/2',
     'print/2',
     'time/1',
     'time/2',
@@ -1211,6 +1212,12 @@ class DakiLangInterpreter
   # Other operator clauses
   def oper_rand(args)
     rand
+  end
+
+  def oper_type(args)
+    a, _ = args
+
+    a.class.to_s.downcase
   end
 
   def oper_print(args)

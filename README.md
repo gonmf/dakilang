@@ -190,6 +190,7 @@ _The inputs must be of the correct data type to unify._
 _These always unify._
 
 - `rand(Answer)` - Unifies with a random floating point value between 0 and 1
+- `type(Input, Answer)` - Unifies with the string literal of the name of the data type of Input: `'string'`, `'integer'` or `'float'`
 - `print(Input, Answer)` - Print the Input to the console; unifies with the string literal `'yes'`
 - `time(Answer)` - Unifies with the number of milliseconds since the UNIX epoch
 - `time(Input, Answer)` - Unifies with the number of milliseconds since the UNIX epoch; the input is just used as a requirement to enforce order of execution
