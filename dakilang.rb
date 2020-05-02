@@ -54,10 +54,14 @@ class DakiLangInterpreter
     'time/2'
   ]).freeze
 
+  VAR_BEGIN_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
+  VAR_REST_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
+  VAR_END_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
+
   attr_accessor :search_time_limit, :debug
 
   def initialize
-    @test_mode = true
+    @test_mode = false
     @search_time_limit = 3.0 # Seconds
     @debug = false
     @table = {}
@@ -604,7 +608,28 @@ class DakiLangInterpreter
       end
     end
 
-    tokens.compact
+    tokens = tokens.compact
+
+    tokens.each do |s|
+      next if s[0] != 'var' && s[0] != 'name'
+
+      term = s[0] == 'var' ? 'variable' : 'clause'
+      chars = s[0] == 'var' ? s[1].split('%')[1].chars : s[1].chars
+
+      if !VAR_BEGIN_CHARS.include?(chars[0])
+        err("Syntax error at #{text}", "illegal first character in #{term} name")
+      end
+
+      if chars.slice(1, chars.count - 1).any? { |c| !VAR_REST_CHARS.include?(c) }
+        err("Syntax error at #{text}", "illegal character in #{term} name")
+      end
+
+      if !VAR_END_CHARS.include?(chars.last)
+        err("Syntax error at #{text}", "illegal last character in #{term} name")
+      end
+    end
+
+    tokens
   end
 
   def select_table(name)

@@ -101,9 +101,11 @@ value(1).
 value(1.0).
 ```
 
-Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. String literals can be enclosed both by the characters `'` and `"`, and both of these can be escaped with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
+String literals can be enclosed both by the characters `'` and `"`, and both of these can be escaped with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`. The character `\` is also used to denote line continuation - when placed at the end of a line, it is discarded and the line is join with the line bellow.
 
-The following characters are reserved and should only appear outside of string constants for their specific uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~`, `\`, `>` and `<`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and constants. All whitespace outside of string constants is ignored.
+Variable names and clause names must start with a letter and not end in an underscore. They can be composed only of ASCII letters, algarisms and underscores.
+
+All whitespace outside of string constants is ignored.
 
 ### Queries
 
