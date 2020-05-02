@@ -31,6 +31,7 @@ Regardless of your familiarity with Prolog or Datalog, Daki language has signifi
     - [String operator clauses](#string-operator-clauses)
     - [Other operator clauses](#other-operator-clauses)
   - [Clause conditions](#clause-conditions)
+    - [Operators](#operators)
 - [Interpreter](#interpreter-manual)
   - [Options](#options)
 - [Future work](#future-work)
@@ -278,9 +279,18 @@ This is best achieved by using what we call _clause conditions_. Clause conditio
 > fib(N > 2, Res) :- sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
 ```
 
-The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than), `<=` (lower or equal to), `>=` (greater or equal to) and `<>` (different than). _Equal to_ semantics are already the default matching strategy used. The lower and greater than operators use alphabetical order for strings.
+The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The full list of operators is as follows.
 
-Clause conditions are exclusively between a variable and a constant values (`func(X < B, ...` is invalid) and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types unify.
+#### Operators
+
+- `<` - Tests if the variable is lower than the constant
+- `<=` - Tests if the variable is lower or _equal_ to the constant
+- `>` - Tests if the variable is greater than the constant
+- `>=` - Tests if the variable is greater or _equal_ to the constant
+- `<>` - Tests if the variable is not _equal_ to the constant
+- `:` - Tests if the data type of the variable is the constant value (from `'integer'`, `'float'` or `'string'`)
+
+Clause conditions are exclusively between a variable and a constant values (`func(X < B, ...` is invalid) and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types unify. The comparison operators use alphabetical order for strings.
 
 Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:
 
@@ -301,6 +311,46 @@ No solution
 No solution
 
 > positive_except_five('1')?
+No solution
+
+> is_string(X: 'string').
+> is_string(1)?
+No solution
+
+> is_string(1.0)?
+No solution
+
+> is_string("1")?
+is_string('1').
+
+> is_float(X: 'float').
+> is_float(1)?
+No solution
+
+> is_float(1.0)?
+is_float(1.0).
+
+> is_float("1")?
+No solution
+
+> is_integer(X: 'integer').
+> is_integer(1)?
+is_integer(1).
+
+> is_integer(1.0)?
+No solution
+
+> is_integer("1")?
+No solution
+
+> is_numeric(X) :- is_float(X) | is_integer(X).
+> is_numeric(1)?
+is_numeric(1).
+
+> is_numeric(1.0)?
+is_numeric(1.0).
+
+> is_numeric("1")?
 No solution
 ```
 
@@ -369,7 +419,6 @@ The full list of command line options are:
 
 ## Future work
 
-- Add clause condition operator ":" for testing data type
 - Allow memoization of specific clauses (name and arity), relative to a clauses table
 - Test suite - cover the parser
 - Improve parser

@@ -153,7 +153,7 @@ class DakiLangInterpreter
       tokens = tokenizer(line)
       next if tokens.empty?
 
-      puts tokens.map { |a| a.join(':') }.join(' & ') if @debug
+      puts tokens.map { |a| a.join(':') }.join(', ') if @debug
 
       case tokens.last.first
       when 'clause_finish'
@@ -390,7 +390,7 @@ class DakiLangInterpreter
           string = ''
           operator_mode = false
         end
-      elsif ['<', '>'].include?(c)
+      elsif ['<', '>', ':'].include?(c) && var_list
         if string.size > 0
           tokens.push(['var', "%#{string}"])
           string = ''
@@ -584,7 +584,7 @@ class DakiLangInterpreter
     tokens.each.with_index do |s, idx|
       next if s.nil? || s[0] != 'oper'
 
-      if ['>=', '<=', '=', '>', '<', '<>'].include?(s[1])
+      if ['>=', '<=', '=', '>', '<', '<>', ':'].include?(s[1])
         var1 = tokens[idx - 1]
         var2 = tokens[idx + 1]
 
@@ -597,6 +597,10 @@ class DakiLangInterpreter
 
         if var2[0] == 'var'
           s[1] = invert_operator(s[1])
+        end
+
+        if s[1] == ':' && (const[0][0] != 's' || !['integer', 'float', 'string'].include?(const[1]))
+          err("Syntax error at #{text}", 'invalid argument for : operator')
         end
 
         new_var = "#{var[1]}%#{s[1]}%#{const[0][0]}%#{const[1]}"
@@ -740,7 +744,11 @@ class DakiLangInterpreter
 
     const_value = varname.slice([start, name, oper, const_type].join('_').size + 1, varname.size)
 
-    oper = '!=' if oper == '<>'
+    if oper == '<>'
+      oper = '!='
+    elsif oper == ':'
+      oper = 'class_is'
+    end
 
     case const_type
     when 'i'
@@ -769,13 +777,12 @@ class DakiLangInterpreter
 
         next if oper.nil?
 
-        return false if const.is_a?(String)
-
         h1.variables.each do |var3|
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
-          if var3 == var && oper2 && const.is_a?(String) == comp2.is_a?(String) # Numeric types only unify with numeric types; same for strings
+          # binding.pry
+          if var3 == var && oper2 && (oper2 == 'class_is' || const.is_a?(String) == comp2.is_a?(String)) # Numeric types only unify with numeric types; same for strings
             return false if !const.send(oper2, comp2)
           end
         end
@@ -784,7 +791,8 @@ class DakiLangInterpreter
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
-          if var3 == var && oper2 && const.is_a?(String) == comp2.is_a?(String) # Numeric types only unify with numeric types; same for strings
+          # binding.pry
+          if var3 == var && oper2 && (oper2 == 'class_is' || const.is_a?(String) == comp2.is_a?(String)) # Numeric types only unify with numeric types; same for strings
             return false if !const.send(oper2, comp2)
           end
         end
