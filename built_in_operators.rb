@@ -51,7 +51,7 @@ module OperatorClauses
   end
 
   def oper_sqrt(args)
-    a, _ = args
+    a, = args
 
     if !a.is_a?(String) && a >= 0
       Math.sqrt(a)
@@ -75,7 +75,7 @@ module OperatorClauses
   end
 
   def oper_trunc(args)
-    a, _ = args
+    a, = args
 
     if !a.is_a?(String)
       a.to_i
@@ -83,7 +83,7 @@ module OperatorClauses
   end
 
   def oper_floor(args)
-    a, _ = args
+    a, = args
 
     if !a.is_a?(String)
       a.floor
@@ -91,7 +91,7 @@ module OperatorClauses
   end
 
   def oper_ceil(args)
-    a, _ = args
+    a, = args
 
     if !a.is_a?(String)
       a.ceil
@@ -99,7 +99,7 @@ module OperatorClauses
   end
 
   def oper_abs(args)
-    a, _ = args
+    a, = args
 
     if !a.is_a?(String)
       a.abs
@@ -132,7 +132,7 @@ module OperatorClauses
   end
 
   def bit_neg(args)
-    a, _ = args
+    a, = args
 
     if a.is_a?(Integer)
       ~a
@@ -159,7 +159,7 @@ module OperatorClauses
   def oper_eql(args)
     a, b = args
 
-    if a.class == b.class && a == b
+    if a.is_a?(String) == b.is_a?(String) && a == b
       'yes'
     end
   end
@@ -167,7 +167,7 @@ module OperatorClauses
   def oper_neq(args)
     a, b = args
 
-    if a.class != b.class || a != b
+    if a.is_a?(String) != b.is_a?(String) || a != b
       'yes'
     end
   end
@@ -175,7 +175,7 @@ module OperatorClauses
   def oper_max(args)
     a, b = args
 
-    if a.class == b.class
+    if a.is_a?(String) == b.is_a?(String)
       [a, b].max
     end
   end
@@ -183,7 +183,7 @@ module OperatorClauses
   def oper_min(args)
     a, b = args
 
-    if a.class == b.class
+    if a.is_a?(String) == b.is_a?(String)
       [a, b].min
     end
   end
@@ -191,7 +191,7 @@ module OperatorClauses
   def oper_gt(args)
     a, b = args
 
-    if a.class == b.class && a > b
+    if a.is_a?(String) == b.is_a?(String) && a > b
       'yes'
     end
   end
@@ -199,33 +199,33 @@ module OperatorClauses
   def oper_lt(args)
     a, b = args
 
-    if a.class == b.class && a < b
+    if a.is_a?(String) == b.is_a?(String) && a < b
       'yes'
     end
   end
 
   # Type casting operator clauses
   def oper_str(args)
-    a, _ = args
+    a, = args
 
     a.to_s
   end
 
   def oper_int(args)
-    a, _ = args
+    a, = args
 
     a.to_i
   end
 
   def oper_float(args)
-    a, _ = args
+    a, = args
 
     a.to_f
   end
 
   # String operators
   def oper_len(args)
-    a, _ = args
+    a, = args
 
     if a.is_a?(String)
       a.size
@@ -243,7 +243,7 @@ module OperatorClauses
   def oper_slice(args)
     a, b, c = args
 
-    if a.is_a?(String) && !b.is_a?(String) && !c.is_a?(String)
+    if a.is_a?(String) && b.is_a?(Integer) && c.is_a?(Integer)
       a.slice(b, c)
     end
   end
@@ -251,13 +251,13 @@ module OperatorClauses
   def oper_index(args)
     a, b, c = args
 
-    if a.is_a?(String) && b.is_a?(String) && !c.is_a?(String)
+    if a.is_a?(String) && b.is_a?(String) && c.is_a?(Integer)
       a.index(b, c)
     end
   end
 
   def oper_ord(args)
-    a, _ = args
+    a, = args
 
     if a.is_a?(String)
       a[0]&.ord
@@ -265,7 +265,7 @@ module OperatorClauses
   end
 
   def oper_char(args)
-    a, _ = args
+    a, = args
 
     if a.is_a?(Integer)
       a.to_i.chr
@@ -278,13 +278,13 @@ module OperatorClauses
   end
 
   def oper_type(args)
-    a, _ = args
+    a, = args
 
     a.class.to_s.downcase
   end
 
   def oper_print(args)
-    a, _ = args
+    a, = args
 
     puts a
 

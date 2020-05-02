@@ -18,7 +18,7 @@ class Fact
       else
         next var unless friendly
 
-        start, name, oper, const_type, _ = var.split('%')
+        start, name, oper, const_type, = var.split('%')
         next name unless oper
 
         const_value = var.slice([start, name, oper, const_type].join('_').size + 1, var.size)

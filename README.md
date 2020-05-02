@@ -1,6 +1,6 @@
 # Daki Language Interpreter
 
-Daki is a small computer programming language similar to Prolog and Datalog. This is it's first version definition, with accompanying language interpreter. The language features are still subject to fast change.
+Daki is a small computer programming language influenced by Prolog and Datalog. This is it's first version definition, with accompanying language interpreter. The language features are still subject to fast change.
 
 ![Dakilang mascot](/img/mascot.jpeg)
 
@@ -210,7 +210,7 @@ _The inputs must be of type Integer to unify._
 
 #### Equality/order operator clauses
 
-_The inputs must be of the same data type to unify._
+_The inputs must be both numeric or both strings to unify._
 
 - `eql(Input1, Input2, Answer)` - Unifies if the values are equal; with the string literal `'yes'`
 - `neq(Input1, Input2, Answer)` - Unifies if the values are not equal; with the string literal `'yes'`
@@ -233,8 +233,8 @@ _The inputs must be of the correct data type to unify._
 
 - `len(String, Answer)` - Unifies with the number of characters in String
 - `concat(String1, String2, Answer)` - Unifies with the concatenation of the two inputs
-- `slice(String, Numeric1, Numeric2, Answer)` - Unifies with the remainder of String starting at Numeric1 and ending at Numeric2
-- `index(String, Numeric1, Numeric2, Answer)` - Unifies with the first position of Numeric1 in String, starting the search from Numeric2
+- `slice(String, Integer1, Integer2, Answer)` - Unifies with the remainder of String starting at Integer1 and ending at Integer2
+- `index(String, Integer1, Integer2, Answer)` - Unifies with the first position of Integer1 in String, starting the search from Integer2
 - `ord(String, Answer)` - Unifies with the numeric ASCII value of the first character in the String string
 - `char(Integer, Answer)` - Unifies with the ASCII character found for the numeric value of Integer
 
@@ -245,8 +245,8 @@ _These always unify._
 - `rand(Answer)` - Unifies with a random floating point value between 0 and 1
 - `type(Input, Answer)` - Unifies with the string literal of the name of the data type of Input: `'string'`, `'integer'` or `'float'`
 - `print(Input, Answer)` - Print the Input to the console; unifies with the string literal `'yes'`
-- `time(Answer)` - Unifies with the number of milliseconds since the UNIX epoch
-- `time(Input, Answer)` - Unifies with the number of milliseconds since the UNIX epoch; the input is just used as a requirement to enforce order of execution
+- `time(Answer)` - Unifies with the integer number of milliseconds since the UNIX epoch
+- `time(Input, Answer)` - Unifies with the integer number of milliseconds since the UNIX epoch; the input is just used as a requirement to enforce order of execution
 
 Operator clauses cannot be overwritten or retracted with clauses with the same name and arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.
 
@@ -274,12 +274,12 @@ This is best achieved by using what we call _clause conditions_. Clause conditio
 
 The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than), `<=` (lower or equal to), `>=` (greater or equal to) and `<>` (different than). _Equal to_ semantics are already the default matching strategy used. The lower and greater than operators use alphabetical order for strings.
 
-Clause conditions are exclusively between a variable and a constant values (`func(X < B, ...` is invalid) and numeric types never unify with string data types.
+Clause conditions are exclusively between a variable and a constant values (`func(X < B, ...` is invalid) and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types unify.
 
 Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:
 
 ```
-> positive_except_five1(0 < N, N <> 5).
+> positive_except_five1(0 < N, N <> 5.0).
 > positive_except_five(N) :- positive_except_five1(N, N).
 >
 > positive_except_five(3)?
@@ -361,10 +361,13 @@ The full list of command line options are:
 
 ## Future work
 
-- Add condition for testing variable type, like "="
+- Change AND and OR symbols to & and |
+- Add clause condition operator ":" for testing data type
+- Allow memoization of specific clauses (name and arity), relative to a clauses table
 - Test suite - cover the parser
 - Improve parser
 - Support other formats for numeric values, like hex
 - Test suite - cover the solver
 - Help built-in
+- Version number 1.0
 - List data type, operators and unification of list elements (head|tail)

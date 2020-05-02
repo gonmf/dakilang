@@ -205,7 +205,7 @@ class DakiLangInterpreter
   end
 
   def execute_query(tokens, stop_early)
-    head, _ = build_fact(tokens)
+    head, = build_fact(tokens)
 
     solutions = search(head, stop_early)
 
@@ -705,7 +705,7 @@ class DakiLangInterpreter
   end
 
   def parse_variable_condition(varname)
-    start, name, oper, const_type, _ = varname.split('%')
+    start, name, oper, const_type, = varname.split('%')
     return [varname] unless oper
 
     const_value = varname.slice([start, name, oper, const_type].join('_').size + 1, varname.size)
