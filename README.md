@@ -12,7 +12,6 @@ Daki is a declarative and logic language based on Horn clauses, aimed at solving
 
 Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences from both. It is also a work in progress. For this reason I have compiled the following short language definition, in the form of a tutorial with examples.
 
-- [Introduction](#daki-language-interpreter)
 - [Language definition](#language-definition)
   - [Comments](#comments)
   - [Declarations](#declarations)
@@ -26,7 +25,7 @@ Regardless of your familiarity with Prolog or Datalog, Daki language has signifi
     - [Type casting operator clauses](#type-casting-operator-clauses)
     - [String operator clauses](#string-operator-clauses)
     - [Other operator clauses](#other-operator-clauses)
-    - [Clause conditions](#clause-conditions)
+  - [Clause conditions](#clause-conditions)
 - [Interpreter](#interpreter-manual)
   - [Options](#options)
 - [Future work](#future-work)
