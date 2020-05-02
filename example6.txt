@@ -11,7 +11,7 @@ xpto(4, N)?
 
 
 % fib(1, -1).
-% fib(N > 1, X) :- sub(N, 1, N1), fib(N1, X).
+% fib(N > 1, X) :- sub(N, 1, N1) & fib(N1, X).
 %
 % fib(4, N)?
 

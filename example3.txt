@@ -4,13 +4,13 @@ parent('john', 'damian').
 parent('john', 'ellie').
 parent('sarah', 'john').
 
-grandparent(gp, gc) :- parent(gp, parent), parent(parent, gc).
+grandparent(gp, gc) :- parent(gp, parent) & parent(parent, gc).
 
-sibling(X, Y) :- grandparent(Z, X), grandparent(Z, Y).
+sibling(X, Y) :- grandparent(Z, X) & grandparent(Z, Y).
 
 son(X, Y) :- parent(Y, X).
 
-related(person, other) :- son(parent, other); parent(parent, other); sibling(parent, other).
+related(person, other) :- son(parent, other) | parent(parent, other) | sibling(parent, other).
 
 related('sarah', anyone)?
 

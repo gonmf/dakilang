@@ -149,7 +149,7 @@ class DakiLangInterpreter
       tokens = tokenizer(line)
       next if tokens.empty?
 
-      puts tokens.map { |a| a.join(':') }.join(', ') if @debug
+      puts tokens.map { |a| a.join(':') }.join(' & ') if @debug
 
       case tokens.last.first
       when 'clause_finish'
@@ -507,30 +507,41 @@ class DakiLangInterpreter
             err("Syntax error at #{text}", 'invalid , at argument list start')
           end
         else
+          err("Syntax error at #{text}", 'unexpected , character')
+        end
+
+        next
+      end
+
+      if c == '&'
+        if var_list
+          err("Syntax error at #{text}", 'unexpected & character')
+        else
           if !tokens.include?(['sep'])
-            err("Syntax error at #{text}", 'invalid , character before clause head/tail separator')
+            err("Syntax error at #{text}", 'invalid & character before clause head/tail separator')
           end
 
           if tokens.include?(['or'])
-            err("Syntax error at #{text}", 'mixing of ; and , logical operators')
+            err("Syntax error at #{text}", 'mixing of | and & logical operators')
           end
 
           if string.size > 0
             tokens.push(['name', string])
             string = ''
           end
+
           tokens.push(['and'])
+          next
         end
-        next
       end
 
-      if c == ';'
+      if c == '|'
         if !tokens.include?(['sep'])
-          err("Syntax error at #{text}", 'invalid ; character before clause head/tail separator')
+          err("Syntax error at #{text}", 'invalid | character before clause head/tail separator')
         end
 
         if tokens.include?(['and'])
-          err("Syntax error at #{text}", 'mixing of ; and , logical operators')
+          err("Syntax error at #{text}", 'mixing of | and & logical operators')
         end
 
         if string.size > 0
@@ -591,12 +602,6 @@ class DakiLangInterpreter
       else
         err("Syntax error at #{text}", 'unknown clause condition operator')
       end
-
-      # if s[1].count('>') + s[1].count('<') + s[1].count('/') > 1
-      #   err("Syntax error at #{text}", 'unexpected characters in variable condition')
-      # end
-
-      # s[1] = s[1].sub('>=', '%>=%').sub('<=', '%<=%').sub('>', '%>%').sub('<', '%<%').sub('/', '%/%').sub('%=', '%%=%')
     end
 
     tokens.compact
@@ -615,7 +620,7 @@ class DakiLangInterpreter
 
   def table_listing
     table.each do |arr|
-      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}."
+      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(' & ')}" : ''}."
     end
 
     puts

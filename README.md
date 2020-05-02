@@ -67,15 +67,15 @@ New declarations add what is called a _clause_ to the _global table of clauses_ 
 
 ```
 > parent('john', 'emily').
-> grandparent(A, B) :- parent(A, C), parent(C, B).
+> grandparent(A, B) :- parent(A, C) & parent(C, B).
 ```
 
 Clauses are always terminated by a dot `.`. If they are declared with a tail, the tail must be evaluated true for the head to match. Clauses with a tail are called _rules_, while clauses without it are called _facts_.
 
-In accordance with other logic languages, the `,` character is used to denote logical AND. You can also use the character `;` to denote logical OR, but notice these are equivalent:
+In Daki, the tail dependencies order is not important. The `&` character is used to denote logical AND, and the `|` character logical OR. Notice how these are equivalent though:
 
 ```
-> rule(x) :- reason1(x); reason2(x).
+> rule(x) :- reason1(x) | reason2(x).
 > % is the same as
 > rule(x) :- reason1(x).
 > rule(x) :- reason2(x).
@@ -132,6 +132,8 @@ month('January').
 ```
 
 Queries have a time limit to be completed. If a query times out the interpreter prints the message `Search timeout`. A full query can timeout even after finding at least part of the solution.
+
+Previously we said the order of tail clauses is not important, which is true for full queries. With short queries, the first solution found may be different depending on the order of the tail clauses. The interpreter algorithm, however, is stable: given the same definitions the result will be constant (aside from built-in clauses with side effects and interpreter/system differences).
 
 ### Retractions
 
@@ -255,7 +257,7 @@ Let's now go back to how to implement a program that returns the value of the Fi
 ```
 > fib(1, 1).
 > fib(2, 1).
-> fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+> fib(N, Res) :- gt(N, 2, gt) & sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
 ```
 
 Since this solution is recursive: a dependency on `fib` will try all solutions by expanding all clauses named `fib`, including itself; this may seem wrong at first. The Daki language interpreter, however, knows that the operator clauses can be evaluated before everything else in the clause tail. Therefore if the operator clause `gt` fails to unify when it's variables are set, we can abort that whole search subtree.
@@ -269,7 +271,7 @@ This is best achieved by using what we call _clause conditions_. Clause conditio
 ```
 > fib(1, 1).
 > fib(2, 1).
-> fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+> fib(N > 2, Res) :- sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
 ```
 
 The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than), `<=` (lower or equal to), `>=` (greater or equal to) and `<>` (different than). _Equal to_ semantics are already the default matching strategy used. The lower and greater than operators use alphabetical order for strings.
@@ -304,8 +306,9 @@ As a last example, we can also benchmark how fast our two Fibonnaci functions ar
 > % Using only operator clauses
 > fib1(1, 1).
 > fib1(2, 1).
-> fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), fib1(N2, X2), add(X1, X2, Res).
-> time_fib1(N, Val, Elapsed) :- time(StartTime), fib1(N, Val), time(Val, EndTime), \
+> fib1(N, Res) :- gt(N, 2, gt) & sub(N, 1, N1) & sub(N, 2, N2) & fib1(N1, X1) & fib1(N2, X2) & \
+                  add(X1, X2, Res).
+> time_fib1(N, Val, Elapsed) :- time(StartTime) & fib1(N, Val) & time(Val, EndTime) & \
                                 sub(EndTime, StartTime, Elapsed).
 >
 > time_fib1(10, Val, Elapsed)?
@@ -314,8 +317,9 @@ time_fib1(12, 144, 161). % 161 milliseconds
 > % Using a clause condition
 > fib2(1, 1).
 > fib2(2, 1).
-> fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), add(X1, X2, Res).
-> time_fib2(N, Val, Elapsed) :- time(StartTime), fib2(N, Val), time(Val, EndTime), \
+> fib2(N > 2, Res) :- sub(N, 1, N1) & sub(N, 2, N2) & fib2(N1, X1) & fib2(N2, X2) & \
+                      add(X1, X2, Res).
+> time_fib2(N, Val, Elapsed) :- time(StartTime) & fib2(N, Val) & time(Val, EndTime) & \
                                 sub(EndTime, StartTime, Elapsed).
 >
 > time_fib2(10, Val, Elapsed)?
@@ -361,7 +365,6 @@ The full list of command line options are:
 
 ## Future work
 
-- Change AND and OR symbols to & and |
 - Add clause condition operator ":" for testing data type
 - Allow memoization of specific clauses (name and arity), relative to a clauses table
 - Test suite - cover the parser

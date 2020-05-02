@@ -17,5 +17,5 @@ select_table 1
 parent("john", "mary").
 parent("john", "maria").
 parent("victor", "john").
-grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
+grandparent(X, Y) :- parent(X, Z) & parent(Z, Y).
 grandparent(A, B)?

@@ -28,7 +28,7 @@ listing
 
 parent("john", "mary").
 parent("victor", "john").
-grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
+grandparent(X, Y) :- parent(X, Z) & parent(Z, Y).
 
 grandparent(A, B)?
 grandparent(A, A)?
