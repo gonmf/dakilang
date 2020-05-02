@@ -12,7 +12,26 @@ Daki is a declarative and logic language based on Horn clauses, aimed at solving
 
 Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences from both. It is also a work in progress. For this reason I have compiled the following short language definition, in the form of a tutorial with examples.
 
-## Tutorial
+- [Introduction](#daki-language-interpreter)
+- [Language definition](#language-definition)
+  - [Comments](#comments)
+  - [Declarations](#declarations)
+  - [Queries](#queries)
+  - [Retractions](#retractions)
+  - [Environment commands](#environment-commands)
+  - [Operator clauses](#operator-clauses)
+    - [Arithmetic operator clauses](#arithmetic-operator-clauses)
+    - [Bitwise operator clauses](#bitwise-operator-clauses)
+    - [Equality/order operator clauses](#equalityorder-operator-clauses)
+    - [Type casting operator clauses](#type-casting-operator-clauses)
+    - [String operator clauses](#string-operator-clauses)
+    - [Other operator clauses](#other-operator-clauses)
+    - [Clause conditions](#clause-conditions)
+- [Interpreter](#interpreter-manual)
+  - [Options](#options)
+- [Future work](#future-work)
+
+## Language definition
 
 Daki can be used both in interactive and non-interactive mode. In non-interactive mode, the interpreter input, read from files, is also outputted so as to mimic what would appear on a terminal on interactive mode.
 
@@ -26,7 +45,9 @@ A Daki language text file can contain five types of instructions:
 4. Declarations to be removed
 5. Built-in commands
 
-**Comments** start with the `%` character, and everything after this character is ignored.
+### Comments
+
+Comments start with the `%` character, and everything after this character is ignored.
 
 ```
 > % I am a comment
@@ -34,7 +55,9 @@ A Daki language text file can contain five types of instructions:
 > fact('john', 'mary', 1). % I am a comment too
 ```
 
-**New declarations** add what is called a _clause_ to a global table of clauses. A clause is composed of a head declaration and an optional tail, separated by the characters `:-`.
+### Declarations
+
+New declarations add what is called a _clause_ to a global table of clauses. A clause is composed of a head declaration and an optional tail, separated by the characters `:-`.
 
 ```
 > parent('john', 'emily').
@@ -76,7 +99,9 @@ Besides these limitations, variables names and string literals can contain any c
 
 The following characters are reserved and should only appear outside of string constants for their specific uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~`, `\`, `>` and `<`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and constants. All whitespace outside of string constants is ignored.
 
-A **query** has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
+### Queries
+
+A query has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
 
 The search will try to find all solutions for which the original query has no outstanding variables, showing the constants that have filled it. When all variables of a clause are replaced, we say it has unified.
 
@@ -99,7 +124,9 @@ month('January').
 
 Queries have a time limit to be completed (and of course the memory constraints of the system itself). If a query times out the interpreter prints the message `Search timeout`. A full query can timeout even after finding at least part of the solution.
 
-**Declarations to be removed** are declared with the same name, constant values and tail of the original clause declarations. The variables can have different names.
+### Retractions
+
+Declarations to be removed are declared with the same name, constant values and tail of the original clause declarations. The variables can have different names.
 
 Declaring two clauses with the same name, constants and tail is impossible, and will raise a warning; similarly trying to remove from the global table a clause that does not exist will also raise a warning.
 
@@ -114,8 +141,9 @@ Clause removed
 > grandparent("john", X) :- other(X, X)~
 Clause not found
 ```
+### Environment commands
 
-Finally, **built-in commands** allow for some specific operations related to the interpreter and global table themselves. These are:
+Finally, some built-in commands allow for operations related to the interpreter and global table themselves. These are:
 
 - _quit_ / _exit_ - Stop execution and exit the interpreter if in interactive mode. Only stops processing the current file is in non-interactive mode.
 - _select_table N_ - Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
@@ -124,9 +152,11 @@ Finally, **built-in commands** allow for some specific operations related to the
 - _version_ - Print version information.
 - _help_ - Print help information.
 
-Built-in commands are executed without any trailing `.`, `?` or `!`.
+These commands are executed without any trailing `.`, `?` or `!`.
 
-There are also **built-in clauses**, that unify with user-specified clauses and perform some form of calculation. To see why these are important, let's look at a practical example. In a language like Prolog, for instance, calculating a number of the Fibonacci sequence may look like:
+### Operator clauses
+
+There are also __built-in clauses__, that unify with user-specified clauses and perform some form of calculation. To see why these are important, let's look at a practical example. In a language like Prolog, for instance, calculating a number of the Fibonacci sequence may look like:
 
 ```prolog
 > fib(1, 1).
@@ -140,7 +170,7 @@ In Prolog we find arithmetic and conditional logic mixed with the clause itself.
 
 Operator clauses are always unifiable only when the input variables are present, if any, and for performance they are always unified before user-defined clauses where possible.
 
-**Arithmetic operator clauses**
+#### Arithmetic operator clauses
 
 _The inputs must be numeric to unify._
 
@@ -158,7 +188,7 @@ _The inputs must be numeric to unify._
 - `ceil(Numeric, Answer)` - Unifies with the smallest integer value that is greater or equal to the input
 - `abs(Numeric, Answer)` - Unifies with the absolute value of the input
 
-**Bitwise operator clauses**
+#### Bitwise operator clauses
 
 _The inputs must be of type Integer to unify._
 
@@ -169,7 +199,7 @@ _The inputs must be of type Integer to unify._
 - `bit_shift_left(Integer1, Integer2, Answer)` - Unifies with the left shifted value of Integer1 by Integer2
 - `bit_shift_right(Integer1, Integer2, Answer)` - Unifies with the right shifted value of Integer1 by Integer2
 
-**Equality/order operator clauses**
+#### Equality/order operator clauses
 
 _The inputs must be of the same data type to unify._
 
@@ -180,7 +210,7 @@ _The inputs must be of the same data type to unify._
 - `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
 - `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
 
-**Type casting operator clauses**
+#### Type casting operator clauses
 
 _These always unify._
 
@@ -188,7 +218,7 @@ _These always unify._
 - `int(Input, Answer)` - Unifies with the integer value of Input; will truncate floating point inputs
 - `float(Input, Answer)` - Unifies with the floating point value of Input
 
-**String operator clauses**
+#### String operator clauses
 
 _The inputs must be of the correct data type to unify._
 
@@ -199,7 +229,7 @@ _The inputs must be of the correct data type to unify._
 - `ord(String, Answer)` - Unifies with the numeric ASCII value of the first character in the String string
 - `char(Integer, Answer)` - Unifies with the ASCII character found for the numeric value of Integer
 
-**Other operator clauses**
+#### Other operator clauses
 
 _These always unify._
 
@@ -221,9 +251,11 @@ fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, 
 
 Since this solution is recursive: a dependency on `fib` will try all solutions by expanding all clauses named `fib`, including itself; this may seem wrong at first. The Daki language interpreter, however, knows that the operator clauses can be evaluated before everything else in the clause tail. Therefore if the operator clause `gt` fails to unify when it's variables are set, we can abort the whole search subtree.
 
+### Clause conditions
+
 Depending on the interpreter to abort the whole search subtree because one of the clauses is falsifiable however still requires the whole clause tail to be expanded. In another example we may also not be able to fail to unify immediately. The best solution would be to avoid expanding the clause tail in the first place.
 
-This is best achieved by using what we call **clause conditions**. Clause conditions are boolean tests evaluated before a clause is expanded, providing earlier search termination. With clause conditions our Fibonnaci program becomes:
+This is best achieved by using what we call _clause conditions_. Clause conditions are boolean tests evaluated before a clause is expanded, providing earlier search termination. With clause conditions our Fibonnaci program becomes:
 
 ```
 fib(1, 1).
@@ -281,7 +313,7 @@ time_fib2(12, 144, 99). % 99 milliseconds
 
 As you can see, using only operator clauses where a clause condition could've been used can result in a large performance penalty. Operator clauses are obviously still useful for intermediate calculations, but should be avoided for logic control.
 
-## Manual
+## Interpreter Manual
 
 You will need to have a Ruby executable installed.
 
@@ -305,6 +337,8 @@ You can mix the modes, you can start the interpreter by including - _consulting_
 
 Switching to interactive mode is always performed only after every consulted file is interpreted, in order.
 
+### Options
+
 The full list of command line options are:
 
 - `-h`, `--help` - Print out the program manual and exit
@@ -314,7 +348,7 @@ The full list of command line options are:
 - `-d`, `--debug` - Activate debug mode, which shows extra output and disables some performance improvements
 - `-t N`, `--time N` - Changes the default query timeout time; N is a floating point value in seconds
 
-## TODO - Planned features or improvements
+## Future work
 
 - Add condition for testing variable type, like "="
 - Test suite - cover the parser
