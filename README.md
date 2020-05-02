@@ -10,9 +10,12 @@ Daki is a declarative and logic language based on Horn clauses, aimed at solving
 
 **For now the reference interpreter will be implemented in Ruby for fast prototyping and iteration.**
 
-Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences from both. It is also a work in progress. For this reason I have compiled the following short language definition, in the form of a tutorial with examples.
+Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences from both. It is also a work in progress. For this reason I have compiled the following short language definition, with examples.
+
+## Contents
 
 - [Language definition](#language-definition)
+  - [Introduction](#introduction)
   - [Comments](#comments)
   - [Declarations](#declarations)
   - [Queries](#queries)
@@ -31,6 +34,8 @@ Regardless of your familiarity with Prolog or Datalog, Daki language has signifi
 - [Future work](#future-work)
 
 ## Language definition
+
+### Introduction
 
 Daki can be used both in interactive and non-interactive mode. In non-interactive mode, the interpreter input, read from files, is also outputted so as to mimic what would appear on a terminal on interactive mode.
 
