@@ -54,16 +54,14 @@ class DakiLangInterpreter
     'time/2'
   ]).freeze
 
+  attr_accessor :search_time_limit, :debug
+
   def initialize
     @test_mode = true
-    @iteration_limit = 2000
+    @search_time_limit = 3.0 # Seconds
     @debug = false
     @table = {}
     @table_name = '0'
-  end
-
-  def activate_debug
-    @debug = true
   end
 
   def enter_interactive_mode
@@ -210,7 +208,9 @@ class DakiLangInterpreter
 
     solutions = search(head, stop_early)
 
-    if solutions.any?
+    if solutions.nil?
+      puts 'Search timeout'
+    elsif solutions.any?
       solutions.uniq.each do |arr1|
         puts "#{arr1}."
       end
@@ -863,13 +863,14 @@ class DakiLangInterpreter
   def search(head, stop_early)
     @vari = 0
     iteration = 0
+    time_limit = Time.now + @search_time_limit
 
     solution_set = [unique_var_names([[deep_clone(head), false]])]
 
-    while iteration < @iteration_limit
-      iteration += 1
-
+    while Time.now < time_limit
       if @debug
+        iteration += 1
+
         puts "Iteration #{iteration}"
         solution_set.each.with_index do |solution, idx|
           puts "  Solution #{idx + 1}"
@@ -963,7 +964,7 @@ class DakiLangInterpreter
       solution_set = solution_set.compact
     end
 
-    []
+    nil # Timeout
   end
 
   def equal_bodies(arr1, arr2)
@@ -1024,11 +1025,24 @@ ARGV.each do |command|
   end
 
   if command == '-d' || command == '--debug'
-    interpreter.activate_debug
+    interpreter.debug = true
   end
 
   if command == '-i' || command == '--interactive'
     enter_interactive = true
+  end
+end
+
+ARGV.each.with_index do |command, idx|
+  if command == '-t' || command == '--time'
+    new_time = ARGV[idx + 1].to_f
+
+    if new_time > 0
+      interpreter.search_time_limit = new_time
+    else
+      puts "Illegal time limit argument #{ARGV[idx + 1]}"
+      exit(1)
+    end
   end
 end
 

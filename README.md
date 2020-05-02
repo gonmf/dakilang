@@ -97,6 +97,8 @@ These queries that return all the solutions are called _full queries_. If the cl
 month('January').
 ```
 
+Queries have a time limit to be completed (and of course the memory constraints of the system itself). If a query times out the interpreter prints the message `Search timeout`. A full query can timeout even after finding at least part of the solution.
+
 **Declarations to be removed** are declared with the same name, constant values and tail of the original clause declarations. The variables can have different names.
 
 Declaring two clauses with the same name, constants and tail is impossible, and will raise a warning; similarly trying to remove from the global table a clause that does not exist will also raise a warning.
@@ -267,14 +269,14 @@ As a last example, we can also benchmark how fast our two Fibonnaci functions ar
 > time_fib1(10, Val, Elapsed)?
 time_fib1(12, 144, 161). % 161 milliseconds
 
-> % Using clause conditions
+> % Using a clause condition
 > fib2(1, 1).
 > fib2(2, 1).
 > fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), add(X1, X2, Res).
 > time_fib2(N, Val, Elapsed) :- time(StartTime), fib2(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 >
 > time_fib2(10, Val, Elapsed)?
-time_fib2(12, 144, 106). % 106 milliseconds
+time_fib2(12, 144, 99). % 99 milliseconds
 ```
 
 As you can see, using only operator clauses where a clause condition could've been used can result in a large performance penalty. Operator clauses are obviously still useful for intermediate calculations, but should be avoided for logic control.
@@ -303,7 +305,14 @@ You can mix the modes, you can start the interpreter by including - _consulting_
 
 Switching to interactive mode is always performed only after every consulted file is interpreted, in order.
 
-The commands `-h`, `-v` and `-d` are also available to show instructions, the program version, and activate debug mode. All commands have their long form counterparts: `--consult`, `--interactive`, `--help`, `--version` and `--debug`. Debug mode shows extra debug messages and disables some performance improvements.
+The full list of command line options are:
+
+- `-h`, `--help` - Print out the program manual and exit
+- `-v`, `--version` - Print out the program name and version, and exit
+- `-c F`, `--consult F` - Read file with path F and interpret each line
+- `-i`, `--interactive` - Activate interactive mode after finishing consulting all files
+- `-d`, `--debug` - Activate debug mode, which shows extra output and disables some performance improvements
+- `-t N`, `--time N` - Changes the default query timeout time; N is a floating point value in seconds
 
 ## TODO - Planned features or improvements
 
