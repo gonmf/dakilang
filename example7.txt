@@ -10,11 +10,13 @@ grandparent(A, A)? % No solution
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-natural_except_five2(N > 0, N / 5).
-natural_except_five(N) :- natural_except_five2(N, N).
+positive_except_five2(0 < N, N <> 5).
+positive_except_five(N) :- positive_except_five2(N, N).
 
-natural_except_five(4)? % OK
-natural_except_five(5)? % No solution
+positive_except_five(4)? % OK
+positive_except_five(4.50)? % OK
+positive_except_five(5)? % No solution
+positive_except_five("3")? % No solution
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 

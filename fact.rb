@@ -16,7 +16,15 @@ class Fact
           s.to_s
         end
       else
-        friendly ? s.slice(1, s.size).sub('>', ' > ').sub('<', ' < ').sub('/', ' / ') : s
+        next varname unless friendly
+
+        start, name, oper, const_type, _ = varname.split('%')
+        next name unless oper
+
+        const_value = varname.slice([start, name, oper, const_type].join('_').size + 1, varname.size)
+        const_value = "'#{const_value}'" if const_type == 's'
+
+        "#{name} #{oper} #{const_value}"
       end
     end
 

@@ -74,7 +74,7 @@ value(1.0).
 
 Besides these limitations, variables names and string literals can contain any character not reserved by the language, like hyphens and underscores. String literals can be enclosed both by the characters `'` and `"`, and both of these can be escaped with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`.
 
-The following characters are reserved and should only appear outside of string constants for their specific uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~`, `\`, `>`, `<` and `/`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and constants. All whitespace outside of string constants is ignored.
+The following characters are reserved and should only appear outside of string constants for their specific uses: `'`, `"`, `%`, `,`, `(`, `)`, `;`, `.`, `?`, `~`, `\`, `>` and `<`. The specific sequence `:-` is also reserved. All others can be used in names of clause terms, variables and constants. All whitespace outside of string constants is ignored.
 
 A **query** has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
 
@@ -229,26 +229,29 @@ fib(2, 1).
 fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
-The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than), `<=` (lower or equal to), `>=` (greater or equal to) and `/` (different than). _Equal to_ semantics are already the default matching strategy used.
+The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than), `<=` (lower or equal to), `>=` (greater or equal to) and `<>` (different than). _Equal to_ semantics are already the default matching strategy used. The lower and greater than operators use alphabetical order for strings.
 
-Clause conditions are exclusively numeric, must have a constant comparison value (`func(X < B, ...` is invalid) and the constant value for the comparison always on the right side (`func(0 < X, ...` is also invalid). Variables bounded by clause conditions are never unified with string literals.
+Clause conditions are exclusively between a variable and a constant values (`func(X < B, ...` is invalid) and numeric types never unify with string data types.
 
 Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:
 
 ```
-> natural_except_five1(N > 0, N / 5).
-> natural_except_five(N) :- natural_except_five1(N, N).
+> positive_except_five1(0 < N, N <> 5).
+> positive_except_five(N) :- positive_except_five1(N, N).
 >
-> natural_except_five(3)?
-natural_except_five(3).
+> positive_except_five(3)?
+positive_except_five(3).
 
-> natural_except_five(5)?
+> positive_except_five(4.50)?
+positive_except_five(4.5).
+
+> positive_except_five(5)?
 No solution
 
-> natural_except_five(-3)?
+> positive_except_five(-3)?
 No solution
 
-> natural_except_five('1')?
+> positive_except_five('1')?
 No solution
 ```
 
@@ -259,7 +262,7 @@ As a last example, we can also benchmark how fast our Fibonnaci function is, by 
 > time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), \
                                sub(EndTime, StartTime, Elapsed).
 > time_fib(10, Val, Elapsed)?
-time_fib(10, 55, 35). % Finished in 35 milliseconds
+time_fib(10, 55, 40). % Finished in 40 milliseconds
 ```
 
 ## Manual
@@ -293,7 +296,6 @@ The commands `-h`, `-v` and `-d` are also available to show instructions, the pr
 - Add condition for testing variable type, like "="
 - Test suite - cover the parser
 - Improve parser
-- Improve clause conditions formats
 - Support other formats for numeric values, like hex
 - Test suite - cover the solver
 - Help built-in

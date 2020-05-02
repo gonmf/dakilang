@@ -55,6 +55,7 @@ class DakiLangInterpreter
   ]).freeze
 
   def initialize
+    @test_mode = true
     @iteration_limit = 1000
     @debug = false
     @table = {}
@@ -100,6 +101,16 @@ class DakiLangInterpreter
   def print_help
     # TODO:
     raise 'NotImplementedError'
+  end
+
+  def debug_tokenizer(line)
+    @test_mode = true
+
+    tokens = tokenizer(line)
+
+    tokens.join(' | ')
+  rescue => e
+    e.to_s
   end
 
   private
@@ -271,6 +282,16 @@ class DakiLangInterpreter
     end
   end
 
+  def invert_operator(str)
+    if str[0] == '<'
+      str.sub('<', '>')
+    elsif str[0] == '>'
+      str.sub('>', '<')
+    else
+      str
+    end
+  end
+
   def tokenizer(text)
     text_chars = text.chars
 
@@ -282,6 +303,7 @@ class DakiLangInterpreter
     number_mode = false
     floating_point_mode = false
     separator_mode = false
+    operator_mode = false
     string_delimiter = nil
     string = ''
 
@@ -354,6 +376,26 @@ class DakiLangInterpreter
         number_mode = false
       end
 
+      if operator_mode
+        if ['<', '>', '='].include?(c)
+          string += c
+          next
+        else
+          tokens.push(['oper', string])
+          string = ''
+          operator_mode = false
+        end
+      elsif ['<', '>'].include?(c)
+        if string.size > 0
+          tokens.push(['var', "%#{string}"])
+          string = ''
+        end
+
+        operator_mode = true
+        string = c
+        next
+      end
+
       if c == '-' || (c >= '0' && c <= '9') && string.size == 0
         number_mode = true
         floating_point_mode = false
@@ -365,7 +407,14 @@ class DakiLangInterpreter
         break
       end
 
-      next if c == ' ' || c == "\t" || c == "\r" # Whitespace are ignored outside of string literals
+      if c == ' ' || c == "\t" || c == "\r" # Whitespace are ignored outside of string literals
+        if string.size > 0
+          tokens.push(['var', "%#{string}"])
+          string = ''
+        end
+
+        next
+      end
 
       if c == '.'
         if tokens.any? { |a| a[0].end_with?('_finish') }
@@ -516,17 +565,40 @@ class DakiLangInterpreter
       err("Syntax error at #{text}", 'unterminated clause')
     end
 
-    tokens.each do |s|
-      next unless s[0] == 'var'
+    tokens.each.with_index do |s, idx|
+      next if s.nil? || s[0] != 'oper'
 
-      if s[1].count('>') + s[1].count('<') + s[1].count('/') > 1
-        err("Syntax error at #{text}", 'unexpected characters in variable condition')
+      if ['>=', '<=', '=', '>', '<', '<>'].include?(s[1])
+        var1 = tokens[idx - 1]
+        var2 = tokens[idx + 1]
+
+        if !var1 || !var2 || ((var1[0] == 'var') == (var2[0] == 'var'))
+          err("Syntax error at #{text}", 'invalid clause condition format')
+        end
+
+        var = var1[0] == 'var' ? var1 : var2
+        const = var1[0] == 'var' ? var2 : var1
+
+        if var2[0] == 'var'
+          s[1] = invert_operator(s[1])
+        end
+
+        new_var = "#{var[1]}%#{s[1]}%#{const[0][0]}%#{const[1]}"
+        tokens[idx - 1] = ['var', new_var]
+        tokens[idx] = nil
+        tokens[idx + 1] = nil
+      else
+        err("Syntax error at #{text}", 'unknown clause condition operator')
       end
 
-      s[1] = s[1].sub('>=', '%>=%').sub('<=', '%<=%').sub('>', '%>%').sub('<', '%<%').sub('/', '%/%')
+      # if s[1].count('>') + s[1].count('<') + s[1].count('/') > 1
+      #   err("Syntax error at #{text}", 'unexpected characters in variable condition')
+      # end
+
+      # s[1] = s[1].sub('>=', '%>=%').sub('<=', '%<=%').sub('>', '%>%').sub('<', '%<%').sub('/', '%/%').sub('%=', '%%=%')
     end
 
-    tokens
+    tokens.compact
   end
 
   def select_table(name)
@@ -624,32 +696,23 @@ class DakiLangInterpreter
   end
 
   def parse_variable_condition(varname)
-    parts = varname.split('%>%')
-    if parts.count == 2
-      return [parts[0], '>', numeric_cast(parts[1])]
+    start, name, oper, const_type, _ = varname.split('%')
+    return [varname] unless oper
+
+    const_value = varname.slice([start, name, oper, const_type].join('_').size + 1, varname.size)
+
+    oper = '!=' if oper == '<>'
+
+    case const_type
+    when 'i'
+      const_value = const_value.to_i
+    when 'f'
+      const_value = const_value.to_f
+    when 's'
+      const_value = const_value.to_s
     end
 
-    parts = varname.split('%>=%')
-    if parts.count == 2
-      return [parts[0], '>=', numeric_cast(parts[1])]
-    end
-
-    parts = varname.split('%<=%')
-    if parts.count == 2
-      return [parts[0], '<=', numeric_cast(parts[1])]
-    end
-
-    parts = varname.split('%<%')
-    if parts.count == 2
-      return [parts[0], '<', numeric_cast(parts[1])]
-    end
-
-    parts = varname.split('%/%')
-    if parts.count == 2
-      return [parts[0], '!=', numeric_cast(parts[1])]
-    end
-
-    [varname]
+    [name, oper, const_value]
   end
 
   def clauses_match(h1, h2)
@@ -673,7 +736,7 @@ class DakiLangInterpreter
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
-          if var3 == var && oper2
+          if var3 == var && oper2 && const.is_a?(String) == comp2.is_a?(String) # Numeric types only unify with numeric types; same for strings
             return false if !const.send(oper2, comp2)
           end
         end
@@ -682,7 +745,7 @@ class DakiLangInterpreter
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
-          if var3 == var && oper2
+          if var3 == var && oper2 && const.is_a?(String) == comp2.is_a?(String) # Numeric types only unify with numeric types; same for strings
             return false if !const.send(oper2, comp2)
           end
         end
@@ -913,6 +976,10 @@ class DakiLangInterpreter
   end
 
   def err(msg, detail = nil)
+    if @test_mode
+      raise [msg, detail].compact.join(': ')
+    end
+
     if detail && detail.size > 0
       puts "#{msg}\n    #{detail}"
     else
