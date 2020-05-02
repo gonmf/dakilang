@@ -614,7 +614,7 @@ class DakiLangInterpreter
 
   def table_listing
     table.each do |arr|
-      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(' & ')}" : ''}."
+      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}."
     end
 
     puts
