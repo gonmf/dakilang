@@ -11,7 +11,7 @@ require_relative 'fact'
 class DakiLangInterpreter
   include OperatorClauses
 
-  VERSION = '0.10'
+  VERSION = '0.11'
 
   BUILT_INS = Set.new([
     # Arithmetic
@@ -56,7 +56,7 @@ class DakiLangInterpreter
 
   def initialize
     @test_mode = true
-    @iteration_limit = 1000
+    @iteration_limit = 2000
     @debug = false
     @table = {}
     @table_name = '0'
@@ -681,16 +681,24 @@ class DakiLangInterpreter
     str.include?('.') ? str.to_f : str.to_i
   end
 
+  def clause_match_built_in_ready(head)
+    arity = head.variables.count
+
+    head.variables.slice(0, arity - 1).all? { |v| v.const? }
+  end
+
   def clause_match_built_in_eval(head)
     name = head.name
     arity = head.variables.count
-
-    return nil if head.variables.last.const?
 
     other_variables = head.variables.slice(0, arity - 1)
     return nil if other_variables.any? { |var| !var.const? }
 
     value = send("oper_#{name}", other_variables)
+
+    if head.variables.last.const?
+      return nil if value.class != head.variables.last.class || value != head.variables.last
+    end
 
     value ? [Fact.new(name, other_variables + [value])] : nil
   end
@@ -890,6 +898,7 @@ class DakiLangInterpreter
       end
 
       first_solution = solution_set[first_solution_idx]
+      try_again = false
 
       first_solution_clause_by_builtin_idx = nil
       first_solution_clause_idx = nil
@@ -902,11 +911,19 @@ class DakiLangInterpreter
           if built_in_response
             first_solution_clause_by_builtin_idx = idx
             break
+          elsif clause_match_built_in_ready(solution_clause[0])
+            # Solution can never be unified
+            try_again = true
+            solution_set[first_solution_idx] = nil
+            solution_set = solution_set.compact
+            break
           end
         else
           first_solution_clause_idx = idx
         end
       end
+
+      next if try_again
 
       first_solution_clause = first_solution[first_solution_clause_by_builtin_idx || first_solution_clause_idx]
       first_solution_clause[1] = true
@@ -915,8 +932,6 @@ class DakiLangInterpreter
         matching_clauses = [built_in_response]
       else
         head = first_solution_clause[0]
-
-        # binding.pry if iteration == 2
 
         matching_clauses = table.select do |table_clause|
           clauses_match(table_clause[0], head)

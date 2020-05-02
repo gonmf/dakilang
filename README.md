@@ -217,11 +217,11 @@ fib(2, 1).
 fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
-However **this doesn't work**: when a operator clause is used - in the tail of a rule - it will be evaluated like any other clause; it doesn't prevent the clause expansion in the first place. The Daki interpreter tries to discover all the solutions, so recursively `fib(1, 1)` will match both `fib(1, 1).` and `fib(N, Res) :- ...`. Depending on the execution order, this can exceed the memory limits of the interpreter.
+Since this solution is recursive: a dependency on `fib` will try all solutions by expanding all clauses named `fib`, including itself; this may seem wrong at first. The Daki language interpreter, however, knows that the operator clauses can be evaluated before everything else in the clause tail. Therefore if the operator clause `gt` fails to unify when it's variables are set, we can abort the whole search subtree.
 
-For cases like these, where we want to have multiple homonymous clauses, or a recursive chain, and we need to distinguish disjoint clauses; instead of using _operator clauses_ we can use **clause conditions**.
+Depending on the interpreter to abort the whole search subtree because one of the clauses is falsifiable however still requires the whole clause tail to be expanded. In another example we may also not be able to fail to unify immediately. The best solution would be to avoid expanding the clause tail in the first place.
 
-Clause conditions are evaluated before a clause is expanded, providing finer control. With clause conditions our Fibonnaci program becomes:
+This is best achieved by using what we call **clause conditions**. Clause conditions are boolean tests evaluated before a clause is expanded, providing earlier search termination. With clause conditions our Fibonnaci program becomes:
 
 ```
 fib(1, 1).
@@ -255,15 +255,29 @@ No solution
 No solution
 ```
 
-As a last example, we can also benchmark how fast our Fibonnaci function is, by making use of the `time` operator clause:
+As a last example, we can also benchmark how fast our two Fibonnaci functions are, by making use of the `time` operator clause:
 
 ```
-% Having fib declared before
-> time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), \
-                               sub(EndTime, StartTime, Elapsed).
-> time_fib(10, Val, Elapsed)?
-time_fib(10, 55, 40). % Finished in 40 milliseconds
+> % Using only operator clauses
+> fib1(1, 1).
+> fib1(2, 1).
+> fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), fib1(N2, X2), add(X1, X2, Res).
+> time_fib1(N, Val, Elapsed) :- time(StartTime), fib1(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+>
+> time_fib1(10, Val, Elapsed)?
+time_fib1(12, 144, 161). % 161 milliseconds
+
+> % Using clause conditions
+> fib2(1, 1).
+> fib2(2, 1).
+> fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), add(X1, X2, Res).
+> time_fib2(N, Val, Elapsed) :- time(StartTime), fib2(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+>
+> time_fib2(10, Val, Elapsed)?
+time_fib2(12, 144, 106). % 106 milliseconds
 ```
+
+As you can see, using only operator clauses where a clause condition could've been used can result in a large performance penalty. Operator clauses are obviously still useful for intermediate calculations, but should be avoided for logic control.
 
 ## Manual
 
