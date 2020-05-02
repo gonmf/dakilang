@@ -7,21 +7,21 @@ class Fact
   end
 
   def format(friendly)
-    friendly_variables = variables.map do |s|
-      if s.const?
-        case s
+    friendly_variables = variables.map do |var|
+      if var.const?
+        case var
         when String
-          "'#{s}'"
+          "'#{var}'"
         when Float, Integer
-          s.to_s
+          var.to_s
         end
       else
-        next varname unless friendly
+        next var unless friendly
 
-        start, name, oper, const_type, _ = varname.split('%')
+        start, name, oper, const_type, _ = var.split('%')
         next name unless oper
 
-        const_value = varname.slice([start, name, oper, const_type].join('_').size + 1, varname.size)
+        const_value = var.slice([start, name, oper, const_type].join('_').size + 1, var.size)
         const_value = "'#{const_value}'" if const_type == 's'
 
         "#{name} #{oper} #{const_value}"
