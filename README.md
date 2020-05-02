@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/gonmf/dakilang.svg?branch=master)](https://travis-ci.org/gonmf/dakilang)
+
 # Daki Language Interpreter
 
 Daki is a small computer programming language influenced by Prolog and Datalog. This is it's first version definition, with accompanying language interpreter. The language features are still subject to fast change.
