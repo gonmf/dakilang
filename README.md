@@ -78,7 +78,7 @@ The following characters are reserved and should only appear outside of string c
 
 A **query** has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
 
-The search will try to find all solutions for which the original query has no outstanding variables, showing the constants that have filled it.
+The search will try to find all solutions for which the original query has no outstanding variables, showing the constants that have filled it. When all variables of a clause are replaced, we say it has unified.
 
 The interpreter will print out every solution found or return `No solution`.
 
@@ -138,7 +138,7 @@ There are also **built-in clauses**, that unify with user-specified clauses and 
 
 In Prolog we find arithmetic and conditional logic mixed with the clause itself. In the Daki language, however, we prefer to keep the clause format consistent even for these operations. We use instead what we call **operator clauses**:
 
-Operator clauses are always unifiable only when the input variables are present and the Answer missing, and for performance they are always unified before user-defined clauses where possible.
+Operator clauses are always unifiable only when the input variables are present, if any, and for performance they are always unified before user-defined clauses where possible.
 
 **Arithmetic operator clauses**
 
