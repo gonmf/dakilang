@@ -58,7 +58,7 @@ Each instruction must be in it's own line or lines - they cannot be mixed - exce
 
 Comments start with the `%` character, and everything after this character is ignored by the interpreter.
 
-```
+```java
 > % I am a comment
 >
 > fact('john', 'mary', 1). % I am a comment too
@@ -68,7 +68,7 @@ Comments start with the `%` character, and everything after this character is ig
 
 New declarations add what is called a _clause_ to the _global table of clauses_ (sometimes called database or knowledge base in other logic languages). A clause is composed of a head declaration and an optional tail, separated by the characters `:-`.
 
-```
+```java
 > parent('john', 'emily').
 > grandparent(A, B) :- parent(A, C) & parent(C, B).
 ```
@@ -77,7 +77,7 @@ Clauses are always terminated by a dot `.`. If they are declared with a tail, th
 
 In Daki, the tail dependencies order is not important. The `&` character is used to denote logical AND, and the `|` character logical OR. Notice how these are equivalent though:
 
-```
+```java
 > rule(x) :- reason1(x) | reason2(x).
 > % is the same as
 > rule(x) :- reason1(x).
@@ -91,7 +91,7 @@ constants - with a specific data type - or variables.
 
 The Daki data types are **string** (`'daki'`), **integer** (`42`) and **float**, for IEEE 754 floating point numbers (`3.14`). Constant types are not automatically coerced or matched, for example:
 
-```
+```java
 > value('1').
 > value(1).
 > value(1.0).
@@ -118,7 +118,7 @@ The search will try to find all solutions for which the original query has no ou
 
 The interpreter will print out every solution found or return `No solution`.
 
-```
+```java
 > grandparent("john", someone)?
 grandparent('john', 'mary').
 
@@ -128,7 +128,7 @@ No solution
 
 These queries that return all the solutions are called _full queries_. If the clause is ended with a `!` instead of `?`, a _short query_ is performed. A short query terminates as soon as the first solution is found. They only return one answer, or `No solution`:
 
-```
+```java
 > month('January').
 > month('February').
 > month('March').
@@ -146,7 +146,7 @@ You can remove a declaraction from the global table of clauses by declaring it a
 
 Declaring two clauses with the same name, constants and tail is impossible, and will raise a warning; similarly trying to remove from the global table a clause that does not exist will also raise a warning.
 
-```
+```java
 > grandparent("john", Var) :- other(Var, Var).
 > grandparent("john", Var) :- other(Var, Var).
 Clause already exists
@@ -259,7 +259,7 @@ Operator clauses cannot be overwritten or retracted with clauses with the same n
 
 Let's now go back to how to implement a program that returns the value of the Fibonnaci sequence at position N. At first glance the solution would be:
 
-```
+```java
 > fib(1, 1).
 > fib(2, 1).
 > fib(N, Res) :- gt(N, 2, gt) & sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
@@ -273,7 +273,7 @@ Depending on the interpreter to abort the whole search subtree because one of th
 
 This is best achieved by using what we call _clause conditions_. Clause conditions are boolean tests evaluated before a clause is expanded, providing earlier search termination. With clause conditions our Fibonnaci program becomes:
 
-```
+```java
 > fib(1, 1).
 > fib(2, 1).
 > fib(N > 2, Res) :- sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
@@ -294,7 +294,7 @@ Clause conditions are exclusively between a variable and a constant values (`fun
 
 Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:
 
-```
+```java
 > positive_except_five1(0 < N, N <> 5.0).
 > positive_except_five(N) :- positive_except_five1(N, N).
 >
@@ -356,7 +356,7 @@ No solution
 
 As a last example, we can also benchmark how fast our two Fibonnaci functions are, by making use of the `time` operator clause:
 
-```
+```java
 > % Using only operator clauses
 > fib1(1, 1).
 > fib1(2, 1).
@@ -366,7 +366,7 @@ As a last example, we can also benchmark how fast our two Fibonnaci functions ar
                                 sub(EndTime, StartTime, Elapsed).
 >
 > time_fib1(10, Val, Elapsed)?
-time_fib1(12, 144, 161). % 161 milliseconds
+time_fib1(12, 144, 161).
 
 > % Using a clause condition
 > fib2(1, 1).
@@ -377,7 +377,7 @@ time_fib1(12, 144, 161). % 161 milliseconds
                                 sub(EndTime, StartTime, Elapsed).
 >
 > time_fib2(10, Val, Elapsed)?
-time_fib2(12, 144, 99). % 99 milliseconds
+time_fib2(12, 144, 99).
 ```
 
 As you can see, using only operator clauses where a clause condition could've been used can result in a large performance penalty. Operator clauses are obviously still useful for intermediate calculations, but should be avoided for logic control.
@@ -419,8 +419,8 @@ The full list of command line options are:
 
 ## Future work
 
-- Allow memoization of specific clauses (name and arity), relative to a clauses table
 - Test suite - cover the parser
+- Allow memoization of specific clauses (name and arity), relative to a clauses table
 - Improve parser
 - Support other formats for numeric values, like hex
 - Test suite - cover the solver

@@ -11,7 +11,7 @@ require_relative 'fact'
 class DakiLangInterpreter
   include OperatorClauses
 
-  VERSION = '0.12'
+  VERSION = '0.13'
 
   BUILT_INS = Set.new([
     # Arithmetic
