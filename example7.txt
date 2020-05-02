@@ -45,7 +45,7 @@ found('true').
 
 found('true')? % OK
 
-div(4, 0, X)?
+div(4, 0, X)? % No solution
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%

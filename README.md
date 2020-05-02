@@ -49,9 +49,11 @@ A Daki language text file can contain five types of instructions:
 4. Declarations to be removed
 5. Built-in commands
 
+Each instruction must be in it's own line or lines - they cannot be mixed - except for inline comments at the end of another instruction.
+
 ### Comments
 
-Comments start with the `%` character, and everything after this character is ignored.
+Comments start with the `%` character, and everything after this character is ignored by the interpreter.
 
 ```
 > % I am a comment
@@ -61,7 +63,7 @@ Comments start with the `%` character, and everything after this character is ig
 
 ### Declarations
 
-New declarations add what is called a _clause_ to a global table of clauses. A clause is composed of a head declaration and an optional tail, separated by the characters `:-`.
+New declarations add what is called a _clause_ to the _global table of clauses_ (sometimes called database or knowledge base in other logic languages). A clause is composed of a head declaration and an optional tail, separated by the characters `:-`.
 
 ```
 > parent('john', 'emily').
@@ -105,7 +107,7 @@ The following characters are reserved and should only appear outside of string c
 
 ### Queries
 
-A query has a similar format to a tailless clause, but is ended with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
+A query has a similar format to a tailless clause, but ends with a `?` character instead of `.`. Upon being input, it starts a search for all its solutions using the global table of clauses.
 
 The search will try to find all solutions for which the original query has no outstanding variables, showing the constants that have filled it. When all variables of a clause are replaced, we say it has unified.
 
@@ -114,6 +116,9 @@ The interpreter will print out every solution found or return `No solution`.
 ```
 > grandparent("john", someone)?
 grandparent('john', 'mary').
+
+> grandparent("mary", someone)?
+No solution
 ```
 
 These queries that return all the solutions are called _full queries_. If the clause is ended with a `!` instead of `?`, a _short query_ is performed. A short query terminates as soon as the first solution is found. They only return one answer, or `No solution`:
@@ -126,15 +131,13 @@ These queries that return all the solutions are called _full queries_. If the cl
 month('January').
 ```
 
-Queries have a time limit to be completed (and of course the memory constraints of the system itself). If a query times out the interpreter prints the message `Search timeout`. A full query can timeout even after finding at least part of the solution.
+Queries have a time limit to be completed. If a query times out the interpreter prints the message `Search timeout`. A full query can timeout even after finding at least part of the solution.
 
 ### Retractions
 
-Declarations to be removed are declared with the same name, constant values and tail of the original clause declarations. The variables can have different names.
+You can remove a declaraction from the global table of clauses by declaring it again, with a final `~` instead of `.`. The clause must have the same name, constant values and tail of the original clause declaration. The variables can have different names.
 
 Declaring two clauses with the same name, constants and tail is impossible, and will raise a warning; similarly trying to remove from the global table a clause that does not exist will also raise a warning.
-
-To remove a clause end your command with the `~` character.
 
 ```
 > grandparent("john", Var) :- other(Var, Var).
@@ -156,11 +159,13 @@ Finally, some built-in commands allow for operations related to the interpreter 
 - _version_ - Print version information.
 - _help_ - Print help information.
 
-These commands are executed without any trailing `.`, `?` or `!`.
+These commands are executed without any trailing `.`, `?` or `!`, and are case-insensitive.
+
+The language features up to here are the minimum required for a pure, logic-based, query-only language. For many real problems, however, this is not enough.
 
 ### Operator clauses
 
-There are also __built-in clauses__, that unify with user-specified clauses and perform some form of calculation. To see why these are important, let's look at a practical example. In a language like Prolog, for instance, calculating a number of the Fibonacci sequence may look like:
+The Daki language also has __built-in clauses__, that unify with user-specified clauses and perform some form of calculation. To see why these are important, let's look at a practical example. In a language like Prolog, for instance, calculating a number of the Fibonacci sequence may look like:
 
 ```prolog
 > fib(1, 1).
@@ -248,23 +253,23 @@ Operator clauses cannot be overwritten or retracted with clauses with the same n
 Let's now go back to how to implement a program that returns the value of the Fibonnaci sequence at position N. At first glance the solution would be:
 
 ```
-fib(1, 1).
-fib(2, 1).
-fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+> fib(1, 1).
+> fib(2, 1).
+> fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
-Since this solution is recursive: a dependency on `fib` will try all solutions by expanding all clauses named `fib`, including itself; this may seem wrong at first. The Daki language interpreter, however, knows that the operator clauses can be evaluated before everything else in the clause tail. Therefore if the operator clause `gt` fails to unify when it's variables are set, we can abort the whole search subtree.
+Since this solution is recursive: a dependency on `fib` will try all solutions by expanding all clauses named `fib`, including itself; this may seem wrong at first. The Daki language interpreter, however, knows that the operator clauses can be evaluated before everything else in the clause tail. Therefore if the operator clause `gt` fails to unify when it's variables are set, we can abort that whole search subtree.
 
 ### Clause conditions
 
-Depending on the interpreter to abort the whole search subtree because one of the clauses is falsifiable however still requires the whole clause tail to be expanded. In another example we may also not be able to fail to unify immediately. The best solution would be to avoid expanding the clause tail in the first place.
+Depending on the interpreter to abort the whole search subtree because one of the clauses is falsifiable still requires the whole clause tail to be expanded, and sometimes multiple iterations depending on how long it takes for the operator clause to have it's variables set. The best solution would be to avoid expanding the clause tail in the first place.
 
 This is best achieved by using what we call _clause conditions_. Clause conditions are boolean tests evaluated before a clause is expanded, providing earlier search termination. With clause conditions our Fibonnaci program becomes:
 
 ```
-fib(1, 1).
-fib(2, 1).
-fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+> fib(1, 1).
+> fib(2, 1).
+> fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
 The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The only other operators are `<` (lower than), `<=` (lower or equal to), `>=` (greater or equal to) and `<>` (different than). _Equal to_ semantics are already the default matching strategy used. The lower and greater than operators use alphabetical order for strings.
@@ -300,7 +305,8 @@ As a last example, we can also benchmark how fast our two Fibonnaci functions ar
 > fib1(1, 1).
 > fib1(2, 1).
 > fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), fib1(N2, X2), add(X1, X2, Res).
-> time_fib1(N, Val, Elapsed) :- time(StartTime), fib1(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+> time_fib1(N, Val, Elapsed) :- time(StartTime), fib1(N, Val), time(Val, EndTime), \
+                                sub(EndTime, StartTime, Elapsed).
 >
 > time_fib1(10, Val, Elapsed)?
 time_fib1(12, 144, 161). % 161 milliseconds
@@ -309,7 +315,8 @@ time_fib1(12, 144, 161). % 161 milliseconds
 > fib2(1, 1).
 > fib2(2, 1).
 > fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), add(X1, X2, Res).
-> time_fib2(N, Val, Elapsed) :- time(StartTime), fib2(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+> time_fib2(N, Val, Elapsed) :- time(StartTime), fib2(N, Val), time(Val, EndTime), \
+                                sub(EndTime, StartTime, Elapsed).
 >
 > time_fib2(10, Val, Elapsed)?
 time_fib2(12, 144, 99). % 99 milliseconds

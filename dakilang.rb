@@ -11,7 +11,7 @@ require_relative 'fact'
 class DakiLangInterpreter
   include OperatorClauses
 
-  VERSION = '0.11'
+  VERSION = '0.12'
 
   BUILT_INS = Set.new([
     # Arithmetic
@@ -117,30 +117,31 @@ class DakiLangInterpreter
     lines.each do |line|
       puts "> #{line}" unless @interactive
 
-      if line == 'quit' || line == 'exit'
+      down_line = line.split('%').first.to_s.strip.downcase
+      if down_line == 'quit' || down_line == 'exit'
         if @interactive
           exit(0)
         else
           return
         end
       end
-      if line == 'select_table' || line.start_with?('select_table ')
+      if down_line == 'select_table' || down_line.start_with?('select_table ')
         select_table(line.split(' ')[1])
         next
       end
-      if line == 'listing'
+      if down_line == 'listing'
         table_listing
         next
       end
-      if line.start_with?('consult ')
+      if down_line.start_with?('consult ')
         consult_file(line.split(' ')[1], consult_chain)
         next
       end
-      if line == 'version'
+      if down_line == 'version'
         print_version
         next
       end
-      if line == 'help'
+      if down_line == 'help'
         print_help
         next
       end
