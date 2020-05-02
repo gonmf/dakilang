@@ -1,0 +1,14 @@
+language: ruby
+rvm:
+ - 2.6.2
+
+script:
+- ruby ./test.rb
+
+os:
+- linux
+
+depth: 1
+
+notifications:
+  email: false
