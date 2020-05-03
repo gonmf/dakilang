@@ -8,7 +8,7 @@ Daki is a small computer programming language influenced by Prolog and Datalog. 
 
 _Image courtesy of Maria Teresa C._
 
-Daki is a declarative and logic language based on Horn clauses, aimed at solving problems via deduction. This project implements a stable, iterative and space bound algorithm of unification of free variables, in depth-first search.
+Daki is a declarative, logic, typed language based on Horn clauses, aimed at solving problems via deduction. This project implements a stable, iterative and space bound algorithm of unification of free variables, in depth-first search.
 
 **For now the reference interpreter will be implemented in Ruby for fast prototyping and iteration.**
 
