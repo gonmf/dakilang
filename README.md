@@ -32,6 +32,7 @@ Regardless of your familiarity with Prolog or Datalog, Daki language has signifi
     - [Other operator clauses](#other-operator-clauses)
   - [Clause conditions](#clause-conditions)
     - [Operators](#operators)
+  - [Memoization](#memoization)
 - [Interpreter](#interpreter-manual)
   - [Options](#options)
 - [Future work](#future-work)
@@ -167,8 +168,12 @@ listing | Prints all clauses kept in the current global table.
 consult | Read and interpret a Daki language file. Receives file path as argument.
 version | Print version information.
 help | Print help information.
+add_memo | Add a clause name to the list of clauses to memoize (ex: `func/3`)
+rem_memo | Remove a clause name to the list of clauses to memoize; clears the memory pertaining to that clause
+list_memo | List all clause names of the memoization list
+clear_memo | Clear all memory spent on clause memoization (does not clear the list of clauses to memoize)
 
-These commands are executed without any trailing `.`, `?` or `!`, and are case-insensitive.
+These commands are executed without any trailing `.`, `?` or `!`, and are case-insensitive. The _memo_ commands are made clear in the [memoization](#memoization) section.
 
 The language features up to here are the minimum required for a pure, logic-based, query-only language. For many real problems, however, this is not enough.
 
@@ -275,7 +280,7 @@ time/2 | Unifies with the integer number of milliseconds since the UNIX epoch; t
 
 Operator clauses cannot be overwritten or retracted with clauses with the same name and arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.
 
-Let's now go back to how to implement a program that returns the value of the Fibonnaci sequence at position N. At first glance the solution would be:
+Let's now go back to how to implement a program that returns the value of the Fibonacci sequence at position N. At first glance the solution would be:
 
 ```java
 > fib(1, 1).
@@ -290,7 +295,7 @@ Since this solution is recursive: a dependency on `fib` will try all solutions b
 
 Depending on the interpreter to abort the whole search subtree because one of the clauses is falsifiable still requires the whole clause tail to be expanded, and sometimes multiple iterations depending on how long it takes for the operator clause to have it's variables set. The best solution would be to avoid expanding the clause tail in the first place.
 
-This is best achieved by using what we call _clause conditions_. Clause conditions are boolean tests evaluated before a clause is expanded, providing earlier search termination. With clause conditions our Fibonnaci program becomes:
+This is best achieved by using what we call _clause conditions_. Clause conditions are boolean tests evaluated before a clause is expanded, providing earlier search termination. With clause conditions our Fibonacci program becomes:
 
 ```java
 > fib(1, 1).
@@ -375,7 +380,7 @@ is_numeric(1.0).
 No solution
 ```
 
-As a last example, we can also benchmark how fast our two Fibonnaci functions are, by making use of the `time` operator clause:
+As a last example, we can also benchmark how fast our two Fibonacci functions are, by making use of the `time` operator clause:
 
 ```java
 > % Using only operator clauses
@@ -402,6 +407,47 @@ time_fib2(12, 144, 99).
 ```
 
 As you can see, using only operator clauses where a clause condition could've been used can result in a large performance penalty. Operator clauses are obviously still useful for intermediate calculations, but should be avoided for logic control.
+
+### Memoization
+
+In the last example, when calculating the value of position N of the Fibonacci sequence, we are recalculating a lot. In some contexts, this is required, because a clause can be expanded in many ways; in mathematical formulas however this doesn't happen, and we can apply _memoization_ to the known unifiable forms of the clause.
+
+In the Daki language this is done by telling the interpreter what functions can be memoized:
+
+```java
+> % Having fib1, fib2, time_fib1 and time_fib2 defined before
+>
+> add_memo fib1/2
+OK
+
+> add_memo fib2/2
+OK
+
+>
+> time_fib1(12, Val, Elapsed)?
+time_fib1(12, 144, 11).
+
+> time_fib2(12, Val, Elapsed)?
+time_fib2(12, 144, 8).
+
+>
+> % Values have already been completely memoized:
+>
+> time_fib1(12, Val, Elapsed)?
+time_fib1(12, 144, 0).
+
+> time_fib2(12, Val, Elapsed)?
+time_fib2(12, 144, 0).
+```
+
+In this example we are implicitly memoizing the unification of the clause by the first argument. We must be consistent in how we expand our requirements on a memoized clause. If we later tried to find out all positions in the Fibonacci sequence for which the value is 1, it would fail to give all the solutions:
+
+```java
+> fib2(X, 1)?
+fib2(2, 1).
+```
+
+Memoization is always relative to a global clauses table. Changing to another table will use another memoization tree.
 
 ## Interpreter Manual
 
@@ -441,7 +487,6 @@ The full list of command line options are:
 ## Future work
 
 - Test suite - cover the parser
-- Allow memoization of specific clauses (name and arity), relative to a clauses table
 - Improve parser
 - Support other formats for numeric values, like hex
 - Test suite - cover the solver

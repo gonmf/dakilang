@@ -66,8 +66,13 @@ class DakiLangInterpreter
     @test_mode = false
     @search_time_limit = 3.0 # Seconds
     @debug = false
+
     @table = {}
-    @table_name = '0'
+    @memo_tree = {}
+    @to_memo = {}
+    @table_name = nil
+
+    select_table('0')
   end
 
   def enter_interactive_mode
@@ -82,7 +87,9 @@ class DakiLangInterpreter
   end
 
   def consult_file(filename, consult_chain = [])
-    if consult_chain.include?(filename)
+    if !filename || filename.size == 0
+      puts 'File name is missing or invalid'
+    elsif consult_chain.include?(filename)
       puts 'Circular file consult invocation detected'
     else
       contents = file_read(filename)
@@ -135,6 +142,22 @@ class DakiLangInterpreter
         select_table(line.split(' ')[1])
         next
       end
+      if down_line.start_with?('add_memo ')
+        add_memo(line.split(' ')[1])
+        next
+      end
+      if down_line.start_with?('rem_memo ')
+        rem_memo(line.split(' ')[1])
+        next
+      end
+      if down_line == 'list_memo'
+        list_memo
+        next
+      end
+      if down_line == 'clear_memo'
+        clear_memo
+        next
+      end
       if down_line == 'listing'
         table_listing
         next
@@ -184,7 +207,7 @@ class DakiLangInterpreter
       arr1.push(body) if body
     end
 
-    table.each.with_index do |rule, idx|
+    @table[@table_name].each.with_index do |rule, idx|
       arr2 = [rule[0]] + rule[1]
 
       next if arr1.count != arr2.count
@@ -200,8 +223,8 @@ class DakiLangInterpreter
       end
 
       if are_equal
-        table[idx] = nil
-        @table[@table_name] = table.compact
+        @table[@table_name][idx] = nil
+        @table[@table_name] = @table[@table_name].compact
         puts 'Clause removed'
         return
       end
@@ -287,6 +310,50 @@ class DakiLangInterpreter
     else
       [nil, -1]
     end
+  end
+
+  def add_memo(name)
+    name = name.to_s
+
+    n, arity, more = name.split('/')
+
+    if name.size == 0 || !arity || more || arity != arity.to_i.to_s || arity.to_i < 1
+      puts 'Clause name is invalid'
+    elsif @to_memo[@table_name].include?(name)
+      puts 'Clause is already being memoized'
+    else
+      @to_memo[@table_name].add(name)
+      puts 'OK'
+    end
+
+    puts
+  end
+
+  def rem_memo(name)
+    if !name && name.size == 0
+      puts 'Clause name is invalid'
+    elsif @to_memo[@table_name].include?(name)
+      @to_memo[@table_name].delete(name)
+      @memo_tree[@table_name][name] = nil
+      @memo_tree[@table_name] = @memo_tree[@table_name].compact
+      puts 'OK'
+    else
+      puts 'Clause was not being memoized'
+    end
+
+    puts
+  end
+
+  def list_memo
+    @to_memo[@table_name].sort.each do |name|
+      puts name
+    end
+
+    puts
+  end
+
+  def clear_memo
+    @memo_tree[@table_name] = {}
   end
 
   def invert_operator(str)
@@ -641,7 +708,12 @@ class DakiLangInterpreter
   def select_table(name)
     if name && name.size > 0
       @table_name = name
-      puts "Table changed to #{name}"
+
+      @table[@table_name] ||= []
+      @memo_tree[@table_name] ||= {}
+      @to_memo[@table_name] ||= Set.new
+
+      puts "Table changed to #{@table_name}"
     else
       puts "Current table is #{@table_name}"
     end
@@ -650,15 +722,11 @@ class DakiLangInterpreter
   end
 
   def table_listing
-    table.each do |arr|
+    @table[@table_name].each do |arr|
       puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(' & ')}" : ''}."
     end
 
     puts
-  end
-
-  def table
-    @table[@table_name] ||= []
   end
 
   def deep_clone(obj)
@@ -783,7 +851,7 @@ class DakiLangInterpreter
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
-          # binding.pry
+
           if var3 == var && oper2 && (oper2 == 'class_is' || const.is_a?(String) == comp2.is_a?(String)) # Numeric types only unify with numeric types; same for strings
             return false if !const.send(oper2, comp2)
           end
@@ -793,7 +861,7 @@ class DakiLangInterpreter
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
-          # binding.pry
+
           if var3 == var && oper2 && (oper2 == 'class_is' || const.is_a?(String) == comp2.is_a?(String)) # Numeric types only unify with numeric types; same for strings
             return false if !const.send(oper2, comp2)
           end
@@ -901,6 +969,36 @@ class DakiLangInterpreter
     new_clauses
   end
 
+  def memoed_fact(memo, variables)
+    return [] if variables.empty?
+
+    var = variables.first
+
+    if var.const?
+      if memo[var]
+        variables = variables.slice(1, variables.count)
+
+        if variables.any?
+          return [var, memoed_fact(memo[var], variables)]
+        else
+          [var]
+        end
+      else
+        return nil
+      end
+    else
+      variables = variables.slice(1, variables.count)
+
+      memo.each do |value, sol|
+        se = memoed_fact(sol, variables)
+
+        return [value, se] if se
+      end
+
+      return nil
+    end
+  end
+
   def search(head, stop_early)
     @vari = 0
     iteration = 0
@@ -974,8 +1072,22 @@ class DakiLangInterpreter
         matching_clauses = [built_in_response]
       else
         head = first_solution_clause[0]
+        matching_clauses = nil
 
-        matching_clauses = table.select do |table_clause|
+        func_name = "#{head.name}/#{head.variables.count}"
+        if @to_memo[@table_name].include?(func_name)
+          memo_solution = @memo_tree[@table_name][func_name]
+
+          if memo_solution
+            memoed = memoed_fact(memo_solution, head.variables)
+
+            if memoed
+              matching_clauses = [[Fact.new(head.name, memoed.flatten), []]]
+            end
+          end
+        end
+
+        matching_clauses ||= @table[@table_name].select do |table_clause|
           clauses_match(table_clause[0], head)
         end
       end
@@ -992,9 +1104,28 @@ class DakiLangInterpreter
             new_solution.push([line, false])
           end
 
-          if !@debug
-            # Truncate solution to first clause and clauses still to be resolved
-            new_solution = new_solution.select.with_index { |rule, idx| idx == 0 || !rule[1] }
+          # Truncate solution to first clause and clauses still to be resolved (it not debugging)
+          new_solution = new_solution.select.with_index do |rule, idx|
+            arity = rule[0].variables.count
+            func_name = "#{rule[0].name}/#{arity}"
+            memoized_func = @to_memo[@table_name].include?(func_name)
+
+            kept = idx == 0 || !rule[1] || memoized_func
+
+            # If can be memoized and the rule is finished, memoize it
+            if rule[1] && memoized_func && rule[0].variables.all? { |v| v.const? }
+              @memo_tree[@table_name][func_name] ||= {}
+              root = @memo_tree[@table_name][func_name]
+
+              rule[0].variables.slice(0, arity - 1).each do |val|
+                root[val] ||= {}
+                root = root[val]
+              end
+
+              root[rule[0].variables.last] = true
+            end
+
+            @debug || kept
           end
 
           solution_set.push(unique_var_names(new_solution))
@@ -1019,7 +1150,7 @@ class DakiLangInterpreter
   end
 
   def table_add_clause(head, body, warn_if_exists)
-    table.each do |arr|
+    @table[@table_name].each do |arr|
       table_head = arr[0]
       table_body = arr[1]
 
@@ -1029,7 +1160,7 @@ class DakiLangInterpreter
       end
     end
 
-    table.push([head, body])
+    @table[@table_name].push([head, body])
   end
 
   def err(msg, detail = nil)
