@@ -162,9 +162,9 @@ Finally, some built-in commands allow for operations related to the interpreter 
 Command | Description
 ------ | -----------
 _quit_ / _exit_ | Stop execution and exit the interpreter if in interactive mode. Only stops processing the current file is in non-interactive mode.
-_select_table N_ | Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
+_select_table_ | Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
 _listing_ | Prints all clauses kept in the current global table.
-_consult_ | Read and interpret a Daki language file.
+_consult_ | Read and interpret a Daki language file. Receives file path as argument.
 _version_ | Print version information.
 _help_ | Print help information.
 
@@ -304,9 +304,9 @@ Symbol | Description
 ------ | ----
 <  | Tests if the variable is lower than the constant
 <= | Tests if the variable is lower or _equal_ to the constant
->  | Tests if the variable is greater than the constant
->= | Tests if the variable is greater or _equal_ to the constant
-<> | Tests if the variable is not _equal_ to the constant
+\>  | Tests if the variable is greater than the constant
+\>= | Tests if the variable is greater or _equal_ to the constant
+<\> | Tests if the variable is not _equal_ to the constant
 :  | Tests if the data type of the variable is the constant value (from `'integer'`, `'float'` or `'string'`)
 
 Clause conditions are exclusively between a variable and a constant values (`func(X < B, ...` is invalid) and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types unify. The comparison operators use alphabetical order for strings.
