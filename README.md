@@ -162,12 +162,12 @@ Finally, some built-in commands allow for operations related to the interpreter 
 
 Command | Description
 ------ | -----------
-quit, exit | Stop execution and exit the interpreter if in interactive mode. Only stops processing the current file is in non-interactive mode.
-select_table | Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
-listing | Prints all clauses kept in the current global table.
-consult | Read and interpret a Daki language file. Receives file path as argument.
-version | Print version information.
-help | Print help information.
+quit, exit | Stop execution and exit the interpreter if in interactive mode; only stops processing the current file is in non-interactive mode
+select_table | Changes the global table currently in use; by default, table 0 is active; passing no argument prints the current table number
+listing | Prints all clauses kept in the current global table
+consult | Read and interpret a Daki language file; receives file path as an argument
+version | Print version information
+help | Print help information
 add_memo | Add a clause name to the list of clauses to memoize (ex: `func/3`)
 rem_memo | Remove a clause name to the list of clauses to memoize; clears the memory pertaining to that clause
 list_memo | List all clause names of the memoization list
@@ -477,12 +477,14 @@ Switching to interactive mode is always performed only after every consulted fil
 
 The full list of command line options are:
 
-- `-h`, `--help` - Print out the program manual and exit
-- `-v`, `--version` - Print out the program name and version, and exit
-- `-c F`, `--consult F` - Read file with path F and interpret each line
-- `-i`, `--interactive` - Activate interactive mode after finishing consulting all files
-- `-d`, `--debug` - Activate debug mode, which shows extra output and disables some performance improvements
-- `-t N`, `--time N` - Changes the default query timeout time; N is a floating point value in seconds
+Option | Description
+------ | -----------
+-h, --help | Print out the program manual and exit
+-v, --version | Print out the program name and version, and exit
+-c, --consult | Read file with path F and interpret each line
+-i, --interactive | Activate interactive mode after finishing consulting all files
+-d, --debug | Activate debug mode, which shows extra output and disables some performance improvements
+-t, --time | Changes the default query timeout time; N is a floating point value in seconds
 
 ## Future work
 
