@@ -159,12 +159,14 @@ Clause not found
 
 Finally, some built-in commands allow for operations related to the interpreter and global table themselves. These are:
 
-- _quit_ / _exit_ - Stop execution and exit the interpreter if in interactive mode. Only stops processing the current file is in non-interactive mode.
-- _select_table N_ - Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
-- _listing_ - Prints all clauses kept in the current global table.
-- _consult_ - Read and interpret a Daki language file.
-- _version_ - Print version information.
-- _help_ - Print help information.
+Command | Description
+------ | -----------
+_quit_ / _exit_ | Stop execution and exit the interpreter if in interactive mode. Only stops processing the current file is in non-interactive mode.
+_select_table N_ | Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
+_listing_ | Prints all clauses kept in the current global table.
+_consult_ | Read and interpret a Daki language file.
+_version_ | Print version information.
+_help_ | Print help information.
 
 These commands are executed without any trailing `.`, `?` or `!`, and are case-insensitive.
 
@@ -186,7 +188,7 @@ In Prolog we find arithmetic and conditional logic mixed with the clause itself.
 
 Operator clauses are always unifiable only when the input variables are present, if any, and for performance they are always unified before user-defined clauses where possible.
 
-In these tables, clause `add/3` means a clause named `add` with three arguments. The first two are input variables, and the result of the operation is unified in the last argument. The descriptions sometimes use the term _InputN_ to name a specific variable.
+In these tables, clause `add/3` means a clause named `add` with three arguments. The last variable is always the output, and the remaining the input variables. The descriptions sometimes use the term _InputN_ to name a specific variable N, counting from 1. The result of the operation is unified in the last argument.
 
 #### Arithmetic operator clauses
 
@@ -194,19 +196,19 @@ _The inputs must be numeric to unify._
 
 Clause | Description
 ------ | -----------
-`add/3` | Unifies with the result of the addition of the two inputs
-`sub/3` | Unifies with the result of the subtraction of Input1 with Input2
-`mul/3` | Unifies with the result of the multiplication of the two inputs
-`div/3` | Unifies with the result of the division of the two inputs; integer division is used if both inputs are integer
-`mod/3` | Unifies with the rest of the integer division of the two inputs
-`pow/3` | Unifies with the result ofInput1 to the power of Input2
-`sqrt/2` | Unifies with the result of the square root of Input
-`log/3` | Unifies with the logarithmic base Input2 of Input1
-`round/3` | Unifies with the rounded value of Input1 to Input2 decimal cases
-`trunc/2` | Unifies with the value of Input without decimal part
-`floor/2` | Unifies with the largest integer value that is less or equal to the input
-`ceil/2` | Unifies with the smallest integer value that is greater or equal to the input
-`abs/2` | Unifies with the absolute value of the input
+add/3 | Unifies with the result of the addition of the two inputs
+sub/3 | Unifies with the result of the subtraction of Input1 with Input2
+mul/3 | Unifies with the result of the multiplication of the two inputs
+div/3 | Unifies with the result of the division of the two inputs; integer division is used if both inputs are integer
+mod/3 | Unifies with the rest of the integer division of the two inputs
+pow/3 | Unifies with the result ofInput1 to the power of Input2
+sqrt/2 | Unifies with the result of the square root of Input
+log/3 | Unifies with the logarithmic base Input2 of Input1
+round/3 | Unifies with the rounded value of Input1 to Input2 decimal cases
+trunc/2 | Unifies with the value of Input without decimal part
+floor/2 | Unifies with the largest integer value that is less or equal to the input
+ceil/2 | Unifies with the smallest integer value that is greater or equal to the input
+abs/2 | Unifies with the absolute value of the input
 
 #### Bitwise operator clauses
 
@@ -214,12 +216,12 @@ _The inputs must be of type Integer to unify._
 
 Clause | Description
 ------ | -----------
-`bit_and/3` | Unifies with the bitwise AND of the two inputs
-`bit_or/3` | Unifies with the bitwise OR of the two inputs
-`bit_xor/3` | Unifies with the bitwise XOR of the two inputs
-`bit_neg/2` | Unifies with the bitwise inversion of the bits of the input
-`bit_shift_left/3` | Unifies with the left shifted value of Input1 by Input2
-`bit_shift_right/3` | Unifies with the right shifted value of Input1 by Input2
+bit_and/3 | Unifies with the bitwise AND of the two inputs
+bit_or/3 | Unifies with the bitwise OR of the two inputs
+bit_xor/3 | Unifies with the bitwise XOR of the two inputs
+bit_neg/2 | Unifies with the bitwise inversion of the bits of the input
+bit_shift_left/3 | Unifies with the left shifted value of Input1 by Input2
+bit_shift_right/3 | Unifies with the right shifted value of Input1 by Input2
 
 #### Equality/order operator clauses
 
@@ -227,12 +229,12 @@ _The inputs must be both numeric or both strings to unify._
 
 Clause | Description
 ------ | -----------
-`eql/3` | Unifies if the values are equal; with the string literal `'yes'`
-`neq/3` | Unifies if the values are not equal; with the string literal `'yes'`
-`max/3` | Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
-`min/3` | Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
-`gt/3` | Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
-`lt/3` | Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
+eql/3 | Unifies if the values are equal; with the string literal `'yes'`
+neq/3 | Unifies if the values are not equal; with the string literal `'yes'`
+max/3 | Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
+min/3 | Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
+gt/3 | Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
+lt/3 | Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
 
 #### Type casting operator clauses
 
@@ -240,9 +242,9 @@ _These always unify._
 
 Clause | Description
 ------ | -----------
-`string/2` | Unifies with the text representation of the input
-`integer/2` | Unifies with the integer value of the input; will truncate floating point inputs
-`float/2` | Unifies with the floating point value of Input
+string/2 | Unifies with the text representation of the input
+integer/2 | Unifies with the integer value of the input; will truncate floating point inputs
+float/2 | Unifies with the floating point value of Input
 
 #### String operator clauses
 
@@ -250,12 +252,12 @@ _The inputs must be of the correct data type to unify._
 
 Clause | Description
 ------ | -----------
-`len/2` | Unifies with the number of characters of a string input
-`concat/3` | Unifies with the concatenation of two string inputs
-`slice/4` | Unifies with the remainder of a string Input1 starting at integer Input2 and ending at integer Input3
-`index/4` | Unifies with the integer position of string Input2 if found in string Input1, or `-1`; searching from the integer offset Input3
-`ord/2` | Unifies with the numeric ASCII value of the first character in the string input
-`char/2` | Unifies with a string with the ASCII character found for the integer input
+len/2 | Unifies with the number of characters of a string input
+concat/3 | Unifies with the concatenation of two string inputs
+slice/4 | Unifies with the remainder of a string Input1 starting at integer Input2 and ending at integer Input3
+index/4 | Unifies with the integer position of string Input2 if found in string Input1, or `-1`; searching from the integer offset Input3
+ord/2 | Unifies with the numeric ASCII value of the first character in the string input
+char/2 | Unifies with a string with the ASCII character found for the integer input
 
 #### Other operator clauses
 
@@ -263,11 +265,11 @@ _These always unify._
 
 Clause | Description
 ------ | -----------
-`rand/1` | Unifies with a random floating point value between 0 and 1
-`type/2` | Unifies with the string literal of the name of the data type of Input: `'string'`, `'integer'` or `'float'`
-`print/2` | Print the Input to the console; unifies with the string literal `'yes'`
-`time/1` | Unifies with the integer number of milliseconds since the UNIX epoch
-`time/2` | Unifies with the integer number of milliseconds since the UNIX epoch; the input is just used as a requirement to enforce order of execution
+rand/1 | Unifies with a random floating point value between 0 and 1
+type/2 | Unifies with the string literal of the name of the data type of Input: `'string'`, `'integer'` or `'float'`
+print/2 | Print the Input to the console; unifies with the string literal `'yes'`
+time/1 | Unifies with the integer number of milliseconds since the UNIX epoch
+time/2 | Unifies with the integer number of milliseconds since the UNIX epoch; the input is just used as a requirement to enforce order of execution
 
 Operator clauses cannot be overwritten or retracted with clauses with the same name and arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.
 
@@ -300,12 +302,12 @@ The clause condition `fib(N > 2, Res)` restricts matching N to values greater th
 
 Symbol | Description
 ------ | ----
-`<`  | Tests if the variable is lower than the constant
-`<=` | Tests if the variable is lower or _equal_ to the constant
-`>`  | Tests if the variable is greater than the constant
-`>=` | Tests if the variable is greater or _equal_ to the constant
-`<>` | Tests if the variable is not _equal_ to the constant
-`:`  | Tests if the data type of the variable is the constant value (from `'integer'`, `'float'` or `'string'`)
+<  | Tests if the variable is lower than the constant
+<= | Tests if the variable is lower or _equal_ to the constant
+>  | Tests if the variable is greater than the constant
+>= | Tests if the variable is greater or _equal_ to the constant
+<> | Tests if the variable is not _equal_ to the constant
+:  | Tests if the data type of the variable is the constant value (from `'integer'`, `'float'` or `'string'`)
 
 Clause conditions are exclusively between a variable and a constant values (`func(X < B, ...` is invalid) and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types unify. The comparison operators use alphabetical order for strings.
 
