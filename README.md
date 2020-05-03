@@ -262,7 +262,8 @@ Let's now go back to how to implement a program that returns the value of the Fi
 ```java
 > fib(1, 1).
 > fib(2, 1).
-> fib(N, Res) :- gt(N, 2, gt) & sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
+> fib(N, Res) :- gt(N, 2, gt) & sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & \
+                 add(X1, X2, Res).
 ```
 
 Since this solution is recursive: a dependency on `fib` will try all solutions by expanding all clauses named `fib`, including itself; this may seem wrong at first. The Daki language interpreter, however, knows that the operator clauses can be evaluated before everything else in the clause tail. Therefore if the operator clause `gt` fails to unify when it's variables are set, we can abort that whole search subtree.
