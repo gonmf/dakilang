@@ -72,7 +72,7 @@ class DakiLangInterpreter
     @to_memo = {}
     @table_name = nil
 
-    select_table('0')
+    select_table('0', false)
   end
 
   def enter_interactive_mode
@@ -139,7 +139,7 @@ class DakiLangInterpreter
         end
       end
       if down_line == 'select_table' || down_line.start_with?('select_table ')
-        select_table(line.split(' ')[1])
+        select_table(line.split(' ')[1], true)
         next
       end
       if down_line.start_with?('add_memo ')
@@ -321,6 +321,8 @@ class DakiLangInterpreter
       puts 'Clause name is invalid'
     elsif @to_memo[@table_name].include?(name)
       puts 'Clause is already being memoized'
+    elsif BUILT_INS.include?(name)
+      puts 'Cannot memoize built-in operator clause'
     else
       @to_memo[@table_name].add(name)
       puts 'OK'
@@ -705,7 +707,7 @@ class DakiLangInterpreter
     tokens
   end
 
-  def select_table(name)
+  def select_table(name, output)
     if name && name.size > 0
       @table_name = name
 
@@ -713,12 +715,12 @@ class DakiLangInterpreter
       @memo_tree[@table_name] ||= {}
       @to_memo[@table_name] ||= Set.new
 
-      puts "Table changed to #{@table_name}"
+      puts "Table changed to #{@table_name}" if output
     else
-      puts "Current table is #{@table_name}"
+      puts "Current table is #{@table_name}" if output
     end
 
-    puts
+    puts if output
   end
 
   def table_listing
