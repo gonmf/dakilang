@@ -233,8 +233,10 @@ eql/3 | Unifies if the values are equal; with the string literal `'yes'`
 neq/3 | Unifies if the values are not equal; with the string literal `'yes'`
 max/3 | Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
 min/3 | Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
-gt/3 | Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
-lt/3 | Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
+gt/3 | Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; unifies with the string literal `'yes'`
+lt/3 | Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric; unifies with the string literal `'yes'`
+gte/3 | Unifies if Input1 is greater or equal to Input2; if any of the inputs is a string, string comparison is used instead of numeric; unifies with the string literal `'yes'`
+lte/3 | Unifies if Input1 is lower or equal to Input2; if any of the inputs is a string, string comparison is used instead of numeric; unifies with the string literal `'yes'`
 
 #### Type casting operator clauses
 
@@ -242,9 +244,9 @@ _These always unify._
 
 Clause | Description
 ------ | -----------
-string/2 | Unifies with the text representation of the input
-integer/2 | Unifies with the integer value of the input; will truncate floating point inputs
-float/2 | Unifies with the floating point value of Input
+to_string/2 | Unifies with the text representation of the input
+to_integer/2 | Unifies with the integer value of the input; will truncate floating point inputs
+to_float/2 | Unifies with the floating point value of Input
 
 #### String operator clauses
 

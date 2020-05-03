@@ -35,10 +35,12 @@ class DakiLangInterpreter
     'min/3',
     'gt/3',
     'lt/3',
+    'gte/3',
+    'lte/3',
     # Casts
-    'string/2',
-    'integer/2',
-    'float/2',
+    'to_string/2',
+    'to_integer/2',
+    'to_float/2',
     # Strings
     'len/2',
     'concat/3',

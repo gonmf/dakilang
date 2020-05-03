@@ -204,20 +204,36 @@ module OperatorClauses
     end
   end
 
+  def oper_gte(args)
+    a, b = args
+
+    if a.is_a?(String) == b.is_a?(String) && a >= b
+      'yes'
+    end
+  end
+
+  def oper_lte(args)
+    a, b = args
+
+    if a.is_a?(String) == b.is_a?(String) && a <= b
+      'yes'
+    end
+  end
+
   # Type casting operator clauses
-  def oper_string(args)
+  def oper_to_string(args)
     a, = args
 
     a.to_s
   end
 
-  def oper_integer(args)
+  def oper_to_integer(args)
     a, = args
 
     a.to_i
   end
 
-  def oper_float(args)
+  def oper_to_float(args)
     a, = args
 
     a.to_f
