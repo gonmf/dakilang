@@ -161,12 +161,12 @@ Finally, some built-in commands allow for operations related to the interpreter 
 
 Command | Description
 ------ | -----------
-_quit_ / _exit_ | Stop execution and exit the interpreter if in interactive mode. Only stops processing the current file is in non-interactive mode.
-_select_table_ | Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
-_listing_ | Prints all clauses kept in the current global table.
-_consult_ | Read and interpret a Daki language file. Receives file path as argument.
-_version_ | Print version information.
-_help_ | Print help information.
+quit, exit | Stop execution and exit the interpreter if in interactive mode. Only stops processing the current file is in non-interactive mode.
+selecttable | Changes the global table currently in use. By default, table 0 is active. Passing no argument prints the current table number.
+listing | Prints all clauses kept in the current global table.
+consult | Read and interpret a Daki language file. Receives file path as argument.
+version | Print version information.
+help | Print help information.
 
 These commands are executed without any trailing `.`, `?` or `!`, and are case-insensitive.
 
