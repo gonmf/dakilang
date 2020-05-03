@@ -7,11 +7,13 @@ class Fact
   end
 
   def format(friendly)
+    s = "#{rand}#{rand}#{rand}".tr('.0', '')
+
     friendly_variables = variables.map do |var|
       if var.const?
         case var
         when String
-          "'#{var}'"
+          "'#{var.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
         when Float, Integer
           var.to_s
         end
@@ -22,7 +24,7 @@ class Fact
         next name unless oper
 
         const_value = var.slice([start, name, oper, const_type].join('_').size + 1, var.size)
-        const_value = "'#{const_value}'" if const_type == 's'
+        const_value = "'#{const_value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '') if const_type == 's'
 
         "#{name} #{oper} #{const_value}"
       end
@@ -42,25 +44,19 @@ class Fact
   def hash
     vari = 0
 
-    vars = variables.map do |var_name|
-      if var_name.const?
-        "#{var_name.class.to_s[0]}#{var_name}"
-      else
-        var_name
-      end
-    end
+    vars = variables.clone
 
     vars.each do |var_name|
       next if var_name.const?
 
       vari += 1
-      new_name = "%#{vari}"
+      new_name = vari.to_s
 
       vars.each.with_index do |name, idx|
         vars[idx] = new_name if name == var_name
       end
     end
 
-    ([name] + vars).join(';').hash
+    ([name] + vars).hash
   end
 end

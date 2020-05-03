@@ -1,6 +1,3 @@
-% fib(Pos > 2, Res) :- sub(Pos, 1, N1) & sub(Pos, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
-% fib(2 < Pos, Res) :- sub(Pos, 1, N1) & sub(Pos, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
-
 parent("john", "mary").
 parent("victor", "john").
 grandparent(X, Y) :- parent(X, Z) & parent(Z, Y).
@@ -50,5 +47,9 @@ div(4, 0, X)? % No solution
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 
+select_table 1
 
+abc1("ab'cd").
+abc2(A > "def ' def").
+abc3(A > 'def \' def').
 listing

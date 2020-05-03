@@ -854,8 +854,8 @@ class DakiLangInterpreter
 
           var3, oper2, comp2 = parse_variable_condition(var3)
 
-          if var3 == var && oper2 && (oper2 == 'class_is' || const.is_a?(String) == comp2.is_a?(String)) # Numeric types only unify with numeric types; same for strings
-            return false if !const.send(oper2, comp2)
+          if var3 == var && oper2 # Numeric types only unify with numeric types; same for strings
+            return false if (oper2 != 'class_is' && const.is_a?(String) != comp2.is_a?(String)) || !const.send(oper2, comp2)
           end
         end
 
@@ -864,8 +864,8 @@ class DakiLangInterpreter
 
           var3, oper2, comp2 = parse_variable_condition(var3)
 
-          if var3 == var && oper2 && (oper2 == 'class_is' || const.is_a?(String) == comp2.is_a?(String)) # Numeric types only unify with numeric types; same for strings
-            return false if !const.send(oper2, comp2)
+          if var3 == var && oper2 # Numeric types only unify with numeric types; same for strings
+            return false if (oper2 != 'class_is' && const.is_a?(String) != comp2.is_a?(String)) || !const.send(oper2, comp2)
           end
         end
       end
