@@ -253,7 +253,7 @@ Clause | Description
 `len/2` | Unifies with the number of characters of a string input
 `concat/3` | Unifies with the concatenation of two string inputs
 `slice/4` | Unifies with the remainder of a string Input1 starting at integer Input2 and ending at integer Input3
-`index/4` | Unifies with the integer position of string Input2 if found in string Input1; searching from the integer offset Input3
+`index/4` | Unifies with the integer position of string Input2 if found in string Input1, or `-1`; searching from the integer offset Input3
 `ord/2` | Unifies with the numeric ASCII value of the first character in the string input
 `char/2` | Unifies with a string with the ASCII character found for the integer input
 

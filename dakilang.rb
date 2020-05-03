@@ -36,8 +36,8 @@ class DakiLangInterpreter
     'gt/3',
     'lt/3',
     # Casts
-    'str/2',
-    'int/2',
+    'string/2',
+    'integer/2',
     'float/2',
     # Strings
     'len/2',

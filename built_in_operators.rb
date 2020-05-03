@@ -205,13 +205,13 @@ module OperatorClauses
   end
 
   # Type casting operator clauses
-  def oper_str(args)
+  def oper_string(args)
     a, = args
 
     a.to_s
   end
 
-  def oper_int(args)
+  def oper_integer(args)
     a, = args
 
     a.to_i
