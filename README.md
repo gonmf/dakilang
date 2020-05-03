@@ -89,7 +89,7 @@ In fact the second form is exactly how they are saved in the global table. If so
 The elements of clauses always have open brackets and are declared with one or more strings. Those strings can be
 constants - with a specific data type - or variables.
 
-The Daki data types are **string** (`'daki'`), **integer** (`42`) and **float**, for IEEE 754 floating point numbers (`3.14`). Constant types are not automatically coerced or matched, for example:
+The Daki data types are **string** (`'daki'`), **integer** (`42`) and **float**, for IEEE 754 floating point numbers (`3.14`). This document also uses the term _numeric_ to mean both integer and floating point values. Constant types are not automatically coerced or matched, for example:
 
 ```java
 > value('1').
@@ -186,74 +186,88 @@ In Prolog we find arithmetic and conditional logic mixed with the clause itself.
 
 Operator clauses are always unifiable only when the input variables are present, if any, and for performance they are always unified before user-defined clauses where possible.
 
+In these tables, clause `add/3` means a clause named `add` with three arguments. The first two are input variables, and the result of the operation is unified in the last argument. The descriptions sometimes use the term _InputN_ to name a specific variable.
+
 #### Arithmetic operator clauses
 
 _The inputs must be numeric to unify._
 
-- `add(Numeric1, Numeric2, Answer)` - Unifies with the result of the addition of the two inputs
-- `sub(Numeric1, Numeric2, Answer)` - Unifies with the result of the subtraction of Numeric1 with Numeric2
-- `mul(Numeric1, Numeric2, Answer)` - Unifies with the result of the multiplication of the two inputs
-- `div(Numeric1, Numeric2, Answer)` - Unifies with the result of the division of the two inputs; integer division is used if both inputs are integer
-- `mod(Numeric1, Numeric2, Answer)` - Unifies with the rest of the integer division of the two inputs
-- `pow(Numeric1, Numeric2, Answer)` - Unifies with the result of Numeric1 to the power of Numeric2
-- `sqrt(Numeric, Answer)` - Unifies with the result of the square root of Numeric
-- `log(Numeric1, Numeric2, Answer)` - Unifies with the logarithmic base Numeric2 of Numeric1
-- `round(Numeric1, Numeric2, Answer)` - Unifies with the rounded value of Numeric1 to Numeric2 decimal cases
-- `trunc(Numeric, Answer)` - Unifies with the value of Numeric without decimal part
-- `floor(Numeric, Answer)` - Unifies with the largest integer value that is less or equal to the input
-- `ceil(Numeric, Answer)` - Unifies with the smallest integer value that is greater or equal to the input
-- `abs(Numeric, Answer)` - Unifies with the absolute value of the input
+Clause | Description
+------ | -----------
+`add/3` | Unifies with the result of the addition of the two inputs
+`sub/3` | Unifies with the result of the subtraction of Input1 with Input2
+`mul/3` | Unifies with the result of the multiplication of the two inputs
+`div/3` | Unifies with the result of the division of the two inputs; integer division is used if both inputs are integer
+`mod/3` | Unifies with the rest of the integer division of the two inputs
+`pow/3` | Unifies with the result ofInput1 to the power of Input2
+`sqrt/2` | Unifies with the result of the square root of Input
+`log/3` | Unifies with the logarithmic base Input2 of Input1
+`round/3` | Unifies with the rounded value of Input1 to Input2 decimal cases
+`trunc/2` | Unifies with the value of Input without decimal part
+`floor/2` | Unifies with the largest integer value that is less or equal to the input
+`ceil/2` | Unifies with the smallest integer value that is greater or equal to the input
+`abs/2` | Unifies with the absolute value of the input
 
 #### Bitwise operator clauses
 
 _The inputs must be of type Integer to unify._
 
-- `bit_and(Integer1, Integer2, Answer)` - Unifies with the bitwise AND of the two inputs
-- `bit_or(Integer1, Integer2, Answer)` - Unifies with the bitwise OR of the two inputs
-- `bit_xor(Integer1, Integer2, Answer)` - Unifies with the bitwise XOR of the two inputs
-- `bit_neg(Integer, Answer)` - Unifies with the bitwise inversion of the bits of the input
-- `bit_shift_left(Integer1, Integer2, Answer)` - Unifies with the left shifted value of Integer1 by Integer2
-- `bit_shift_right(Integer1, Integer2, Answer)` - Unifies with the right shifted value of Integer1 by Integer2
+Clause | Description
+------ | -----------
+`bit_and/3` | Unifies with the bitwise AND of the two inputs
+`bit_or/3` | Unifies with the bitwise OR of the two inputs
+`bit_xor/3` | Unifies with the bitwise XOR of the two inputs
+`bit_neg/2` | Unifies with the bitwise inversion of the bits of the input
+`bit_shift_left/3` | Unifies with the left shifted value of Input1 by Input2
+`bit_shift_right/3` | Unifies with the right shifted value of Input1 by Input2
 
 #### Equality/order operator clauses
 
 _The inputs must be both numeric or both strings to unify._
 
-- `eql(Input1, Input2, Answer)` - Unifies if the values are equal; with the string literal `'yes'`
-- `neq(Input1, Input2, Answer)` - Unifies if the values are not equal; with the string literal `'yes'`
-- `max(Input1, Input2, Answer)` - Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
-- `min(Input1, Input2, Answer)` - Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
-- `gt(Input1, Input2, Answer)` - Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
-- `lt(Input1, Input2, Answer)` - Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
+Clause | Description
+------ | -----------
+`eql/3` | Unifies if the values are equal; with the string literal `'yes'`
+`neq/3` | Unifies if the values are not equal; with the string literal `'yes'`
+`max/3` | Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
+`min/3` | Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric
+`gt/3` | Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
+`lt/3` | Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric; ; unifies with the string literal `'yes'`
 
 #### Type casting operator clauses
 
 _These always unify._
 
-- `str(Input, Answer)` - Unifies with the text representation of Input
-- `int(Input, Answer)` - Unifies with the integer value of Input; will truncate floating point inputs
-- `float(Input, Answer)` - Unifies with the floating point value of Input
+Clause | Description
+------ | -----------
+`string/2` | Unifies with the text representation of the input
+`integer/2` | Unifies with the integer value of the input; will truncate floating point inputs
+`float/2` | Unifies with the floating point value of Input
 
 #### String operator clauses
 
 _The inputs must be of the correct data type to unify._
 
-- `len(String, Answer)` - Unifies with the number of characters in String
-- `concat(String1, String2, Answer)` - Unifies with the concatenation of the two inputs
-- `slice(String, Integer1, Integer2, Answer)` - Unifies with the remainder of String starting at Integer1 and ending at Integer2
-- `index(String, Integer1, Integer2, Answer)` - Unifies with the first position of Integer1 in String, starting the search from Integer2
-- `ord(String, Answer)` - Unifies with the numeric ASCII value of the first character in the String string
-- `char(Integer, Answer)` - Unifies with the ASCII character found for the numeric value of Integer
+Clause | Description
+------ | -----------
+`len/2` | Unifies with the number of characters of a string input
+`concat/3` | Unifies with the concatenation of two string inputs
+`slice/4` | Unifies with the remainder of a string Input1 starting at integer Input2 and ending at integer Input3
+`index/4` | Unifies with the integer position of string Input2 if found in string Input1; searching from the integer offset Input3
+`ord/2` | Unifies with the numeric ASCII value of the first character in the string input
+`char/2` | Unifies with a string with the ASCII character found for the integer input
 
 #### Other operator clauses
 
 _These always unify._
 
-- `rand(Answer)` - Unifies with a random floating point value between 0 and 1
-- `type(Input, Answer)` - Unifies with the string literal of the name of the data type of Input: `'string'`, `'integer'` or `'float'`
-- `print(Input, Answer)` - Print the Input to the console; unifies with the string literal `'yes'`
-- `time(Answer)` - Unifies with the integer number of milliseconds since the UNIX epoch
-- `time(Input, Answer)` - Unifies with the integer number of milliseconds since the UNIX epoch; the input is just used as a requirement to enforce order of execution
+Clause | Description
+------ | -----------
+`rand/1` | Unifies with a random floating point value between 0 and 1
+`type/2` | Unifies with the string literal of the name of the data type of Input: `'string'`, `'integer'` or `'float'`
+`print/2` | Print the Input to the console; unifies with the string literal `'yes'`
+`time/1` | Unifies with the integer number of milliseconds since the UNIX epoch
+`time/2` | Unifies with the integer number of milliseconds since the UNIX epoch; the input is just used as a requirement to enforce order of execution
 
 Operator clauses cannot be overwritten or retracted with clauses with the same name and arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.
 
@@ -284,12 +298,14 @@ The clause condition `fib(N > 2, Res)` restricts matching N to values greater th
 
 #### Operators
 
-- `<` - Tests if the variable is lower than the constant
-- `<=` - Tests if the variable is lower or _equal_ to the constant
-- `>` - Tests if the variable is greater than the constant
-- `>=` - Tests if the variable is greater or _equal_ to the constant
-- `<>` - Tests if the variable is not _equal_ to the constant
-- `:` - Tests if the data type of the variable is the constant value (from `'integer'`, `'float'` or `'string'`)
+Symbol | Description
+------ | ----
+`<`  | Tests if the variable is lower than the constant
+`<=` | Tests if the variable is lower or _equal_ to the constant
+`>`  | Tests if the variable is greater than the constant
+`>=` | Tests if the variable is greater or _equal_ to the constant
+`<>` | Tests if the variable is not _equal_ to the constant
+`:`  | Tests if the data type of the variable is the constant value (from `'integer'`, `'float'` or `'string'`)
 
 Clause conditions are exclusively between a variable and a constant values (`func(X < B, ...` is invalid) and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types unify. The comparison operators use alphabetical order for strings.
 
