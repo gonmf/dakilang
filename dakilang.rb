@@ -435,38 +435,38 @@ class DakiLangInterpreter
           end
           tokens.push(['float_const', string.to_f])
         else
-          cd = c.downcase
+          c_d = c.downcase
 
-          if cd == '.'
+          if c_d == '.'
             floating_point_mode = true
-            string += cd
+            string += c_d
             next
-          elsif cd == 'b' || cd == 'x' # Binary or hexadecimal mode
+          elsif c_d == 'b' || c_d == 'x' # Binary or hexadecimal mode
             if string == '0'
-              string += cd
+              string += c_d
               next
             else
               err("Syntax error at #{text}", "illegal integer format at #{string}")
             end
-          elsif cd >= '0' && cd <= '9'
+          elsif c_d >= '0' && c_d <= '9'
             if string[0] == '0' && string[1] != 'b' && string[1] != 'x' # Octal mode
-              if cd > '7'
+              if c_d > '7'
                 err("Syntax error at #{text}", "illegal integer octal format at #{string}")
               else
-                string += cd
+                string += c_d
                 next
               end
             end
 
-            if string[0] == '0' && string[1] == 'b' && cd > '1' # Binary mode
+            if string[0] == '0' && string[1] == 'b' && c_d > '1' # Binary mode
               err("Syntax error at #{text}", "illegal integer binary format at #{string}")
             end
 
-            string += cd
+            string += c_d
             next
-          elsif cd >= 'a' && cd <= 'z'
-            if cd <= 'f' && string[1] == 'x' # Hexadecimal mode
-              string += cd
+          elsif c_d >= 'a' && c_d <= 'z'
+            if c_d <= 'f' && string[1] == 'x' # Hexadecimal mode
+              string += c_d
               next
             else
               err("Syntax error at #{text}", "illegal integer hexadecimal format at #{string}")

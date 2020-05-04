@@ -23,10 +23,9 @@ assert(
   'abc(a_).'
 )
 
-# TODO: should fail
-# assert(
-#   'abc(3a).'
-# )
+assert(
+  'abc(3a).'
+)
 
 assert(
   'abc(A, 123, 12.3, "123", \'123\', 0>vic, vic <> 0.3, vic > "my_str").',

@@ -501,6 +501,7 @@ Option | Description
 
 - Test suite - cover the parser
 - Improve parser
+- Test performance improvements of use of symbols
 - Test suite - cover the solver
 - Help built-in
 - Version number 1.0
