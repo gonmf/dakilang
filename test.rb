@@ -119,7 +119,7 @@ assert(
 )
 
 assert(
-  'div(0043, 0.32, a_b)?',
+  'div(43, 0.32, a_b)?',
   'name | div | vars_start | integer_const | 43 | float_const | 0.32 | var | %a_b | vars_end | full_query_finish'
 )
 
@@ -170,6 +170,46 @@ assert(
 
 assert(
   'xpto(N <> 2, N <> 3) :- eql(N, N, X)?'
+)
+
+assert(
+  'number(121).',
+  'name | number | vars_start | integer_const | 121 | vars_end | clause_finish'
+)
+
+assert(
+  'number(0172).',
+  'name | number | vars_start | integer_const | 122 | vars_end | clause_finish'
+)
+
+assert(
+  'number(019).'
+)
+
+assert(
+  'number(0b1111011).',
+  'name | number | vars_start | integer_const | 123 | vars_end | clause_finish'
+)
+
+assert(
+  'number(0b1111x011).'
+)
+
+assert(
+  'number(0b1112011).'
+)
+
+assert(
+  'number(0x7c).',
+  'name | number | vars_start | integer_const | 124 | vars_end | clause_finish'
+)
+
+assert(
+  'number(0x7xc).'
+)
+
+assert(
+  'number(0x7g).'
 )
 
 puts 'Tests passed'

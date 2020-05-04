@@ -221,19 +221,27 @@ module OperatorClauses
   end
 
   # Type casting operator clauses
-  def oper_to_string(args)
-    a, = args
+  def oper_as_string(args)
+    a, b = args
 
-    a.to_s
+    if b
+      a.to_s(b) if a.is_a?(Integer) && b.is_a?(Integer)
+    else
+      a.to_s
+    end
   end
 
-  def oper_to_integer(args)
-    a, = args
+  def oper_as_integer(args)
+    a, b = args
 
-    a.to_i
+    if b
+      a.to_i(b) if a.is_a?(String) && b.is_a?(Integer)
+    else
+      a.to_i
+    end
   end
 
-  def oper_to_float(args)
+  def oper_as_float(args)
     a, = args
 
     a.to_f

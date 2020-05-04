@@ -38,9 +38,11 @@ class DakiLangInterpreter
     'gte/3',
     'lte/3',
     # Casts
-    'to_string/2',
-    'to_integer/2',
-    'to_float/2',
+    'as_string/2',
+    'as_string/3',
+    'as_integer/2',
+    'as_integer/3',
+    'as_float/2',
     # Strings
     'len/2',
     'concat/3',
@@ -433,19 +435,60 @@ class DakiLangInterpreter
           end
           tokens.push(['float_const', string.to_f])
         else
-          if c == '.'
+          cd = c.downcase
+
+          if cd == '.'
             floating_point_mode = true
-            string += c
+            string += cd
             next
-          elsif c >= '0' && c <= '9'
-            string += c
+          elsif cd == 'b' || cd == 'x' # Binary or hexadecimal mode
+            if string == '0'
+              string += cd
+              next
+            else
+              err("Syntax error at #{text}", "illegal integer format at #{string}")
+            end
+          elsif cd >= '0' && cd <= '9'
+            if string[0] == '0' && string[1] != 'b' && string[1] != 'x' # Octal mode
+              if cd > '7'
+                err("Syntax error at #{text}", "illegal integer octal format at #{string}")
+              else
+                string += cd
+                next
+              end
+            end
+
+            if string[0] == '0' && string[1] == 'b' && cd > '1' # Binary mode
+              err("Syntax error at #{text}", "illegal integer binary format at #{string}")
+            end
+
+            string += cd
             next
+          elsif cd >= 'a' && cd <= 'z'
+            if cd <= 'f' && string[1] == 'x' # Hexadecimal mode
+              string += cd
+              next
+            else
+              err("Syntax error at #{text}", "illegal integer hexadecimal format at #{string}")
+            end
           end
 
           if ['-', '.'].include?(string.chars.last)
             err("Syntax error at #{text}", "illegal integer format at #{string}")
           end
-          tokens.push(['integer_const', string.to_i])
+
+          base = 10
+          if string[0] == '0'
+            if string[1] == 'x'
+              base = 16
+            elsif string[1] == 'b'
+              base = 2
+            else
+              base = 8
+            end
+          end
+
+          tokens.push(['integer_const', string.to_i(base)])
         end
 
         string = ''

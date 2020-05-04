@@ -105,6 +105,15 @@ value(1).
 value(1.0).
 ```
 
+Integer literals can be specified in decimal, octal, hexadecimal or binary notation:
+
+```java
+> value(122).       % decimal
+> value(0172).      % octal
+> value(0x7a).      % hexadecimal
+> value(0b1111010). % binary
+```
+
 String literals can be enclosed both by the characters `'` and `"`, and both of these can be escaped with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`. The character `\` is also used to denote line continuation - when placed at the end of a line, it is discarded and the line is join with the line bellow.
 
 Variable names and clause names must start with a letter and not end in an underscore. They can be composed only of ASCII letters, algarisms and underscores.
@@ -245,13 +254,15 @@ lte/3 | Unifies if Input1 is lower or equal to Input2; if any of the inputs is a
 
 #### Type casting operator clauses
 
-_These always unify._
+_The inputs must be of the correct data type to unify._
 
 Clause | Description
 ------ | -----------
-to_string/2 | Unifies with the text representation of the input
-to_integer/2 | Unifies with the integer value of the input; will truncate floating point inputs
-to_float/2 | Unifies with the floating point value of Input
+as_string/2 | Unifies with the text representation of the input (of any type)
+as_string/3 | Unifies with the text representation of the first integer input, with the base specified by the second integer input
+as_integer/2 | Unifies with the integer value of the input (of any type); will truncate floating point values
+as_integer/3 | Unifies with the integer value of the first string input, with the base specified by the second integer input
+as_float/2 | Unifies with the floating point value of the input (of any type)
 
 #### String operator clauses
 
@@ -490,7 +501,6 @@ Option | Description
 
 - Test suite - cover the parser
 - Improve parser
-- Support other formats for numeric values, like hex
 - Test suite - cover the solver
 - Help built-in
 - Version number 1.0
