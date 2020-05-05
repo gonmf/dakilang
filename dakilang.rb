@@ -66,14 +66,11 @@ class DakiLangInterpreter
   attr_accessor :search_time_limit, :debug
 
   def initialize
-    @test_mode = false
     @search_time_limit = 3.0 # Seconds
-    @debug = false
 
     @table = {}
     @memo_tree = {}
     @to_memo = {}
-    @table_name = nil
 
     select_table('0', false)
   end
@@ -92,8 +89,10 @@ class DakiLangInterpreter
   def consult_file(filename, consult_chain = [])
     if !filename || filename.size == 0
       puts 'File name is missing or invalid'
+      puts
     elsif consult_chain.include?(filename)
       puts 'Circular file consult invocation detected'
+      puts
     else
       contents = file_read(filename)
 
@@ -101,10 +100,9 @@ class DakiLangInterpreter
         run_commands(contents, consult_chain + [filename])
       else
         puts 'File not found or cannot be read'
+        puts
       end
     end
-
-    puts
   end
 
   def print_version
@@ -113,8 +111,17 @@ class DakiLangInterpreter
   end
 
   def print_help
-    # TODO:
-    raise 'NotImplementedError'
+    puts 'USE'
+    puts '    ./dakilang [OPTIONS]'
+    puts
+    puts 'OPTIONS'
+    puts '-h, --help                 % Print out the program manual and exit'
+    puts '-v, --version              % Print out the program name and version, and exit'
+    puts '-c file, --consult file    % Read file with path "file" and interpret each line'
+    puts '-i, --interactive          % Activate interactive mode after finishing consulting all files'
+    puts '-d, --debug                % Activate debug mode, which shows extra output and disables some performance improvements'
+    puts '-t seconds, --time seconds % Changes the default query timeout time; "seconds" is a floating point value in seconds'
+    puts
   end
 
   def debug_tokenizer(line)
@@ -257,7 +264,7 @@ class DakiLangInterpreter
   def add_rule(tokens)
     head, last_idx = build_fact(tokens)
 
-    if OPERATOR_CLAUSES.include?(head.arity_name)
+    if head && OPERATOR_CLAUSES.include?(head.arity_name)
       puts 'Built-in operator clause already exists'
       return
     end
@@ -400,7 +407,7 @@ class DakiLangInterpreter
           separator_mode = false
           next
         else
-          err("Syntax error at #{text}", 'expected :-')
+          parser_error("Syntax error at #{text}", 'expected :-')
         end
       end
 
@@ -411,7 +418,7 @@ class DakiLangInterpreter
             escape_mode = false
             next
           else
-            err("Syntax error at #{text}", 'string literal escape of unsupported character')
+            parser_error("Syntax error at #{text}", 'string literal escape of unsupported character')
           end
         elsif c == '\\'
           escape_mode = true
@@ -432,14 +439,14 @@ class DakiLangInterpreter
       if number_mode
         if floating_point_mode
           if c == '.'
-            err("Syntax error at #{text}", 'illegal floating point format')
+            parser_error("Syntax error at #{text}", 'illegal floating point format')
           elsif c >= '0' && c <= '9'
             string += c
             next
           end
 
           if ['-', '.'].include?(string.chars.last)
-            err("Syntax error at #{text}", "illegal floating point format at #{string}")
+            parser_error("Syntax error at #{text}", "illegal floating point format at #{string}")
           end
           tokens.push(['float_const', string.to_f])
         else
@@ -454,12 +461,12 @@ class DakiLangInterpreter
               string += c_d
               next
             else
-              err("Syntax error at #{text}", "illegal integer format at #{string}")
+              parser_error("Syntax error at #{text}", "illegal integer format at #{string}")
             end
           elsif c_d >= '0' && c_d <= '9'
             if string[0] == '0' && string[1] != 'b' && string[1] != 'x' # Octal mode
               if c_d > '7'
-                err("Syntax error at #{text}", "illegal integer octal format at #{string}")
+                parser_error("Syntax error at #{text}", "illegal integer octal format at #{string}")
               else
                 string += c_d
                 next
@@ -467,7 +474,7 @@ class DakiLangInterpreter
             end
 
             if string[0] == '0' && string[1] == 'b' && c_d > '1' # Binary mode
-              err("Syntax error at #{text}", "illegal integer binary format at #{string}")
+              parser_error("Syntax error at #{text}", "illegal integer binary format at #{string}")
             end
 
             string += c_d
@@ -477,12 +484,12 @@ class DakiLangInterpreter
               string += c_d
               next
             else
-              err("Syntax error at #{text}", "illegal integer hexadecimal format at #{string}")
+              parser_error("Syntax error at #{text}", "illegal integer hexadecimal format at #{string}")
             end
           end
 
           if ['-', '.'].include?(string.chars.last)
-            err("Syntax error at #{text}", "illegal integer format at #{string}")
+            parser_error("Syntax error at #{text}", "illegal integer format at #{string}")
           end
 
           base = 10
@@ -550,7 +557,7 @@ class DakiLangInterpreter
 
       if c == '.'
         if tokens.any? { |a| a[0].end_with?('_finish') }
-          err("Syntax error at #{text}", 'unexpected . character')
+          parser_error("Syntax error at #{text}", 'unexpected . character')
         end
 
         tokens.push(['clause_finish'])
@@ -559,10 +566,10 @@ class DakiLangInterpreter
 
       if c == '?'
         if tokens.any? { |a| a[0].end_with?('_finish') }
-          err("Syntax error at #{text}", 'unexpected ? character')
+          parser_error("Syntax error at #{text}", 'unexpected ? character')
         end
         if tokens.include?(['sep'])
-          err("Syntax error at #{text}", 'unexpected ? character for rule with tail')
+          parser_error("Syntax error at #{text}", 'unexpected ? character for rule with tail')
         end
 
         tokens.push(['full_query_finish'])
@@ -571,10 +578,10 @@ class DakiLangInterpreter
 
       if c == '!'
         if tokens.any? { |a| a[0].end_with?('_finish') }
-          err("Syntax error at #{text}", 'unexpected ! character')
+          parser_error("Syntax error at #{text}", 'unexpected ! character')
         end
         if tokens.include?(['sep'])
-          err("Syntax error at #{text}", 'unexpected ! character for rule with tail')
+          parser_error("Syntax error at #{text}", 'unexpected ! character for rule with tail')
         end
 
         tokens.push(['short_query_finish'])
@@ -583,7 +590,7 @@ class DakiLangInterpreter
 
       if c == '~'
         if tokens.any? { |a| a[0].end_with?('_finish') }
-          err("Syntax error at #{text}", 'unexpected ~ character')
+          parser_error("Syntax error at #{text}", 'unexpected ~ character')
         end
 
         tokens.push(['retract_finish'])
@@ -592,7 +599,7 @@ class DakiLangInterpreter
 
       if c == '"' || c == "'"
         if string.size > 0
-          err("Syntax error at #{text}", 'unexpected end of string')
+          parser_error("Syntax error at #{text}", 'unexpected end of string')
         end
 
         string_delimiter = c
@@ -602,7 +609,7 @@ class DakiLangInterpreter
 
       if c == '('
         if string.empty?
-          err("Syntax error at #{text}", 'unexpected start of argument list')
+          parser_error("Syntax error at #{text}", 'unexpected start of argument list')
         end
 
         arg_list_mode = true
@@ -614,11 +621,11 @@ class DakiLangInterpreter
 
       if c == ')'
         if !arg_list_mode
-          err("Syntax error at #{text}", 'unexpected end of empty argument list')
+          parser_error("Syntax error at #{text}", 'unexpected end of empty argument list')
         end
 
         if last_non_whitespace == ','
-          err("Syntax error at #{text}", 'unexpected dangling comma at end of argument list')
+          parser_error("Syntax error at #{text}", 'unexpected dangling comma at end of argument list')
         end
 
         arg_list_mode = false
@@ -626,7 +633,7 @@ class DakiLangInterpreter
           tokens.push(['var', "%#{string}"])
           string = ''
         elsif tokens.last == ['args_start']
-          err("Syntax error at #{text}", 'unexpected end of empty argument list')
+          parser_error("Syntax error at #{text}", 'unexpected end of empty argument list')
         end
 
         tokens.push(['args_end'])
@@ -639,10 +646,10 @@ class DakiLangInterpreter
             tokens.push(['var', "%#{string}"])
             string = ''
           elsif tokens.last == ['args_start']
-            err("Syntax error at #{text}", 'invalid , at argument list start')
+            parser_error("Syntax error at #{text}", 'invalid , at argument list start')
           end
         else
-          err("Syntax error at #{text}", 'unexpected , character')
+          parser_error("Syntax error at #{text}", 'unexpected , character')
         end
 
         next
@@ -650,18 +657,18 @@ class DakiLangInterpreter
 
       if c == '&'
         if arg_list_mode
-          err("Syntax error at #{text}", 'unexpected & character')
+          parser_error("Syntax error at #{text}", 'unexpected & character')
         else
           if !tokens.include?(['sep'])
-            err("Syntax error at #{text}", 'invalid & character before clause head/tail separator')
+            parser_error("Syntax error at #{text}", 'invalid & character before clause head/tail separator')
           end
 
           if tokens.include?(['or'])
-            err("Syntax error at #{text}", 'mixing of | and & logical operators')
+            parser_error("Syntax error at #{text}", 'mixing of | and & logical operators')
           end
 
           if string.size > 0
-            err("Syntax error at #{text}", 'unexpected & character')
+            parser_error("Syntax error at #{text}", 'unexpected & character')
           end
 
           tokens.push(['and'])
@@ -671,15 +678,15 @@ class DakiLangInterpreter
 
       if c == '|'
         if !tokens.include?(['sep'])
-          err("Syntax error at #{text}", 'invalid | character before clause head/tail separator')
+          parser_error("Syntax error at #{text}", 'invalid | character before clause head/tail separator')
         end
 
         if tokens.include?(['and'])
-          err("Syntax error at #{text}", 'mixing of | and & logical operators')
+          parser_error("Syntax error at #{text}", 'mixing of | and & logical operators')
         end
 
         if string.size > 0
-          err("Syntax error at #{text}", 'unexpected | character')
+          parser_error("Syntax error at #{text}", 'unexpected | character')
         end
 
         tokens.push(['or'])
@@ -688,7 +695,7 @@ class DakiLangInterpreter
 
       if c == ':' && !separator_mode
         if arg_list_mode
-          err("Syntax error at #{text}", 'duplicate :- separator')
+          parser_error("Syntax error at #{text}", 'duplicate :- separator')
         end
 
         if string.size > 0
@@ -704,11 +711,11 @@ class DakiLangInterpreter
     end
 
     if string.size > 0
-      err("Syntax error at #{text}", 'unterminated text')
+      parser_error("Syntax error at #{text}", 'unterminated text')
     end
 
     if tokens.any? && !['clause_finish', 'short_query_finish', 'full_query_finish', 'retract_finish'].include?(tokens.last&.first)
-      err("Syntax error at #{text}", 'unterminated clause')
+      parser_error("Syntax error at #{text}", 'unterminated clause')
     end
 
     tokens.each.with_index do |s, idx|
@@ -719,7 +726,7 @@ class DakiLangInterpreter
         var2 = tokens[idx + 1]
 
         if !var1 || !var2 || ((var1[0] == 'var') == (var2[0] == 'var'))
-          err("Syntax error at #{text}", 'invalid clause condition format')
+          parser_error("Syntax error at #{text}", 'invalid clause condition format')
         end
 
         var = var1[0] == 'var' ? var1 : var2
@@ -730,7 +737,7 @@ class DakiLangInterpreter
         end
 
         if s[1] == ':' && (const[0][0] != 's' || !['integer', 'float', 'string'].include?(const[1]))
-          err("Syntax error at #{text}", 'invalid argument for : operator')
+          parser_error("Syntax error at #{text}", 'invalid argument for : operator')
         end
 
         new_var = "#{var[1]}%#{s[1]}%#{const[0][0]}%#{const[1]}"
@@ -738,7 +745,7 @@ class DakiLangInterpreter
         tokens[idx] = nil
         tokens[idx + 1] = nil
       else
-        err("Syntax error at #{text}", 'unknown clause condition operator')
+        parser_error("Syntax error at #{text}", 'unknown clause condition operator')
       end
     end
 
@@ -746,10 +753,10 @@ class DakiLangInterpreter
 
     tokens.each.with_index do |s, idx|
       if s[0] == 'name' && (tokens[idx + 1].nil? || tokens[idx + 1][0] != 'args_start')
-        err("Syntax error at #{text}", 'clause without arguments list')
+        parser_error("Syntax error at #{text}", 'clause without arguments list')
       end
       if s[0] == 'args_start' && tokens[idx + 1] && tokens[idx + 1][0] == 'args_end'
-        err("Syntax error at #{text}", 'empty arguments list')
+        parser_error("Syntax error at #{text}", 'empty arguments list')
       end
 
       next if s[0] != 'var' && s[0] != 'name'
@@ -758,13 +765,13 @@ class DakiLangInterpreter
         chrs = s[1].split('%')[1].chars
 
         if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
-          err("Syntax error at #{text}", "illegal character in variable name")
+          parser_error("Syntax error at #{text}", "illegal character in variable name")
         end
       elsif s[0] == 'name'
         chrs = s[1].chars
 
         if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
-          err("Syntax error at #{text}", "illegal character in clause name")
+          parser_error("Syntax error at #{text}", "illegal character in clause name")
         end
       else
         next
@@ -772,6 +779,18 @@ class DakiLangInterpreter
     end
 
     tokens
+  rescue ParserError => e
+    raise if @test_mode
+
+    puts e
+
+    if @interactive
+      puts
+    else
+      exit(1)
+    end
+
+    []
   end
 
   def select_table(name, output)
@@ -1204,6 +1223,11 @@ class DakiLangInterpreter
   end
 
   def table_add_clause(head, body, warn_if_exists)
+    if !head
+      puts 'Invalid clause format'
+      return
+    end
+
     @table[@table_name].each do |arr|
       table_head = arr[0]
       table_body = arr[1]
@@ -1217,29 +1241,15 @@ class DakiLangInterpreter
     @table[@table_name].push([head, body])
   end
 
-  def err(msg, detail = nil)
-    if @test_mode
-      raise ParserError.new([msg, detail].compact.join(': '))
-    end
-
-    if detail && detail.size > 0
-      puts "#{msg}\n    #{detail}"
-    else
-      puts msg
-    end
-
-    if @interactive
-      puts
-    else
-      exit(1)
-    end
+  def parser_error(msg, detail = nil)
+    raise ParserError.new([msg, detail].compact.join(': '))
   end
 end
 
 interpreter = DakiLangInterpreter.new
 enter_interactive = false
 
-ARGV.each do |command|
+ARGV.each.with_index do |command, idx|
   if command == '-h' || command == '--help'
     interpreter.print_help
     exit(0)
@@ -1252,19 +1262,25 @@ ARGV.each do |command|
 
   if command == '-d' || command == '--debug'
     interpreter.debug = true
+    ARGV[idx] = nil
   end
 
   if command == '-i' || command == '--interactive'
     enter_interactive = true
+    ARGV[idx] = nil
   end
 end
 
-ARGV.each.with_index do |command, idx|
+ARGV.compact.each.with_index do |command, idx|
+  next if command.nil?
+
   if command == '-t' || command == '--time'
     new_time = ARGV[idx + 1].to_f
 
-    if new_time > 0
+    if ARGV[idx + 1] && new_time > 0
       interpreter.search_time_limit = new_time
+      ARGV[idx] = nil
+      ARGV[idx + 1] = nil
     else
       puts "Illegal time limit argument #{ARGV[idx + 1]}"
       exit(1)
@@ -1272,10 +1288,26 @@ ARGV.each.with_index do |command, idx|
   end
 end
 
-ARGV.each.with_index do |command, idx|
+to_consult = []
+
+ARGV.compact.each.with_index do |command, idx|
+  next if command.nil?
+
   if command == '-c' || command == '--command'
-    interpreter.consult_file(ARGV[idx + 1])
+    to_consult.push(ARGV[idx + 1])
+    ARGV[idx] = nil
+    ARGV[idx + 1] = nil
   end
+end
+
+if ARGV.compact.any?
+  puts 'Illegal arguments'
+  puts
+  exit(1)
+end
+
+to_consult.each do |file|
+  interpreter.consult_file(file)
 end
 
 if enter_interactive

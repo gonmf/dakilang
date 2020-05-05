@@ -500,6 +500,5 @@ Option | Description
 ## Future work
 
 - Test suite - cover the solver
-- Help built-in
 - Version number 1.0
 - List data type, operators and unification of list elements (head|tail)

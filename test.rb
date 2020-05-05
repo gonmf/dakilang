@@ -135,13 +135,11 @@ assert(
   :error
 )
 
-# TODO:
 assert(
   'div(43, a_b,)?',
   :error
 )
 
-# TODO:
 assert(
   'div(43, a_b, )?',
   :error
