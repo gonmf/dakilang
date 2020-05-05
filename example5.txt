@@ -4,9 +4,9 @@ fib(1, 1).
 fib(2, 1).
 
 % This doesnt work:
-% fib(N, Res) :- gt(N, 2, gt) & sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
+% fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 
-fib(Pos > 2, Res) :- sub(Pos, 1, N1) & sub(Pos, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
+fib(Pos > 2, Res) :- sub(Pos, 1, N1), sub(Pos, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 
 fib(7, Val)?
 
@@ -25,5 +25,5 @@ time(X)?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-time_fib(N, Val, Elapsed) :- time(StartTime) & fib(N, Val) & time(Val, EndTime) & sub(EndTime, StartTime, Elapsed).
+time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 time_fib(10, Val, Elapsed)?

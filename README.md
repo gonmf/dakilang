@@ -71,15 +71,15 @@ New declarations add what is called a _clause_ to the _global table of clauses_ 
 
 ```java
 > parent('john', 'emily').
-> grandparent(A, B) :- parent(A, C) & parent(C, B).
+> grandparent(A, B) :- parent(A, C), parent(C, B).
 ```
 
 Clauses are always terminated by a dot `.`. If they are declared with a tail, the tail must be evaluated true for the head to match. Clauses with a tail are called _rules_, while clauses without it are called _facts_.
 
-In Daki, the tail dependencies order is not important. The `&` character is used to denote logical AND, and the `|` character logical OR. Notice how these are equivalent though:
+In Daki, the tail dependencies order is not important. In accordance with other logic languages, the `,` character is used to denote logical AND, and the `;` character logical OR. Notice how these are equivalent though:
 
 ```java
-> rule(x) :- reason1(x) | reason2(x).
+> rule(x) :- reason1(x); reason2(x).
 > % is the same as
 > rule(x) :- reason1(x).
 > rule(x) :- reason2(x).
@@ -160,8 +160,10 @@ Declaring two clauses with the same name, constants and tail is impossible, and 
 > grandparent("john", Var) :- other(Var, Var).
 > grandparent("john", Var) :- other(Var, Var).
 Clause already exists
+
 > grandparent("john", X) :- other(X, X)~
 Clause removed
+
 > grandparent("john", X) :- other(X, X)~
 Clause not found
 ```
@@ -296,7 +298,7 @@ Let's now go back to how to implement a program that returns the value of the Fi
 ```java
 > fib(1, 1).
 > fib(2, 1).
-> fib(N, Res) :- gt(N, 2, gt) & sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & \
+> fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), \
                  add(X1, X2, Res).
 ```
 
@@ -311,7 +313,7 @@ This is best achieved by using what we call _clause conditions_. Clause conditio
 ```java
 > fib(1, 1).
 > fib(2, 1).
-> fib(N > 2, Res) :- sub(N, 1, N1) & sub(N, 2, N2) & fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).
+> fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
 The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The full list of operators is as follows.
@@ -380,7 +382,7 @@ No solution
 > is_integer("1")?
 No solution
 
-> is_numeric(X) :- is_float(X) | is_integer(X).
+> is_numeric(X) :- is_float(X); is_integer(X).
 > is_numeric(1)?
 is_numeric(1).
 
@@ -397,9 +399,9 @@ As a last example, we can also benchmark how fast our two Fibonacci functions ar
 > % Using only operator clauses
 > fib1(1, 1).
 > fib1(2, 1).
-> fib1(N, Res) :- gt(N, 2, gt) & sub(N, 1, N1) & sub(N, 2, N2) & fib1(N1, X1) & fib1(N2, X2) & \
+> fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), fib1(N2, X2), \
                   add(X1, X2, Res).
-> time_fib1(N, Val, Elapsed) :- time(StartTime) & fib1(N, Val) & time(Val, EndTime) & \
+> time_fib1(N, Val, Elapsed) :- time(StartTime), fib1(N, Val), time(Val, EndTime), \
                                 sub(EndTime, StartTime, Elapsed).
 >
 > time_fib1(10, Val, Elapsed)?
@@ -408,9 +410,9 @@ time_fib1(12, 144, 161).
 > % Using a clause condition
 > fib2(1, 1).
 > fib2(2, 1).
-> fib2(N > 2, Res) :- sub(N, 1, N1) & sub(N, 2, N2) & fib2(N1, X1) & fib2(N2, X2) & \
+> fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), \
                       add(X1, X2, Res).
-> time_fib2(N, Val, Elapsed) :- time(StartTime) & fib2(N, Val) & time(Val, EndTime) & \
+> time_fib2(N, Val, Elapsed) :- time(StartTime), fib2(N, Val), time(Val, EndTime), \
                                 sub(EndTime, StartTime, Elapsed).
 >
 > time_fib2(10, Val, Elapsed)?

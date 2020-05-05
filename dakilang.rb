@@ -649,16 +649,6 @@ class DakiLangInterpreter
             parser_error("Syntax error at #{text}", 'invalid , at argument list start')
           end
         else
-          parser_error("Syntax error at #{text}", 'unexpected , character')
-        end
-
-        next
-      end
-
-      if c == '&'
-        if arg_list_mode
-          parser_error("Syntax error at #{text}", 'unexpected & character')
-        else
           if !tokens.include?(['sep'])
             parser_error("Syntax error at #{text}", 'invalid & character before clause head/tail separator')
           end
@@ -674,9 +664,11 @@ class DakiLangInterpreter
           tokens.push(['and'])
           next
         end
+
+        next
       end
 
-      if c == '|'
+      if c == ';'
         if !tokens.include?(['sep'])
           parser_error("Syntax error at #{text}", 'invalid | character before clause head/tail separator')
         end

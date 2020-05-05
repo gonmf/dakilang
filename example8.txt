@@ -13,7 +13,7 @@ is_integer(1)?
 is_integer(1.0)?
 is_integer("1")?
 
-is_numeric(X) :- is_float(X) | is_integer(X).
+is_numeric(X) :- is_float(X); is_integer(X).
 is_numeric(1)?
 is_numeric(1.0)?
 is_numeric("1")?

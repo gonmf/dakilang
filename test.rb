@@ -36,7 +36,7 @@ assert(
 )
 
 assert(
-  'fib(Pos <= 2, Res) :- sub(Pos, 1, N1) & sub(Pos, 2, N2)& fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).',
+  'fib(Pos <= 2, Res) :- sub(Pos, 1, N1), sub(Pos, 2, N2) , fib(N1, X1), fib(N2, X2), add(X1, X2, Res).',
   'name(fib) | args_start | var(%Pos%<=%i%2) | var(%Res) | args_end | sep | name(sub) | args_start | var(%Pos) | integer_const(1) | var(%N1) | args_end | and | name(sub) | args_start | var(%Pos) | integer_const(2) | var(%N2) | args_end | and | name(fib) | args_start | var(%N1) | var(%X1) | args_end | and | name(fib) | args_start | var(%N2) | var(%X2) | args_end | and | name(add) | args_start | var(%X1) | var(%X2) | var(%Res) | args_end | clause_finish'
 )
 
@@ -51,8 +51,13 @@ assert(
 )
 
 assert(
-  'grandparent(X, Y) :- parent(X, Z) & parent(Z, Y).',
+  'grandparent(X, Y) :- parent(X, Z), parent(Z, Y).',
   'name(grandparent) | args_start | var(%X) | var(%Y) | args_end | sep | name(parent) | args_start | var(%X) | var(%Z) | args_end | and | name(parent) | args_start | var(%Z) | var(%Y) | args_end | clause_finish'
+)
+
+assert(
+  'grandparent(X, Y) :- parent(X, Z); parent(Z, Y).',
+  'name(grandparent) | args_start | var(%X) | var(%Y) | args_end | sep | name(parent) | args_start | var(%X) | var(%Z) | args_end | or | name(parent) | args_start | var(%Z) | var(%Y) | args_end | clause_finish'
 )
 
 assert(
