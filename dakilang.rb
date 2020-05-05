@@ -58,9 +58,8 @@ class DakiLangInterpreter
     'time/2'
   ]).freeze
 
-  VAR_BEGIN_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
-  VAR_REST_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
-  VAR_END_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
+  NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
+  NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
   WHITESPACE = ["\r", "\t", ' '].freeze
 
   attr_accessor :search_time_limit, :debug
@@ -732,19 +731,20 @@ class DakiLangInterpreter
     tokens.each do |s|
       next if s[0] != 'var' && s[0] != 'name'
 
-      term = s[0] == 'var' ? 'variable' : 'clause'
-      chars = s[0] == 'var' ? s[1].split('%')[1].chars : s[1].chars
+      if s[0] == 'var'
+        chrs = s[1].split('%')[1].chars
 
-      if !VAR_BEGIN_CHARS.include?(chars[0])
-        err("Syntax error at #{text}", "illegal first character in #{term} name")
-      end
+        if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
+          err("Syntax error at #{text}", "illegal character in variable name")
+        end
+      elsif s[0] == 'name'
+        chrs = s[1].chars
 
-      if chars.slice(1, chars.count - 1).any? { |c| !VAR_REST_CHARS.include?(c) }
-        err("Syntax error at #{text}", "illegal character in #{term} name")
-      end
-
-      if !VAR_END_CHARS.include?(chars.last)
-        err("Syntax error at #{text}", "illegal last character in #{term} name")
+        if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
+          err("Syntax error at #{text}", "illegal character in clause name")
+        end
+      else
+        next
       end
     end
 
@@ -1107,9 +1107,8 @@ class DakiLangInterpreter
         head = first_solution_clause[0]
         matching_clauses = nil
 
-        func_name = "#{head.name}/#{head.arg_list.count}"
-        if @to_memo[@table_name].include?(func_name)
-          memo_solution = @memo_tree[@table_name][func_name]
+        if @to_memo[@table_name].include?(head.arity_name)
+          memo_solution = @memo_tree[@table_name][head.arity_name]
 
           if memo_solution
             memoed = memoed_fact(memo_solution, head.arg_list)
@@ -1140,15 +1139,14 @@ class DakiLangInterpreter
           # Truncate solution to first clause and clauses still to be resolved (it not debugging)
           new_solution = new_solution.select.with_index do |rule, idx|
             arity = rule[0].arg_list.count
-            func_name = "#{rule[0].name}/#{arity}"
-            memoized_func = @to_memo[@table_name].include?(func_name)
+            memoized_func = @to_memo[@table_name].include?(rule[0].arity_name)
 
             kept = idx == 0 || !rule[1] || memoized_func
 
             # If can be memoized and the rule is finished, memoize it
             if rule[1] && memoized_func && rule[0].arg_list.all? { |v| v.const? }
-              @memo_tree[@table_name][func_name] ||= {}
-              root = @memo_tree[@table_name][func_name]
+              @memo_tree[@table_name][rule[0].arity_name] ||= {}
+              root = @memo_tree[@table_name][rule[0].arity_name]
 
               rule[0].arg_list.slice(0, arity - 1).each do |val|
                 root[val] ||= {}

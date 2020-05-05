@@ -20,7 +20,8 @@ assert(
 )
 
 assert(
-  'abc(a_).'
+  'abc(a_).',
+  'name(abc) | args_start | var(%a_) | args_end | clause_finish'
 )
 
 assert(

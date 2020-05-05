@@ -116,7 +116,7 @@ Integer literals can be specified in decimal, octal, hexadecimal or binary notat
 
 String literals can be enclosed both by the characters `'` and `"`, and both of these can be escaped with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`. The character `\` is also used to denote line continuation - when placed at the end of a line, it is discarded and the line is join with the line bellow.
 
-Variable names and clause names must start with a letter and not end in an underscore. They can be composed only of ASCII letters, algarisms and underscores.
+Variable names and clause names must start with a letter and be composed of letters, algarisms and underscores.
 
 All whitespace outside of string constants is ignored.
 
@@ -501,7 +501,6 @@ Option | Description
 
 - Test suite - cover the parser
 - Improve parser
-- Explore "don't care" (`_`) arguments
 - Test suite - cover the solver
 - Help built-in
 - Version number 1.0
