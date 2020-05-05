@@ -12,7 +12,7 @@ require_relative 'fact'
 class DakiLangInterpreter
   include OperatorClauses
 
-  VERSION = '0.17'
+  VERSION = '0.18'
 
   OPERATOR_CLAUSES = Set.new([
     # Arithmetic
@@ -650,15 +650,15 @@ class DakiLangInterpreter
           end
         else
           if !tokens.include?(['sep'])
-            parser_error("Syntax error at #{text}", 'invalid & character before clause head/tail separator')
+            parser_error("Syntax error at #{text}", 'invalid , character before clause head/tail separator')
           end
 
           if tokens.include?(['or'])
-            parser_error("Syntax error at #{text}", 'mixing of | and & logical operators')
+            parser_error("Syntax error at #{text}", 'mixing of , and ; logical operators')
           end
 
           if string.size > 0
-            parser_error("Syntax error at #{text}", 'unexpected & character')
+            parser_error("Syntax error at #{text}", 'unexpected , character')
           end
 
           tokens.push(['and'])
@@ -670,15 +670,15 @@ class DakiLangInterpreter
 
       if c == ';'
         if !tokens.include?(['sep'])
-          parser_error("Syntax error at #{text}", 'invalid | character before clause head/tail separator')
+          parser_error("Syntax error at #{text}", 'invalid ; character before clause head/tail separator')
         end
 
         if tokens.include?(['and'])
-          parser_error("Syntax error at #{text}", 'mixing of | and & logical operators')
+          parser_error("Syntax error at #{text}", 'mixing of ; and & logical operators')
         end
 
         if string.size > 0
-          parser_error("Syntax error at #{text}", 'unexpected | character')
+          parser_error("Syntax error at #{text}", 'unexpected ; character')
         end
 
         tokens.push(['or'])
@@ -803,7 +803,7 @@ class DakiLangInterpreter
 
   def table_listing
     @table[@table_name].each do |arr|
-      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(' & ')}" : ''}."
+      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}."
     end
 
     puts

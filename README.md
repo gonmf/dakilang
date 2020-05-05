@@ -80,7 +80,7 @@ In Daki, the tail dependencies order is not important. In accordance with other 
 
 ```java
 > rule(x) :- reason1(x); reason2(x).
-> % is the same as
+> % is the same in Daki as
 > rule(x) :- reason1(x).
 > rule(x) :- reason2(x).
 ```
