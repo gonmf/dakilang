@@ -12,7 +12,7 @@ end
 
 assert(
   'abc(A, B0).',
-  'name | abc | vars_start | var | %A | var | %B0 | vars_end | clause_finish'
+  'name(abc) | args_start | var(%A) | var(%B0) | args_end | clause_finish'
 )
 
 assert(
@@ -29,42 +29,42 @@ assert(
 
 assert(
   'abc(A, 123, 12.3, "123", \'123\', 0>vic, vic <> 0.3, vic > "my_str").',
-  'name | abc | vars_start | var | %A | integer_const | 123 | float_const | 12.3 | string_const | 123 | string_const | 123 | var | %vic%<%i%0 | var | %vic%<>%f%0.3 | var | %vic%>%s%my_str | vars_end | clause_finish'
+  'name(abc) | args_start | var(%A) | integer_const(123) | float_const(12.3) | string_const(123) | string_const(123) | var(%vic%<%i%0) | var(%vic%<>%f%0.3) | var(%vic%>%s%my_str) | args_end | clause_finish'
 )
 
 assert(
   'fib(Pos <= 2, Res) :- sub(Pos, 1, N1) & sub(Pos, 2, N2)& fib(N1, X1) & fib(N2, X2) & add(X1, X2, Res).',
-  'name | fib | vars_start | var | %Pos%<=%i%2 | var | %Res | vars_end | sep | name | sub | vars_start | var | %Pos | integer_const | 1 | var | %N1 | vars_end | and | name | sub | vars_start | var | %Pos | integer_const | 2 | var | %N2 | vars_end | and | name | fib | vars_start | var | %N1 | var | %X1 | vars_end | and | name | fib | vars_start | var | %N2 | var | %X2 | vars_end | and | name | add | vars_start | var | %X1 | var | %X2 | var | %Res | vars_end | clause_finish'
+  'name(fib) | args_start | var(%Pos%<=%i%2) | var(%Res) | args_end | sep | name(sub) | args_start | var(%Pos) | integer_const(1) | var(%N1) | args_end | and | name(sub) | args_start | var(%Pos) | integer_const(2) | var(%N2) | args_end | and | name(fib) | args_start | var(%N1) | var(%X1) | args_end | and | name(fib) | args_start | var(%N2) | var(%X2) | args_end | and | name(add) | args_start | var(%X1) | var(%X2) | var(%Res) | args_end | clause_finish'
 )
 
 assert(
   'parent("victor", \'john\').',
-  'name | parent | vars_start | string_const | victor | string_const | john | vars_end | clause_finish'
+  'name(parent) | args_start | string_const(victor) | string_const(john) | args_end | clause_finish'
 )
 
 assert(
   'parent("victor",\'john\').',
-  'name | parent | vars_start | string_const | victor | string_const | john | vars_end | clause_finish'
+  'name(parent) | args_start | string_const(victor) | string_const(john) | args_end | clause_finish'
 )
 
 assert(
   'grandparent(X, Y) :- parent(X, Z) & parent(Z, Y).',
-  'name | grandparent | vars_start | var | %X | var | %Y | vars_end | sep | name | parent | vars_start | var | %X | var | %Z | vars_end | and | name | parent | vars_start | var | %Z | var | %Y | vars_end | clause_finish'
+  'name(grandparent) | args_start | var(%X) | var(%Y) | args_end | sep | name(parent) | args_start | var(%X) | var(%Z) | args_end | and | name(parent) | args_start | var(%Z) | var(%Y) | args_end | clause_finish'
 )
 
 assert(
   'not_found(\'true\')?',
-  'name | not_found | vars_start | string_const | true | vars_end | full_query_finish'
+  'name(not_found) | args_start | string_const(true) | args_end | full_query_finish'
 )
 
 assert(
   'not_found(\'\')?',
-  'name | not_found | vars_start | string_const |  | vars_end | full_query_finish'
+  'name(not_found) | args_start | string_const() | args_end | full_query_finish'
 )
 
 assert(
   'natural_except_five(5)~',
-  'name | natural_except_five | vars_start | integer_const | 5 | vars_end | retract_finish'
+  'name(natural_except_five) | args_start | integer_const(5) | args_end | retract_finish'
 )
 
 # TODO: should accept a empty varlist?
@@ -109,17 +109,17 @@ assert(
 
 assert(
   'is_string(X: \'string\').',
-  'name | is_string | vars_start | var | %X%:%s%string | vars_end | clause_finish'
+  'name(is_string) | args_start | var(%X%:%s%string) | args_end | clause_finish'
 )
 
 assert(
   'is_string("1")?',
-  'name | is_string | vars_start | string_const | 1 | vars_end | full_query_finish'
+  'name(is_string) | args_start | string_const(1) | args_end | full_query_finish'
 )
 
 assert(
   'div(43, 0.32, a_b)?',
-  'name | div | vars_start | integer_const | 43 | float_const | 0.32 | var | %a_b | vars_end | full_query_finish'
+  'name(div) | args_start | integer_const(43) | float_const(0.32) | var(%a_b) | args_end | full_query_finish'
 )
 
 assert(
@@ -150,7 +150,7 @@ assert(
 
 assert(
   'xpto(N <> 2, N <> 3) :- eql(N, N, X).',
-  'name | xpto | vars_start | var | %N%<>%i%2 | var | %N%<>%i%3 | vars_end | sep | name | eql | vars_start | var | %N | var | %N | var | %X | vars_end | clause_finish'
+  'name(xpto) | args_start | var(%N%<>%i%2) | var(%N%<>%i%3) | args_end | sep | name(eql) | args_start | var(%N) | var(%N) | var(%X) | args_end | clause_finish'
 )
 
 assert(
@@ -173,12 +173,12 @@ assert(
 
 assert(
   'number(121).',
-  'name | number | vars_start | integer_const | 121 | vars_end | clause_finish'
+  'name(number) | args_start | integer_const(121) | args_end | clause_finish'
 )
 
 assert(
   'number(0172).',
-  'name | number | vars_start | integer_const | 122 | vars_end | clause_finish'
+  'name(number) | args_start | integer_const(122) | args_end | clause_finish'
 )
 
 assert(
@@ -187,7 +187,7 @@ assert(
 
 assert(
   'number(0b1111011).',
-  'name | number | vars_start | integer_const | 123 | vars_end | clause_finish'
+  'name(number) | args_start | integer_const(123) | args_end | clause_finish'
 )
 
 assert(
@@ -200,7 +200,7 @@ assert(
 
 assert(
   'number(0x7c).',
-  'name | number | vars_start | integer_const | 124 | vars_end | clause_finish'
+  'name(number) | args_start | integer_const(124) | args_end | clause_finish'
 )
 
 assert(

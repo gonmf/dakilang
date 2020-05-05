@@ -13,7 +13,7 @@ class DakiLangInterpreter
 
   VERSION = '0.16'
 
-  BUILT_INS = Set.new([
+  OPERATOR_CLAUSES = Set.new([
     # Arithmetic
     'add/3',
     'sub/3',
@@ -61,6 +61,7 @@ class DakiLangInterpreter
   VAR_BEGIN_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
   VAR_REST_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
   VAR_END_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
+  WHITESPACE = ["\r", "\t", ' '].freeze
 
   attr_accessor :search_time_limit, :debug
 
@@ -121,7 +122,7 @@ class DakiLangInterpreter
 
     tokens = tokenizer(line)
 
-    tokens.join(' | ')
+    tokens.map { |token| token[1] ? "#{token[0]}(#{token[1]})" : token[0] }.join(' | ')
   rescue => e
     e.to_s
   end
@@ -198,7 +199,7 @@ class DakiLangInterpreter
   def retract_rule(tokens)
     head, last_idx = build_fact(tokens)
 
-    if head && clause_match_built_in_test(head)
+    if head && OPERATOR_CLAUSES.include?(head.arity_name)
       puts 'Built-in operator clause cannot be removed'
       return
     end
@@ -256,7 +257,7 @@ class DakiLangInterpreter
   def add_rule(tokens)
     head, last_idx = build_fact(tokens)
 
-    if clause_match_built_in_test(head)
+    if OPERATOR_CLAUSES.include?(head.arity_name)
       puts 'Built-in operator clause already exists'
       return
     end
@@ -278,7 +279,7 @@ class DakiLangInterpreter
 
   def build_fact(tokens, start_index = 0)
     name = nil
-    variables = []
+    arguments = []
     end_index = -1
 
     start_found = false
@@ -286,14 +287,14 @@ class DakiLangInterpreter
       next if idx < start_index
 
       if start_found
-        if token[0] == 'vars_end'
+        if token[0] == 'args_end'
           end_index = idx
           break
         end
 
-        variables.push(token[1])
+        arguments.push(token[1])
       else
-        if token[0] == 'vars_start'
+        if token[0] == 'args_start'
           name = tokens[idx - 1]
 
           if name[0] != 'name'
@@ -307,8 +308,8 @@ class DakiLangInterpreter
       end
     end
 
-    if name && variables.any?
-      [Fact.new(name[1], variables), end_index]
+    if name && arguments.any?
+      [Fact.new(name[1], arguments), end_index]
     else
       [nil, -1]
     end
@@ -323,7 +324,7 @@ class DakiLangInterpreter
       puts 'Clause name is invalid'
     elsif @to_memo[@table_name].include?(name)
       puts 'Clause is already being memoized'
-    elsif BUILT_INS.include?(name)
+    elsif OPERATOR_CLAUSES.include?(name)
       puts 'Cannot memoize built-in operator clause'
     else
       @to_memo[@table_name].add(name)
@@ -392,7 +393,7 @@ class DakiLangInterpreter
           separator_mode = false
           next
         else
-          err("Syntax error at #{text} around", 'expected :-')
+          err("Syntax error at #{text}", 'expected :-')
         end
       end
 
@@ -526,7 +527,7 @@ class DakiLangInterpreter
         break
       end
 
-      if c == ' ' || c == "\t" || c == "\r" # Whitespace are ignored outside of string literals
+      if WHITESPACE.include?(c) # Whitespace is ignored outside of string literals
         if string.size > 0
           tokens.push(['var', "%#{string}"])
           string = ''
@@ -595,7 +596,7 @@ class DakiLangInterpreter
         var_list = true
         tokens.push(['name', string])
         string = ''
-        tokens.push(['vars_start'])
+        tokens.push(['args_start'])
         next
       end
 
@@ -608,11 +609,11 @@ class DakiLangInterpreter
         if string.size > 0
           tokens.push(['var', "%#{string}"])
           string = ''
-        elsif tokens.last == ['vars_start']
+        elsif tokens.last == ['args_start']
           err("Syntax error at #{text}", 'unexpected end of empty argument list')
         end
 
-        tokens.push(['vars_end'])
+        tokens.push(['args_end'])
         next
       end
 
@@ -621,7 +622,7 @@ class DakiLangInterpreter
           if string.size > 0
             tokens.push(['var', "%#{string}"])
             string = ''
-          elsif tokens.last == ['vars_start']
+          elsif tokens.last == ['args_start']
             err("Syntax error at #{text}", 'invalid , at argument list start')
           end
         else
@@ -783,7 +784,7 @@ class DakiLangInterpreter
       obj.each { |k, v| ret[k] = deep_clone(v) }
       ret
     when Fact
-      Fact.new(obj.name, obj.variables.dup)
+      Fact.new(obj.name, obj.arg_list.dup)
     else
       obj
     end
@@ -818,39 +819,26 @@ class DakiLangInterpreter
     nil
   end
 
-  def clause_match_built_in_test(head)
-    name = head.name
-    arity = head.variables.count
-
-    return nil if arity < 1
-
-    BUILT_INS.include?("#{name}/#{arity}")
-  end
-
-  def numeric_cast(str)
-    str.include?('.') ? str.to_f : str.to_i
-  end
-
   def clause_match_built_in_ready(head)
-    arity = head.variables.count
+    arity = head.arg_list.count
 
-    head.variables.slice(0, arity - 1).all? { |v| v.const? }
+    head.arg_list.slice(0, arity - 1).all? { |v| v.const? }
   end
 
   def clause_match_built_in_eval(head)
     name = head.name
-    arity = head.variables.count
+    arity = head.arg_list.count
 
-    other_variables = head.variables.slice(0, arity - 1)
-    return nil if other_variables.any? { |var| !var.const? }
+    other_args = head.arg_list.slice(0, arity - 1)
+    return nil if other_args.any? { |var| !var.const? }
 
-    value = send("oper_#{name}", other_variables)
+    value = send("oper_#{name}", other_args)
 
-    if head.variables.last.const?
-      return nil if value.class != head.variables.last.class || value != head.variables.last
+    if head.arg_list.last.const?
+      return nil if value.class != head.arg_list.last.class || value != head.arg_list.last
     end
 
-    value ? [Fact.new(name, other_variables + [value])] : nil
+    value ? [Fact.new(name, other_args + [value])] : nil
   end
 
   def parse_variable_condition(varname)
@@ -878,10 +866,10 @@ class DakiLangInterpreter
   end
 
   def clauses_match(h1, h2)
-    return false unless h1.name == h2.name && h1.variables.count == h2.variables.count
+    return false unless h1.name == h2.name && h1.arg_list.count == h2.arg_list.count
 
-    h1.variables.each.with_index do |var1, idx|
-      var2 = h2.variables[idx]
+    h1.arg_list.each.with_index do |var1, idx|
+      var2 = h2.arg_list[idx]
 
       return false if var1.const? && var2.const? && (var1.class != var2.class || var1 != var2)
 
@@ -892,7 +880,7 @@ class DakiLangInterpreter
 
         next if oper.nil?
 
-        h1.variables.each do |var3|
+        h1.arg_list.each do |var3|
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
@@ -902,7 +890,7 @@ class DakiLangInterpreter
           end
         end
 
-        h2.variables.each do |var3|
+        h2.arg_list.each do |var3|
           next if var3.const?
 
           var3, oper2, comp2 = parse_variable_condition(var3)
@@ -922,8 +910,8 @@ class DakiLangInterpreter
     h1 = deep_clone(h1)
     h2 = deep_clone(h2)
     dummy_count = 0
-    h1.variables.each.with_index do |var1, idx1|
-      var2 = h2.variables[idx1]
+    h1.arg_list.each.with_index do |var1, idx1|
+      var2 = h2.arg_list[idx1]
 
       if var1.const?
         replace_variable(var2, var1, h2) unless var2.const?
@@ -938,8 +926,8 @@ class DakiLangInterpreter
       end
     end
 
-    h1.variables.each.with_index do |var, idx|
-      return false if var != h2.variables[idx]
+    h1.arg_list.each.with_index do |var, idx|
+      return false if var != h2.arg_list[idx]
     end
 
     true
@@ -948,35 +936,35 @@ class DakiLangInterpreter
   def replace_variable(var_name, literal, head)
     var_name = var_name.split('%')[1]
 
-    head.variables.each.with_index do |var1, idx|
+    head.arg_list.each.with_index do |var1, idx|
       if !var1.const? && var1.split('%')[1] == var_name
-        head.variables[idx] = literal
+        head.arg_list[idx] = literal
       end
     end
   end
 
   def unique_var_names(clauses)
-    variables = Set.new
+    unique_vars = Set.new
 
     clauses.each do |head|
       head = head[0]
-      head.variables.each do |var_name1|
-        next if var_name1.const? || variables.include?(var_name1)
+      head.arg_list.each do |var_name1|
+        next if var_name1.const? || unique_vars.include?(var_name1)
 
         if var_name1[1] >= '0' && var_name1[1] <= '9'
-          variables.add(var_name1)
+          unique_vars.add(var_name1)
           next
         end
 
         @vari += 1
         new_var_name = "%#{@vari}"
-        variables.add(var_name1)
+        unique_vars.add(var_name1)
 
         clauses.each do |head1|
           head1 = head1[0]
 
-          head1.variables.each.with_index do |var_name2, idx|
-            head1.variables[idx] = new_var_name if var_name1 == var_name2
+          head1.arg_list.each.with_index do |var_name2, idx|
+            head1.arg_list[idx] = new_var_name if var_name1 == var_name2
           end
         end
       end
@@ -988,8 +976,8 @@ class DakiLangInterpreter
   def substitute_variables(solution, removed_clause, new_clauses)
     new_clauses = new_clauses.flatten
 
-    new_clauses[0].variables.each.with_index do |var_name1, i1|
-      var_name2 = removed_clause.variables[i1]
+    new_clauses[0].arg_list.each.with_index do |var_name1, i1|
+      var_name2 = removed_clause.arg_list[i1]
 
       if var_name1.const?
         if !var_name2.const?
@@ -1014,17 +1002,17 @@ class DakiLangInterpreter
     new_clauses
   end
 
-  def memoed_fact(memo, variables)
-    return [] if variables.empty?
+  def memoed_fact(memo, arguments)
+    return [] if arguments.empty?
 
-    var = variables.first
+    var = arguments.first
 
     if var.const?
       if memo[var]
-        variables = variables.slice(1, variables.count)
+        arguments = arguments.slice(1, arguments.count)
 
-        if variables.any?
-          return [var, memoed_fact(memo[var], variables)]
+        if arguments.any?
+          return [var, memoed_fact(memo[var], arguments)]
         else
           [var]
         end
@@ -1032,10 +1020,10 @@ class DakiLangInterpreter
         return nil
       end
     else
-      variables = variables.slice(1, variables.count)
+      arguments = arguments.slice(1, arguments.count)
 
       memo.each do |value, sol|
-        se = memoed_fact(sol, variables)
+        se = memoed_fact(sol, arguments)
 
         return [value, se] if se
       end
@@ -1073,7 +1061,7 @@ class DakiLangInterpreter
       if first_solution_idx.nil? || (stop_early && first_solution_idx > 0)
         successful_solutions = solution_set.select do |solution|
           !solution.any? do |solution_clause|
-            solution_clause[0].variables.any? { |v| !v.const? }
+            solution_clause[0].arg_list.any? { |v| !v.const? }
           end
         end
 
@@ -1091,7 +1079,7 @@ class DakiLangInterpreter
       first_solution.each.with_index do |solution_clause, idx|
         next if solution_clause[1]
 
-        if clause_match_built_in_test(solution_clause[0])
+        if OPERATOR_CLAUSES.include?(solution_clause[0].arity_name)
           built_in_response = clause_match_built_in_eval(solution_clause[0])
           if built_in_response
             first_solution_clause_by_builtin_idx = idx
@@ -1119,12 +1107,12 @@ class DakiLangInterpreter
         head = first_solution_clause[0]
         matching_clauses = nil
 
-        func_name = "#{head.name}/#{head.variables.count}"
+        func_name = "#{head.name}/#{head.arg_list.count}"
         if @to_memo[@table_name].include?(func_name)
           memo_solution = @memo_tree[@table_name][func_name]
 
           if memo_solution
-            memoed = memoed_fact(memo_solution, head.variables)
+            memoed = memoed_fact(memo_solution, head.arg_list)
 
             if memoed
               matching_clauses = [[Fact.new(head.name, memoed.flatten), []]]
@@ -1151,23 +1139,23 @@ class DakiLangInterpreter
 
           # Truncate solution to first clause and clauses still to be resolved (it not debugging)
           new_solution = new_solution.select.with_index do |rule, idx|
-            arity = rule[0].variables.count
+            arity = rule[0].arg_list.count
             func_name = "#{rule[0].name}/#{arity}"
             memoized_func = @to_memo[@table_name].include?(func_name)
 
             kept = idx == 0 || !rule[1] || memoized_func
 
             # If can be memoized and the rule is finished, memoize it
-            if rule[1] && memoized_func && rule[0].variables.all? { |v| v.const? }
+            if rule[1] && memoized_func && rule[0].arg_list.all? { |v| v.const? }
               @memo_tree[@table_name][func_name] ||= {}
               root = @memo_tree[@table_name][func_name]
 
-              rule[0].variables.slice(0, arity - 1).each do |val|
+              rule[0].arg_list.slice(0, arity - 1).each do |val|
                 root[val] ||= {}
                 root = root[val]
               end
 
-              root[rule[0].variables.last] = true
+              root[rule[0].arg_list.last] = true
             end
 
             @debug || kept

@@ -1,15 +1,19 @@
 class Fact
-  attr_reader :name, :variables
+  attr_reader :name, :arg_list
 
-  def initialize(name, variables)
+  def initialize(name, arg_list)
     @name = name
-    @variables = variables
+    @arg_list = arg_list
+  end
+
+  def arity_name
+    @arity_name ||= "#{name}/#{arg_list.count}"
   end
 
   def format(friendly)
     s = "#{rand}#{rand}#{rand}".tr('.0', '')
 
-    friendly_variables = variables.map do |var|
+    friendly_args = arg_list.map do |var|
       if var.const?
         case var
         when String
@@ -30,7 +34,7 @@ class Fact
       end
     end
 
-    "#{name}(#{friendly_variables.join(', ')})"
+    "#{name}(#{friendly_args.join(', ')})"
   end
 
   def to_s
@@ -44,19 +48,19 @@ class Fact
   def hash
     vari = 0
 
-    vars = variables.clone
+    args = arg_list.clone
 
-    vars.each do |var_name|
+    args.each do |var_name|
       next if var_name.const?
 
       vari += 1
       new_name = vari.to_s
 
-      vars.each.with_index do |name, idx|
-        vars[idx] = new_name if name == var_name
+      args.each.with_index do |name, idx|
+        args[idx] = new_name if name == var_name
       end
     end
 
-    ([name] + vars).hash
+    ([name] + args).hash
   end
 end

@@ -501,6 +501,7 @@ Option | Description
 
 - Test suite - cover the parser
 - Improve parser
+- Explore "don't care" (`_`) arguments
 - Test performance improvements of use of symbols
 - Test suite - cover the solver
 - Help built-in
