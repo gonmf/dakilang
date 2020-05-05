@@ -499,8 +499,6 @@ Option | Description
 
 ## Future work
 
-- Test suite - cover the parser
-- Improve parser
 - Test suite - cover the solver
 - Help built-in
 - Version number 1.0

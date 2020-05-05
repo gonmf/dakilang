@@ -6,6 +6,7 @@ require 'set'
 
 require_relative 'monkey_patches'
 require_relative 'built_in_operators'
+require_relative 'parser_error'
 require_relative 'fact'
 
 class DakiLangInterpreter
@@ -60,7 +61,7 @@ class DakiLangInterpreter
 
   NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
   NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
-  WHITESPACE = ["\r", "\t", ' '].freeze
+  WHITESPACE_CHARS = ["\r", "\t", ' '].freeze
 
   attr_accessor :search_time_limit, :debug
 
@@ -122,7 +123,7 @@ class DakiLangInterpreter
     tokens = tokenizer(line)
 
     tokens.map { |token| token[1] ? "#{token[0]}(#{token[1]})" : token[0] }.join(' | ')
-  rescue => e
+  rescue ParserError => e
     e.to_s
   end
 
@@ -375,7 +376,7 @@ class DakiLangInterpreter
 
     tokens = []
 
-    var_list = false
+    arg_list_mode = false
     string_mode = false
     escape_mode = false
     number_mode = false
@@ -384,8 +385,15 @@ class DakiLangInterpreter
     operator_mode = false
     string_delimiter = nil
     string = ''
+    c = nil
+    prev_c = nil
+    last_non_whitespace = nil
 
-    text_chars.each do |c|
+    text_chars.each.with_index do |_, idx|
+      prev_c = c
+      last_non_whitespace = prev_c unless WHITESPACE_CHARS.include?(prev_c)
+      c = text_chars[idx]
+
       if separator_mode
         if c == '-'
           tokens.push(['sep'])
@@ -504,7 +512,7 @@ class DakiLangInterpreter
           string = ''
           operator_mode = false
         end
-      elsif ['<', '>', ':'].include?(c) && var_list
+      elsif ['<', '>', ':'].include?(c) && arg_list_mode
         if string.size > 0
           tokens.push(['var', "%#{string}"])
           string = ''
@@ -526,10 +534,15 @@ class DakiLangInterpreter
         break
       end
 
-      if WHITESPACE.include?(c) # Whitespace is ignored outside of string literals
+      if WHITESPACE_CHARS.include?(c) # Whitespace is ignored outside of string literals
         if string.size > 0
-          tokens.push(['var', "%#{string}"])
-          string = ''
+          if arg_list_mode
+            tokens.push(['var', "%#{string}"])
+            string = ''
+          else
+            tokens.push(['name', string])
+            string = ''
+          end
         end
 
         next
@@ -592,7 +605,7 @@ class DakiLangInterpreter
           err("Syntax error at #{text}", 'unexpected start of argument list')
         end
 
-        var_list = true
+        arg_list_mode = true
         tokens.push(['name', string])
         string = ''
         tokens.push(['args_start'])
@@ -600,11 +613,15 @@ class DakiLangInterpreter
       end
 
       if c == ')'
-        if !var_list
+        if !arg_list_mode
           err("Syntax error at #{text}", 'unexpected end of empty argument list')
         end
 
-        var_list = false
+        if last_non_whitespace == ','
+          err("Syntax error at #{text}", 'unexpected dangling comma at end of argument list')
+        end
+
+        arg_list_mode = false
         if string.size > 0
           tokens.push(['var', "%#{string}"])
           string = ''
@@ -617,7 +634,7 @@ class DakiLangInterpreter
       end
 
       if c == ','
-        if var_list
+        if arg_list_mode
           if string.size > 0
             tokens.push(['var', "%#{string}"])
             string = ''
@@ -632,7 +649,7 @@ class DakiLangInterpreter
       end
 
       if c == '&'
-        if var_list
+        if arg_list_mode
           err("Syntax error at #{text}", 'unexpected & character')
         else
           if !tokens.include?(['sep'])
@@ -644,8 +661,7 @@ class DakiLangInterpreter
           end
 
           if string.size > 0
-            tokens.push(['name', string])
-            string = ''
+            err("Syntax error at #{text}", 'unexpected & character')
           end
 
           tokens.push(['and'])
@@ -663,15 +679,15 @@ class DakiLangInterpreter
         end
 
         if string.size > 0
-          tokens.push(['name', string])
-          string = ''
+          err("Syntax error at #{text}", 'unexpected | character')
         end
+
         tokens.push(['or'])
         next
       end
 
       if c == ':' && !separator_mode
-        if var_list
+        if arg_list_mode
           err("Syntax error at #{text}", 'duplicate :- separator')
         end
 
@@ -728,7 +744,14 @@ class DakiLangInterpreter
 
     tokens = tokens.compact
 
-    tokens.each do |s|
+    tokens.each.with_index do |s, idx|
+      if s[0] == 'name' && (tokens[idx + 1].nil? || tokens[idx + 1][0] != 'args_start')
+        err("Syntax error at #{text}", 'clause without arguments list')
+      end
+      if s[0] == 'args_start' && tokens[idx + 1] && tokens[idx + 1][0] == 'args_end'
+        err("Syntax error at #{text}", 'empty arguments list')
+      end
+
       next if s[0] != 'var' && s[0] != 'name'
 
       if s[0] == 'var'
@@ -1196,7 +1219,7 @@ class DakiLangInterpreter
 
   def err(msg, detail = nil)
     if @test_mode
-      raise [msg, detail].compact.join(': ')
+      raise ParserError.new([msg, detail].compact.join(': '))
     end
 
     if detail && detail.size > 0

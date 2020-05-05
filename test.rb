@@ -2,9 +2,9 @@
 
 require_relative 'dakilang'
 
-def assert(query, expected = 'error')
+def assert(query, expected)
   parsed = DakiLangInterpreter.new.debug_tokenizer(query)
-  return if parsed == expected || (parsed.start_with?('Syntax error') && expected == 'error')
+  return if parsed == expected || (parsed.start_with?('Syntax error') && expected == :error)
 
   puts "Test failed: #{query}\nExpected: #{expected}\nReceived: #{parsed}"
   exit(1)
@@ -16,7 +16,8 @@ assert(
 )
 
 assert(
-  'abc(_a).'
+  'abc(_a).',
+  :error
 )
 
 assert(
@@ -25,7 +26,8 @@ assert(
 )
 
 assert(
-  'abc(3a).'
+  'abc(3a).',
+  :error
 )
 
 assert(
@@ -68,45 +70,45 @@ assert(
   'name(natural_except_five) | args_start | integer_const(5) | args_end | retract_finish'
 )
 
-# TODO: should accept a empty varlist?
-# assert(
-#   'natural_except_five().'
-# )
+assert(
+  'natural_except_five().',
+  :error
+)
 
-# TODO:
-# assert(
-#   'natural_except_five()~'
-# )
+assert(
+  'natural_except_five()~',
+  :error
+)
 
-# TODO:
-# assert(
-#   'natural_except_five()?'
-# )
+assert(
+  'natural_except_five()?',
+  :error
+)
 
-# TODO:
-# assert(
-#   'natural_except_five()'
-# )
+assert(
+  'natural_except_five()',
+  :error
+)
 
-# TODO: accept no variables?
-# assert(
-#   'natural_except_five() :- amep(); bla(X).'
-# )
+assert(
+  'natural_except_five() :- amep(); bla(X).',
+  :error
+)
 
-# TODO:
-# assert(
-#   'natural_except_five() :- amep(); bla(X)~'
-# )
+assert(
+  'natural_except_five() :- amep(); bla(X)~',
+  :error
+)
 
-# TODO:
-# assert(
-#   'natural_except_five() :- amep(); bla(X)?'
-# )
+assert(
+  'natural_except_five() :- amep(); bla(X)?',
+  :error
+)
 
-# TODO:
-# assert(
-#   'natural_except_five() :- amep(); bla(X)'
-# )
+assert(
+  'natural_except_five() :- amep(); bla(X)',
+  :error
+)
 
 assert(
   'is_string(X: \'string\').',
@@ -124,29 +126,35 @@ assert(
 )
 
 assert(
-  'div(00_43, 0.32, a_b)?'
+  'div(00_43, 0.32, a_b)?',
+  :error
 )
 
 assert(
-  'div(43, ., a_b)?'
+  'div(43, ., a_b)?',
+  :error
 )
-
-# TODO: should allow a dangling comma?
-# assert(
-#   'div(43, a_b,)?'
-# )
 
 # TODO:
-# assert(
-#   'div(43, a_b, )?'
-# )
-
 assert(
-  'div(, 43, a_b)?'
+  'div(43, a_b,)?',
+  :error
+)
+
+# TODO:
+assert(
+  'div(43, a_b, )?',
+  :error
 )
 
 assert(
-  'div(, 43, a_b, )?'
+  'div(, 43, a_b)?',
+  :error
+)
+
+assert(
+  'div(, 43, a_b, )?',
+  :error
 )
 
 assert(
@@ -155,21 +163,23 @@ assert(
 )
 
 assert(
-  'xpto(N << 2, N <> 3) :- eql(N, N, X).'
+  'xpto(N << 2, N <> 3) :- eql(N, N, X).',
+  :error
 )
 
-# TODO: should allow missing varlists ()?
-# assert(
-#   'xpto(N < 2, N <> 3) :- eql.'
-# )
-
-# TODO:
-# assert(
-#   'xpto :- eql(N, N, X).'
-# )
+assert(
+  'xpto(N < 2, N <> 3) :- eql.',
+  :error
+)
 
 assert(
-  'xpto(N <> 2, N <> 3) :- eql(N, N, X)?'
+  'xpto :- eql(N, N, X).',
+  :error
+)
+
+assert(
+  'xpto(N <> 2, N <> 3) :- eql(N, N, X)?',
+  :error
 )
 
 assert(
@@ -183,7 +193,8 @@ assert(
 )
 
 assert(
-  'number(019).'
+  'number(019).',
+  :error
 )
 
 assert(
@@ -192,11 +203,13 @@ assert(
 )
 
 assert(
-  'number(0b1111x011).'
+  'number(0b1111x011).',
+  :error
 )
 
 assert(
-  'number(0b1112011).'
+  'number(0b1112011).',
+  :error
 )
 
 assert(
@@ -205,11 +218,13 @@ assert(
 )
 
 assert(
-  'number(0x7xc).'
+  'number(0x7xc).',
+  :error
 )
 
 assert(
-  'number(0x7g).'
+  'number(0x7g).',
+  :error
 )
 
 puts 'Tests passed'
