@@ -276,7 +276,7 @@ module OperatorClauses
     a, b, c = args
 
     if a.is_a?(String) && b.is_a?(String) && c.is_a?(Integer)
-      a.index(b, c)
+      a.index(b, c) || -1
     end
   end
 
