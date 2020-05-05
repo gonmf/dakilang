@@ -12,7 +12,7 @@ Daki is a declarative, logic, typed language based on Horn clauses, aimed at sol
 
 **For now the reference interpreter will be implemented in Ruby for fast prototyping and iteration.**
 
-Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences from both. It is also a work in progress. For this reason I have compiled the following short language definition, with examples.
+Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences to both. It is also a work in progress. For this reason I have compiled the following short language definition, with examples.
 
 ## Contents
 
@@ -33,7 +33,7 @@ Regardless of your familiarity with Prolog or Datalog, Daki language has signifi
   - [Clause conditions](#clause-conditions)
     - [Operators](#operators)
   - [Memoization](#memoization)
-- [Interpreter](#interpreter-manual)
+- [Interpreter](#interpreter)
   - [Options](#options)
 - [Future work](#future-work)
 
@@ -41,19 +41,17 @@ Regardless of your familiarity with Prolog or Datalog, Daki language has signifi
 
 ### Introduction
 
-Daki can be used both in interactive and non-interactive mode. In non-interactive mode, the interpreter input, read from files, is also outputted so as to mimic what would appear on a terminal on interactive mode.
+The Daki language is meant to be used in part by reading source code, and then interacting with the declaractions.
 
-In non-interactive mode, the interpreter reads one or more text files in sequence, and interpretes each line fully before advancing. A line can change the global state, which consists of logical assertions.
+One very interesting thing about Daki is that it is meant to bridge the capabilities of Datalog with some of the more powerful features of Prolog. In Datalog queries return all solutions, while in Prolog by default only the first solution is returned. In Daki you can always easily select between the two query methods, and still have access to powerful features missing from Datalog, like a typed system and automatic memoization.
 
-A Daki language text file can contain five types of instructions:
+There are only five types of instructions in Daki, and these cannot be mixed (except for comments that may be inlined):
 
 1. Comments
 2. New declarations
 3. Queries
 4. Declarations to be removed
 5. Built-in commands
-
-Each instruction must be in it's own line or lines - they cannot be mixed - except for inline comments at the end of another instruction.
 
 ### Comments
 
@@ -99,8 +97,10 @@ The Daki data types are **string** (`'daki'`), **integer** (`42`) and **float**,
 >
 > value('1')?
 value('1').
+
 > value(1)?
 value(1).
+
 > value(1.000)?
 value(1.0).
 ```
@@ -108,10 +108,15 @@ value(1.0).
 Integer literals can be specified in decimal, octal, hexadecimal or binary notation:
 
 ```java
-> value(122).       % decimal
-> value(0172).      % octal
+> value(119).       % decimal
+> value(0170).      % octal
 > value(0x7a).      % hexadecimal
-> value(0b1111010). % binary
+> value(0b1111011). % binary
+> listing
+value(119).
+value(120).
+value(122).
+value(123).
 ```
 
 String literals can be enclosed both by the characters `'` and `"`, and both of these can be escaped with `\`. `\` itself is escaped with `\\`. You can write `"'"` and `'"'`, but need to escape it if the character is used for delimiting the string: `"\""` and `'\''`. The character `\` is also used to denote line continuation - when placed at the end of a line, it is discarded and the line is join with the line bellow.
@@ -167,13 +172,14 @@ Clause removed
 > grandparent("john", X) :- other(X, X)~
 Clause not found
 ```
+
 ### Environment commands
 
-Finally, some built-in commands allow for operations related to the interpreter and global table themselves. These are:
+Aside from the language itself, some commands are required to perform operations related to the interpreter and global table themselves. These are:
 
 Command | Description
 ------ | -----------
-quit, exit | Stop execution and exit the interpreter if in interactive mode; only stops processing the current file is in non-interactive mode
+quit | Stop execution and exit the interpreter if in interactive mode; only stops processing the current file is in non-interactive mode
 select_table | Changes the global table currently in use; by default, table 0 is active; passing no argument prints the current table number
 listing | Prints all clauses kept in the current global table
 consult | Read and interpret a Daki language file; receives file path as an argument
@@ -190,21 +196,19 @@ The language features up to here are the minimum required for a pure, logic-base
 
 ### Operator clauses
 
-The Daki language also has __built-in clauses__, that unify with user-specified clauses and perform some form of calculation. To see why these are important, let's look at a practical example. In a language like Prolog, for instance, calculating a number of the Fibonacci sequence may look like:
+The Daki language also has __built-in clauses__, that unify with user-specified clauses and perform some form of calculation. To see why these are important, let's look at a practical example. In a language like Prolog, for instance, calculating a number in the Fibonacci sequence may look like:
 
 ```prolog
-> fib(1, 1).
-> fib(2, 1).
-> fib(N, X) :- f1 = fib(N - 1, X1), f2 = fib(N - 2, X2), X is X1 + X2.
->
-> fib(4, X)?
+fib(1, 1).
+fib(2, 1).
+fib(N, X) :- f1 = fib(N - 1, X1), f2 = fib(N - 2, X2), X is X1 + X2.
 ```
 
-In Prolog we find arithmetic and conditional logic mixed with the clause itself. In the Daki language, however, we prefer to keep the clause format consistent even for these operations. We use instead what we call **operator clauses**:
+In Prolog we find arithmetic and conditional logic mixed with the clause itself. In the Daki language, however, we prefer to keep the clause format consistent even for these operations. We use instead what we call __operator clauses__:
 
 Operator clauses are always unifiable only when the input variables are present, if any, and for performance they are always unified before user-defined clauses where possible.
 
-In these tables, clause `add/3` means a clause named `add` with three arguments. The last variable is always the output, and the remaining the input variables. The descriptions sometimes use the term _InputN_ to name a specific variable N, counting from 1. The result of the operation is unified in the last argument.
+In these tables, clause `add/3` means a clause named `add` with arity three. The last variable is always the output, and the remaining the input variables. The descriptions sometimes use the term _InputN_ to name a specific variable N, counting from 1. The result of the operation is unified in the last argument.
 
 #### Arithmetic operator clauses
 
@@ -293,22 +297,22 @@ time/2 | Unifies with the integer number of milliseconds since the UNIX epoch; t
 
 Operator clauses cannot be overwritten or retracted with clauses with the same name and arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.
 
-Let's now go back to how to implement a program that returns the value of the Fibonacci sequence at position N. At first glance the solution would be:
+Let's now go back to how to implement a program that returns the value of the Fibonacci sequence at position N. At first glance, the solution in Daki would be:
 
 ```java
 > fib(1, 1).
 > fib(2, 1).
-> fib(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), \
-                 add(X1, X2, Res).
+> fib(N, Res) :- gt(N, 2, Y), sub(N, 1, N1), sub(N, 2, N2), fib(N1, F1), fib(N2, F2), \
+                 add(F1, F2, Res).
 ```
 
-Since this solution is recursive: a dependency on `fib` will try all solutions by expanding all clauses named `fib`, including itself; this may seem wrong at first. The Daki language interpreter, however, knows that the operator clauses can be evaluated before everything else in the clause tail. Therefore if the operator clause `gt` fails to unify when it's variables are set, we can abort that whole search subtree.
+Since this solution is recursive: a dependency on `fib` will try all solutions by expanding all clauses named `fib`, including itself; does this result in an infinite cycle? Not quite. The Daki interpreter is smart enough to stop the whole tail calculation when one of it's parts is proven impossible to unify, and most cases we don't have to thing hard about this: operator clauses have higher priority to being processed, and thus the expansion of the clause tail can be aborted sooner.
 
 ### Clause conditions
 
-Depending on the interpreter to abort the whole search subtree because one of the clauses is falsifiable still requires the whole clause tail to be expanded, and sometimes multiple iterations depending on how long it takes for the operator clause to have it's variables set. The best solution would be to avoid expanding the clause tail in the first place.
+The Daki interpreter, however, is not all-knowing. A more complex example may require many clause expansions to reach a falsifiable part. The best solution would be to avoid expanding the clause tail in the first place.
 
-This is best achieved by using what we call _clause conditions_. Clause conditions are boolean tests evaluated before a clause is expanded, providing earlier search termination. With clause conditions our Fibonacci program becomes:
+This is best achieved by using what we call _clause conditions_. Clause conditions are boolean tests on candidate variable values, evaluated before a clause is even expanded. With clause conditions our Fibonacci program becomes:
 
 ```java
 > fib(1, 1).
@@ -316,7 +320,7 @@ This is best achieved by using what we call _clause conditions_. Clause conditio
 > fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
 ```
 
-The clause condition `fib(N > 2, Res)` restricts matching N to values greater than 2. The full list of operators is as follows.
+The clause condition `fib(N > 2, Res)` restricts matching N to values greater than the numeric value 2. The full list of operators is as follows.
 
 #### Operators
 
@@ -329,7 +333,7 @@ Symbol | Description
 <\> | Tests if the variable is not _equal_ to the constant
 :  | Tests if the data type of the variable is the constant value (from `'integer'`, `'float'` or `'string'`)
 
-Clause conditions are exclusively between a variable and a constant values (`func(X < B, ...` is invalid) and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types unify. The comparison operators use alphabetical order for strings.
+Clause conditions are exclusively between a variable and a constant value, and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types do unify. The comparison operators use alphabetical order for strings.
 
 Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:
 
@@ -423,7 +427,7 @@ As you can see, using only operator clauses where a clause condition could've be
 
 ### Memoization
 
-In the last example, when calculating the value of position N of the Fibonacci sequence, we are recalculating a lot. In some contexts, this is required, because a clause can be expanded in many ways; in mathematical formulas however this doesn't happen, and we can apply _memoization_ to the known unifiable forms of the clause.
+In the last example, when calculating the value of position N of the Fibonacci sequence, we are recalculating many intermediate values. In some contexts, this is required, because a clause can be expanded in many ways; in mathematical formulas however this doesn't happen, and we can apply _memoization_ to the known unifiable forms of the clause.
 
 In the Daki language this is done by telling the interpreter what functions can be memoized:
 
@@ -453,29 +457,33 @@ time_fib1(12, 144, 0).
 time_fib2(12, 144, 0).
 ```
 
-In this example we are implicitly memoizing the unification of the clause by the first argument. We must be consistent in how we expand our requirements on a memoized clause. If we later tried to find out all positions in the Fibonacci sequence for which the value is 1, it would fail to give all the solutions:
+In this example, we have instructed the interpreter to remember the configurations at which our functions are unified, and, where possible, to reuse those configurations instead of starting new searches. We must be very careful to be consistent in how we expand our requirements on a memoized clause. If we later tried to find out all positions in the Fibonacci sequence for which the value is 1, it would fail to give all the solutions, because it has already cached one configuration that unifies:
 
 ```java
 > fib2(X, 1)?
 fib2(2, 1).
 ```
 
-Memoization is always relative to a global clauses table. Changing to another table will use another memoization tree.
+Memoization is always relative to a global clauses table. Changing to another table will use another memoization tree. Adding or retracting individual clauses does not affect what clauses are memoized, nor is the process memory cleared, use the built-in commands `rem_memo` and `clear_memo` for that.
 
-## Interpreter Manual
+## Interpreter
 
-You will need to have a Ruby executable installed.
+Daki can be used both in interactive and non-interactive mode. In non-interactive mode, the interpreter input, read from files, is also outputted so as to mimic what would appear on a terminal on interactive mode.
 
-To launch the interpreter in non-interactive mode, execute:
+In non-interactive mode, the interpreter reads one or more text files in sequence, and interpretes each line fully before advancing. A line can change the global state, which consists of logical assertions.
 
-```sh
-./dakilang -c example1.txt
-```
-
-To launch the interpreter in interactive mode, add the -i flag:
+To run the interpreter, you will need to have a Ruby executable installed. To launch the interpreter in interactive mode, use the `-i` flag:
 
 ```sh
 ./dakilang -i
+```
+
+In non-interactive mode a syntax error will end the program, whereas nothing is stopped in interactive mode, so give it a go in interactive mode until you have a good grasp of the syntax.
+
+To launch the interpreter in non-interactive mode, use `-c` with the file path to be executed:
+
+```sh
+./dakilang -c example1.txt
 ```
 
 You can mix the modes, you can start the interpreter by including - _consulting_ - one or more files, and afterwards switching to interactive mode:

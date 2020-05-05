@@ -141,7 +141,7 @@ class DakiLangInterpreter
       puts "> #{line}" unless @interactive
 
       down_line = line.split('%').first.to_s.strip.downcase
-      if down_line == 'quit' || down_line == 'exit'
+      if down_line == 'quit'
         if @interactive
           exit(0)
         else
@@ -266,6 +266,7 @@ class DakiLangInterpreter
 
     if head && OPERATOR_CLAUSES.include?(head.arity_name)
       puts 'Built-in operator clause already exists'
+      puts
       return
     end
 
@@ -1225,7 +1226,10 @@ class DakiLangInterpreter
       table_body = arr[1]
 
       if table_head.eql?(head) && equal_bodies(table_body, body)
-        puts 'Clause already exists' if warn_if_exists
+        if warn_if_exists
+          puts 'Clause already exists'
+          puts
+        end
         return
       end
     end
