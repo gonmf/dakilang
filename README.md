@@ -511,4 +511,4 @@ Option | Description
 
 - Test suite - cover the solver
 - Version number 1.0
-- List data type, operators and unification of list elements (head|tail)
+- List data type, operators and unification of list elements (head\|tail)
