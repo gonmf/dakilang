@@ -32,7 +32,7 @@ class Fact
       new_var = Variable.new(vari.to_s)
 
       args.each.with_index do |var2, idx|
-        args[idx] = new_var if var2.name == var1.name
+        args[idx] = new_var if !var2.const? && var2.name == var1.name
       end
     end
 
