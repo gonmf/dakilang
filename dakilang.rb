@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'rb-readline'
-require 'pry'
+require 'rb-readline' rescue nil
+require 'pry' rescue nil
 require 'set'
 
 Dir['**/*.rb'].each do |filename|
@@ -13,7 +13,7 @@ end
 class DakiLangInterpreter
   include OperatorClauses
 
-  VERSION = '0.18'
+  VERSION = '0.19'
 
   OPERATOR_CLAUSES = Set.new([
     # Arithmetic
