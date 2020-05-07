@@ -54,5 +54,4 @@ Option | Description
 ## Future work
 
 - Extend test suite - cover the solver
-- Add classes for data types and simplify comparison of constants, variables and variables with conditions
 - Explore a list data type, operators and unification of list elements (head\|tail)

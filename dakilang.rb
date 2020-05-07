@@ -4,10 +4,11 @@ require 'rb-readline'
 require 'pry'
 require 'set'
 
-require_relative 'monkey_patches'
-require_relative 'built_in_operators'
-require_relative 'parser_error'
-require_relative 'fact'
+Dir['**/*.rb'].each do |filename|
+  next if ['test.rb', 'dakilang.rb'].include?(filename)
+
+  require_relative filename
+end
 
 class DakiLangInterpreter
   include OperatorClauses
@@ -129,7 +130,7 @@ class DakiLangInterpreter
 
     tokens = tokenizer(line)
 
-    tokens.map { |token| token[1] ? "#{token[0]}(#{token[1]})" : token[0] }.join(' | ')
+    tokens.map { |token| token[1] ? "#{token[0]}(#{token[1].to_s})" : token[0] }.join(' | ')
   rescue ParserError => e
     e.to_s
   end
@@ -427,7 +428,7 @@ class DakiLangInterpreter
         end
 
         if c == string_delimiter
-          tokens.push(['string_const', string])
+          tokens.push(['const', string])
           string = ''
           string_mode = false
         else
@@ -449,7 +450,7 @@ class DakiLangInterpreter
           if ['-', '.'].include?(string.chars.last)
             parser_error("Syntax error at #{text}", "illegal floating point format at #{string}")
           end
-          tokens.push(['float_const', string.to_f])
+          tokens.push(['const', string.to_f])
         else
           c_d = c.downcase
 
@@ -504,7 +505,7 @@ class DakiLangInterpreter
             end
           end
 
-          tokens.push(['integer_const', string.to_i(base)])
+          tokens.push(['const', string.to_i(base)])
         end
 
         string = ''
@@ -522,7 +523,7 @@ class DakiLangInterpreter
         end
       elsif ['<', '>', ':'].include?(c) && arg_list_mode
         if string.size > 0
-          tokens.push(['var', "%#{string}"])
+          tokens.push(['var', string])
           string = ''
         end
 
@@ -545,7 +546,7 @@ class DakiLangInterpreter
       if WHITESPACE_CHARS.include?(c) # Whitespace is ignored outside of string literals
         if string.size > 0
           if arg_list_mode
-            tokens.push(['var', "%#{string}"])
+            tokens.push(['var', string])
             string = ''
           else
             tokens.push(['name', string])
@@ -631,7 +632,7 @@ class DakiLangInterpreter
 
         arg_list_mode = false
         if string.size > 0
-          tokens.push(['var', "%#{string}"])
+          tokens.push(['var', string])
           string = ''
         elsif tokens.last == ['args_start']
           parser_error("Syntax error at #{text}", 'unexpected end of empty argument list')
@@ -644,7 +645,7 @@ class DakiLangInterpreter
       if c == ','
         if arg_list_mode
           if string.size > 0
-            tokens.push(['var', "%#{string}"])
+            tokens.push(['var', string])
             string = ''
           elsif tokens.last == ['args_start']
             parser_error("Syntax error at #{text}", 'invalid , at argument list start')
@@ -729,16 +730,22 @@ class DakiLangInterpreter
           s[1] = invert_operator(s[1])
         end
 
-        if s[1] == ':' && (const[0][0] != 's' || !['integer', 'float', 'string'].include?(const[1]))
+        if s[1] == ':' && !['integer', 'float', 'string'].include?(const[1])
           parser_error("Syntax error at #{text}", 'invalid argument for : operator')
         end
 
-        new_var = "#{var[1]}%#{s[1]}%#{const[0][0]}%#{const[1]}"
-        tokens[idx - 1] = ['var', new_var]
+        const_class_letter = const[1].class.to_s.downcase[0]
+        tokens[idx - 1] = ['var', Variable.new(var[1], s[1], const[1].class.to_s.downcase, const[1])]
         tokens[idx] = nil
         tokens[idx + 1] = nil
       else
         parser_error("Syntax error at #{text}", 'unknown clause condition operator')
+      end
+    end
+
+    tokens.each.with_index do |token, idx|
+      if token && token[0] == 'var' && token[1].is_a?(String)
+        tokens[idx] = ['var', Variable.new(token[1])]
       end
     end
 
@@ -752,10 +759,8 @@ class DakiLangInterpreter
         parser_error("Syntax error at #{text}", 'empty arguments list')
       end
 
-      next if s[0] != 'var' && s[0] != 'name'
-
       if s[0] == 'var'
-        chrs = s[1].split('%')[1].chars
+        chrs = s[1].name.chars
 
         if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
           parser_error("Syntax error at #{text}", "illegal character in variable name")
@@ -766,6 +771,8 @@ class DakiLangInterpreter
         if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
           parser_error("Syntax error at #{text}", "illegal character in clause name")
         end
+      elsif s[0] == 'const'
+        s[1] = Literal.new(s[1])
       else
         next
       end
@@ -820,6 +827,8 @@ class DakiLangInterpreter
       ret
     when Fact
       Fact.new(obj.name, obj.arg_list.dup)
+    when Atom
+      obj.clone
     else
       obj
     end
@@ -867,37 +876,14 @@ class DakiLangInterpreter
     other_args = head.arg_list.slice(0, arity - 1)
     return nil if other_args.any? { |var| !var.const? }
 
-    value = send("oper_#{name}", other_args)
+    value = send("oper_#{name}", other_args.map(&:value))
+    return nil unless value
 
-    if head.arg_list.last.const?
-      return nil if value.class != head.arg_list.last.class || value != head.arg_list.last
-    end
+    value = Literal.new(value)
 
-    value ? [Fact.new(name, other_args + [value])] : nil
-  end
+    return nil if head.arg_list.last.const? && !value.eql?(head.arg_list.last)
 
-  def parse_variable_condition(varname)
-    start, name, oper, const_type, = varname.split('%')
-    return [varname] unless oper
-
-    const_value = varname.slice([start, name, oper, const_type].join('_').size + 1, varname.size)
-
-    if oper == '<>'
-      oper = '!='
-    elsif oper == ':'
-      oper = 'class_is'
-    end
-
-    case const_type
-    when 'i'
-      const_value = const_value.to_i
-    when 'f'
-      const_value = const_value.to_f
-    when 's'
-      const_value = const_value.to_s
-    end
-
-    [name, oper, const_value]
+    [Fact.new(name, other_args + [value])]
   end
 
   def clauses_match(h1, h2)
@@ -906,32 +892,41 @@ class DakiLangInterpreter
     h1.arg_list.each.with_index do |var1, idx|
       var2 = h2.arg_list[idx]
 
-      return false if var1.const? && var2.const? && (var1.class != var2.class || var1 != var2)
+      return false if var1.const? && var2.const? && !var1.eql?(var2)
 
       if var1.const? != var2.const?
         const = var1.const? ? var1 : var2
         var = var1.const? ? var2 : var1
-        var, oper = parse_variable_condition(var)
 
-        next if oper.nil?
+        next if var.condition.nil?
 
         h1.arg_list.each do |var3|
-          next if var3.const?
+          next if var3.const? || var3.name != var.name || var3.condition.nil?
 
-          var3, oper2, comp2 = parse_variable_condition(var3)
-
-          if var3 == var && oper2 # Numeric types only unify with numeric types; same for strings
-            return false if (oper2 != 'class_is' && const.is_a?(String) != comp2.is_a?(String)) || !const.send(oper2, comp2)
+          # Numeric types only unify with numeric types; same for strings
+          if (var3.condition == ':')
+            if const.type != var3.condition_value
+              return false
+            end
+          else
+            if (const.type == 'string') != (var3.condition_type == 'string') || !const.value.send(var3.real_condition, var3.condition_value)
+              return false
+            end
           end
         end
 
         h2.arg_list.each do |var3|
-          next if var3.const?
+          next if var3.const? || var3.name != var.name || var3.condition.nil?
 
-          var3, oper2, comp2 = parse_variable_condition(var3)
-
-          if var3 == var && oper2 # Numeric types only unify with numeric types; same for strings
-            return false if (oper2 != 'class_is' && const.is_a?(String) != comp2.is_a?(String)) || !const.send(oper2, comp2)
+          # Numeric types only unify with numeric types; same for strings
+          if (var3.condition == ':')
+            if const.type != var3.condition_value
+              return false
+            end
+          else
+            if (const.type == 'string') != (var3.condition_type == 'string') || !const.value.send(var3.real_condition, var3.condition_value)
+              return false
+            end
           end
         end
       end
@@ -944,43 +939,48 @@ class DakiLangInterpreter
 
     h1 = deep_clone(h1)
     h2 = deep_clone(h2)
-    dummy_count = 0
+    dummy_value = rand
+
     h1.arg_list.each.with_index do |var1, idx1|
       var2 = h2.arg_list[idx1]
 
       if var1.const?
         unless var2.const?
-          name_only = var2.split('%')[1]
-
-          replace_variable(name_only, var1, h2)
+          replace_variable_with_literal(var2.name, var1.value, h2)
         end
       elsif var2.const?
-        name_only = var1.split('%')[1]
-
-        replace_variable(name_only, var2, h1)
+        replace_variable_with_literal(var1.name, var2.value, h1)
       else
-        dummy_count += 1
-        dummy_value = "_#{dummy_count}"
+        replace_variable_with_literal(var1.name, dummy_value, h1)
+        replace_variable_with_literal(var2.name, dummy_value, h2)
 
-        name_only = var1.split('%')[1]
-        replace_variable(name_only, dummy_value, h1)
-
-        name_only = var2.split('%')[1]
-        replace_variable(name_only, dummy_value, h2)
+        dummy_value += 1
       end
     end
 
     h1.arg_list.each.with_index do |var, idx|
-      return false if var != h2.arg_list[idx]
+      return false if var.value != h2.arg_list[idx].value
     end
 
     true
   end
 
-  def replace_variable(var_name, literal, head)
+  def replace_variable_with_literal(var_name, literal, head)
+    new_literal = Literal.new(literal)
+
     head.arg_list.each.with_index do |var1, idx|
-      if !var1.const? && var1.split('%')[1] == var_name
-        head.arg_list[idx] = literal
+      if !var1.const? && var1.name == var_name
+        head.arg_list[idx] = new_literal
+      end
+    end
+  end
+
+  def replace_variable_with_variable(var_name, new_var_name, head)
+    new_var = Variable.new(new_var_name)
+
+    head.arg_list.each.with_index do |var1, idx|
+      if !var1.const? && var1.name == var_name
+        head.arg_list[idx] = new_var
       end
     end
   end
@@ -990,23 +990,24 @@ class DakiLangInterpreter
 
     clauses.each do |head|
       head = head[0]
-      head.arg_list.each do |var_name1|
-        next if var_name1.const? || unique_vars.include?(var_name1)
+      head.arg_list.each do |var1|
+        next if var1.const? || unique_vars.include?(var1.name)
 
-        if var_name1[1] >= '0' && var_name1[1] <= '9'
-          unique_vars.add(var_name1)
+        if var1.name[0] >= '0' && var1.name[0] <= '9'
+          unique_vars.add(var1.name)
           next
         end
 
         @vari += 1
-        new_var_name = "%#{@vari}"
-        unique_vars.add(var_name1)
+        new_var_name = @vari.to_s
+        new_var = Variable.new(new_var_name)
+        unique_vars.add(var1.name)
 
         clauses.each do |head1|
           head1 = head1[0]
 
-          head1.arg_list.each.with_index do |var_name2, idx|
-            head1.arg_list[idx] = new_var_name if var_name1 == var_name2
+          head1.arg_list.each.with_index do |var2, idx|
+            head1.arg_list[idx] = new_var if !var2.const? && var1.name == var2.name
           end
         end
       end
@@ -1018,31 +1019,25 @@ class DakiLangInterpreter
   def substitute_variables(solution, removed_clause, new_clauses)
     new_clauses = new_clauses.flatten
 
-    new_clauses[0].arg_list.each.with_index do |var_name1, i1|
-      var_name2 = removed_clause.arg_list[i1]
+    new_clauses[0].arg_list.each.with_index do |var1, idx1|
+      var2 = removed_clause.arg_list[idx1]
 
-      if var_name1.const?
-        if !var_name2.const?
-          name_only = var_name2.split('%')[1]
-
+      if var1.const?
+        if !var2.const?
           # Replace variable in solution
           solution.each do |arr|
-            replace_variable(name_only, var_name1, arr[0])
+            replace_variable_with_literal(var2.name, var1.value, arr[0])
           end
         end
-      elsif var_name2.const?
-        name_only = var_name1.split('%')[1]
-
+      elsif var2.const?
         # Replace variable in new_clauses
         new_clauses.each do |clause|
-          replace_variable(name_only, var_name2, clause)
+          replace_variable_with_literal(var1.name, var2.value, clause)
         end
       else
-        name_only = var_name1.split('%')[1]
-
         # Replace variable in new_clauses
         new_clauses.each do |clause|
-          replace_variable(name_only, var_name2, clause)
+          replace_variable_with_variable(var1.name, var2.name, clause)
         end
       end
     end
@@ -1095,7 +1090,7 @@ class DakiLangInterpreter
         solution_set.each.with_index do |solution, idx|
           puts "  Solution #{idx + 1}"
           solution.each do |head1|
-            puts "    #{head1[1] ? '*' : ''}#{head1[0].format(false)}."
+            puts "    #{head1[1] ? '*' : ''}#{head1[0]}."
           end
         end
       end
