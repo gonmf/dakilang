@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
-require 'rb-readline' rescue nil
-require 'pry' rescue nil
+begin
+  require 'rb-readline'
+  require 'pry'
+rescue Exception
+end
+
 require 'set'
 
 Dir['**/*.rb'].each do |filename|
