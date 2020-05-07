@@ -901,7 +901,7 @@ class DakiLangInterpreter
   end
 
   def clauses_match(h1, h2)
-    return false unless h1.name == h2.name && h1.arg_list.count == h2.arg_list.count
+    return false unless h1.arity_name == h2.arity_name
 
     h1.arg_list.each.with_index do |var1, idx|
       var2 = h2.arg_list[idx]
@@ -949,15 +949,24 @@ class DakiLangInterpreter
       var2 = h2.arg_list[idx1]
 
       if var1.const?
-        replace_variable(var2, var1, h2) unless var2.const?
+        unless var2.const?
+          name_only = var2.split('%')[1]
+
+          replace_variable(name_only, var1, h2)
+        end
       elsif var2.const?
-        replace_variable(var1, var2, h1)
+        name_only = var1.split('%')[1]
+
+        replace_variable(name_only, var2, h1)
       else
         dummy_count += 1
         dummy_value = "_#{dummy_count}"
 
-        replace_variable(var1, dummy_value, h1)
-        replace_variable(var2, dummy_value, h2)
+        name_only = var1.split('%')[1]
+        replace_variable(name_only, dummy_value, h1)
+
+        name_only = var2.split('%')[1]
+        replace_variable(name_only, dummy_value, h2)
       end
     end
 
@@ -969,8 +978,6 @@ class DakiLangInterpreter
   end
 
   def replace_variable(var_name, literal, head)
-    var_name = var_name.split('%')[1]
-
     head.arg_list.each.with_index do |var1, idx|
       if !var1.const? && var1.split('%')[1] == var_name
         head.arg_list[idx] = literal
@@ -1016,20 +1023,26 @@ class DakiLangInterpreter
 
       if var_name1.const?
         if !var_name2.const?
+          name_only = var_name2.split('%')[1]
+
           # Replace variable in solution
           solution.each do |arr|
-            replace_variable(var_name2, var_name1, arr[0])
+            replace_variable(name_only, var_name1, arr[0])
           end
         end
       elsif var_name2.const?
+        name_only = var_name1.split('%')[1]
+
         # Replace variable in new_clauses
         new_clauses.each do |clause|
-          replace_variable(var_name1, var_name2, clause)
+          replace_variable(name_only, var_name2, clause)
         end
       else
+        name_only = var_name1.split('%')[1]
+
         # Replace variable in new_clauses
         new_clauses.each do |clause|
-          replace_variable(var_name1, var_name2, clause)
+          replace_variable(name_only, var_name2, clause)
         end
       end
     end
@@ -1173,7 +1186,6 @@ class DakiLangInterpreter
 
           # Truncate solution to first clause and clauses still to be resolved (it not debugging)
           new_solution = new_solution.select.with_index do |rule, idx|
-            arity = rule[0].arg_list.count
             memoized_func = @to_memo[@table_name].include?(rule[0].arity_name)
 
             kept = idx == 0 || !rule[1] || memoized_func
@@ -1183,6 +1195,7 @@ class DakiLangInterpreter
               @memo_tree[@table_name][rule[0].arity_name] ||= {}
               root = @memo_tree[@table_name][rule[0].arity_name]
 
+              arity = rule[0].arg_list.count
               rule[0].arg_list.slice(0, arity - 1).each do |val|
                 root[val] ||= {}
                 root = root[val]
@@ -1205,16 +1218,6 @@ class DakiLangInterpreter
     nil # Timeout
   end
 
-  def equal_bodies(arr1, arr2)
-    return false if arr1.count != arr2.count
-
-    arr1.each.with_index do |val, idx|
-      return false unless arr2[idx].eql?(val)
-    end
-
-    true
-  end
-
   def table_add_clause(head, body, warn_if_exists)
     if !head
       puts 'Invalid clause format'
@@ -1225,7 +1228,7 @@ class DakiLangInterpreter
       table_head = arr[0]
       table_body = arr[1]
 
-      if table_head.eql?(head) && equal_bodies(table_body, body)
+      if table_head.hash == head.hash && table_body.map(&:hash).sort == body.map(&:hash).sort
         if warn_if_exists
           puts 'Clause already exists'
           puts
@@ -1309,4 +1312,3 @@ end
 if enter_interactive
   interpreter.enter_interactive_mode
 end
-

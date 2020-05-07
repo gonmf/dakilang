@@ -54,6 +54,5 @@ Option | Description
 ## Future work
 
 - Extend test suite - cover the solver
-- Try optimizing tail clause order a priori: first built-ins, then clauses ordered by number of variables
-- Optimize and reduce size of interpreter
+- Add classes for data types and simplify comparison of constants, variables and variables with conditions
 - Explore a list data type, operators and unification of list elements (head\|tail)
