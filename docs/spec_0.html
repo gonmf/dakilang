@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Daki Language Specification 0 (WIP)</title>
+
+    <link rel="canonical" href="https://macro.win/dakilang/spec_0.html">
+
+    <style>
+      body {
+        color: black;
+        background-color: white;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      }
+
+      .container {
+        max-width: 720px;
+        margin: auto;
+        padding: 32px;
+      }
+
+      h1 {
+        font-weight: normal;
+      }
+
+      a {
+        color: blue;
+      }
+
+      p {
+        line-height: 2;
+      }
+
+      dt {
+        font-weight: 600;
+        margin-bottom: 8px;
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Daki Language Specification 0</h1>
+
+      <p>Daki is a small computer programming language influenced by Prolog and Datalog. It is a declarative, logic, typed language based on Horn clauses, aimed at solving problems via deduction.</p>
+
+      <p>To execute a Daki program you must use a Daki compiler or interpreter. You can find on GitHub <a href="https://github.com/gonmf/dakilang" target="_blank" rel="noreferrer noopener">the reference interpreter for Spec 0 (external)</a>.</p>
+
+      <p>Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences to both. It is also a work in progress. For this reason I have compiled the following short language definition, with examples.</p>
+
+      <h2>Contents</h2>
+
+      <ul>
+        <li><a href="#introduction">Introduction</a></li>
+        <li><a href="#comments">Comments</a></li>
+        <li><a href="#declarations">Declarations</a></li>
+        <li><a href="#queries">Queries</a></li>
+        <li><a href="#retractions">Retractions</a></li>
+        <li><a href="#commands">Environment commands</a></li>
+        <li><a href="#operator_clauses">Operator clauses</a></li>
+        <ul>
+          <li><a href="#arithmetic_operator_clauses">Arithmetic operator clauses</a></li>
+          <li><a href="#bitwise_operator_clauses">Bitwise operator clauses</a></li>
+          <li><a href="#comparison_operator_clauses">Equality/order operator clauses</a></li>
+          <li><a href="#type_casting_operator_clauses">Type casting operator clauses</a></li>
+          <li><a href="#string_operator_clauses">String operator clauses</a></li>
+          <li><a href="#other_operator_clauses">Other operator clauses</a></li>
+        </ul>
+        <li><a href="#clause_conditions">Clause conditions</a></li>
+        <ul>
+          <li><a href="#operators">Operators</a></li>
+        </ul>
+        <li><a href="#memoization">Memoization</a></li>
+      </ul>
+
+      <hr/>
+
+      <a name="introduction"></a>
+      <h2>Introduction</h2>
+
+      <p>The Daki language is meant to be used in part by reading source code, and then interacting with the declaractions.</p>
+
+      <p>One very interesting thing about Daki is that it is meant to bridge the capabilities of Datalog with some of the more powerful features of Prolog. In Datalog queries return all solutions, while in Prolog by default only the first solution is returned. In Daki you can always easily select between the two query methods, and still have access to powerful features missing from Datalog, like a typed system and automatic memoization.</p>
+
+      <p>There are only five types of instructions in Daki, and these cannot be mixed (except for comments that may be inlined):</p>
+
+      <ol>
+        <li>Comments</li>
+        <li>New declarations</li>
+        <li>Queries</li>
+        <li>Declarations to be removed</li>
+        <li>Built-in commands</li>
+      </ol>
+
+      <a name="comments"></a>
+      <h2>Comments</h2>
+
+      <p>Comments start with the "<code>%</code>" character, and everything after this character is ignored by the interpreter.</p>
+
+      <pre>
+  > % I am a comment
+  >
+  > fact('john', 'mary', 1). % I am a comment too
+      </pre>
+
+      <h2>Declarations</h2>
+
+      <p>New declarations add what is called a clause to the global table of clauses (sometimes called database or knowledge base in other logic languages). A clause is composed of a head declaration and an optional tail, separated by the characters "<code>:-</code>".</p>
+
+      <pre>
+  > parent('john', 'emily').
+  > grandparent(A, B) :- parent(A, C), parent(C, B).
+      </pre>
+
+      <p>Clauses are always terminated by a dot, "<code>.</code>". If they are declared with a tail, the tail must be evaluated true for the head to match. Clauses with a tail are called rules, while clauses without it are called facts.</p>
+
+      <p>In Daki, the tail dependencies order is not important. In accordance with other logic languages, the "<code>,</code>" character is used to denote logical AND, and the "<code>;</code>" character logical OR. Notice how these are equivalent though:</p>
+
+      <pre>
+  > rule(x) :- reason1(x); reason2(x).
+  > % is the same in Daki as
+  > rule(x) :- reason1(x).
+  > rule(x) :- reason2(x).
+      </pre>
+
+      <p>In fact the second form is exactly how they are saved in the global table. If some of the broken down OR clauses already exist they are ignored without raising a warning. Keep this in mind when removing declarations.</p>
+
+      <p>The elements of clauses always have open brackets and are declared with one or more strings. Those strings can be constants - with a specific data type - or variables.</p>
+
+      <p>The Daki data types are <strong>string</strong> (<code>'daki'</code>), <strong>integer</strong> (<code>42</code>) and <strong>float</strong>, for IEEE 754 floating point numbers (<code>3.14</code>). This document also uses the term numeric to mean both integer and floating point values. Constant types are not automatically coerced or matched, for example:</p>
+
+      <pre>
+  > value('1').
+  > value(1).
+  > value(1.0).
+  >
+  > value('1')?
+  value('1').
+
+  > value(1)?
+  value(1).
+
+  > value(1.000)?
+  value(1.0).
+      </pre>
+
+      <p>Integer literals can be specified in decimal, octal, hexadecimal or binary notation:</p>
+
+      <pre>
+  > value(119).       % decimal
+  > value(0170).      % octal
+  > value(0x7a).      % hexadecimal
+  > value(0b1111011). % binary
+  > listing
+  value(119).
+  value(120).
+  value(122).
+  value(123).
+      </pre>
+
+      <p>String literals can be enclosed both by the characters "<code>'</code>" and "<code>"</code>", and both of these can be escaped with "<code>\</code>". The character "<code>\</code>" itself is escaped with <code>\\</code>. You can write "<code>"'"</code>" and "<code>'"'</code>", but need to escape it if the character is used for delimiting the string: <code>"\""</code> and <code>'\''</code>. The character <code>\</code> is also used to denote line continuation: when placed at the end of a line, it is discarded and the line is join with the line bellow.</p>
+
+      <p>Variable names and clause names must start with a letter and be composed of letters, algarisms and underscores.</p>
+
+      <p>All whitespace outside of string constants is ignored.</p>
+
+      <a name="queries"></a>
+      <h2>Queries</h2>
+
+      <p>A query has a similar format to a tailless clause, but ends with a "<code>?</code>" character instead of "<code>.</code>". Upon being input, it starts a search for all its solutions using the global table of clauses.</p>
+
+      <p>The search will try to find all solutions for which the original query has no outstanding variables, showing the constants that have filled it. When all variables of a clause are replaced, we say it has unified.</p>
+
+      <p>The interpreter will print out every solution found or return "<code>No solution</code>".</p>
+
+      <pre>
+  > grandparent("john", someone)?
+  grandparent('john', 'mary').
+
+  > grandparent("mary", someone)?
+  No solution
+      </pre>
+
+      <p>These queries that return all the solutions are called full queries. If the clause is ended with a "<code>!</code>" instead of "<code>?</code>", a short query is performed. A short query terminates as soon as the first solution is found. They only return one answer, or "<code>No solution</code>":</p>
+
+      <pre>
+  > month('January').
+  > month('February').
+  > month('March').
+  > month(name)!
+  month('January').
+      </pre>
+
+      <p>Queries have a time limit to be completed. If a query times out the interpreter prints the message "<code>Search timeout</code>". A full query can timeout even after finding at least part of the solution. The default time limit is interpreter or system specific.</p>
+
+      <p>Previously we said the order of tail clauses is not important, which is true for full queries. With short queries, the first solution found may be different depending on the order of the tail clauses. The interpreter algorithm, however, is stable: given the same definitions the result will be constant (aside from built-in clauses with side effects and interpreter/system differences).</p>
+
+      <a name="retractions"></a>
+      <h2>Retractions</h2>
+
+      <p>You can remove a declaraction from the global table of clauses by declaring it again, with a final "<code>~</code>" instead of "<code>.</code>". The clause must have the same name, constant values and tail of the original clause declaration. The variables can have different names.</p>
+
+      <p>Declaring two clauses with the same name, constants and tail is impossible, and will raise a warning; similarly trying to remove from the global table a clause that does not exist will also raise a warning.</p>
+
+      <pre>
+  > grandparent("john", Var) :- other(Var, Var).
+  > grandparent("john", Var) :- other(Var, Var).
+  Clause already exists
+
+  > grandparent("john", X) :- other(X, X)~
+  Clause removed
+
+  > grandparent("john", X) :- other(X, X)~
+  Clause not found
+      </pre>
+
+      <a name="commands"></a>
+      <h2>Environment commands</h2>
+
+      <p>Aside from the language itself, some commands are required to perform operations related to the interpreter and global table themselves. These are:</p>
+
+      <dl>
+        <dt>quit</dt>
+        <dd>Stop execution and exit the interpreter if in interactive mode; only stops processing the current file is in non-interactive mode</dd>
+
+        <dt>select_table</dt>
+        <dd>Changes the global table currently in use; by default, table "<code>0</code>" is active; passing no argument prints the current table number</dd>
+
+        <dt>listing</dt>
+        <dd>Prints all clauses kept in the current global table</dd>
+
+        <dt>consult</dt>
+        <dd>Read and interpret a Daki language file; receives file path as an argument</dd>
+
+        <dt>version</dt>
+        <dd>Print version information</dd>
+
+        <dt>help</dt>
+        <dd>Print help information</dd>
+
+        <dt>add_memo</dt>
+        <dd>Add a clause name to the list of clauses to memoize (ex: "<code>func/3</code>")</dd>
+
+        <dt>rem_memo</dt>
+        <dd>Remove a clause name to the list of clauses to memoize; clears the memory pertaining to that clause</dd>
+
+        <dt>list_memo</dt>
+        <dd>List all clause names of the memoization list</dd>
+
+        <dt>clear_memo</dt>
+        <dd>Clear all memory spent on clause memoization (does not clear the list of clauses to memoize)</dd>
+      </dl>
+
+      <p>These commands are executed without any trailing "<code>.</code>", "<code>?</code>" or "<code>!</code>", and are case-insensitive. The <code>memo</code> commands are made clear in the [memoization](#memoization) section.</p>
+
+      <p>The language features up to here are the minimum required for a pure, logic-based, query-only language. For many real problems, however, this is not enough.</p>
+
+      <a name="operator_clauses"></a>
+      <h2>Operator clauses</h2>
+
+      <p>The Daki language also has built-in clauses, that unify with user-specified clauses and perform some form of calculation. To see why these are important, let's look at a practical example. In a language like Prolog, for instance, calculating a number in the Fibonacci sequence may look like:</p>
+
+      <pre>
+  fib(1, 1).
+  fib(2, 1).
+  fib(N, X) :- f1 = fib(N - 1, X1), f2 = fib(N - 2, X2), X is X1 + X2.
+      </pre>
+
+      <p>In Prolog we find arithmetic and conditional logic mixed with the clause itself. In the Daki language, however, we prefer to keep the clause format consistent even for these operations. We use instead what we call operator clauses.</p>
+
+      <p>Operator clauses are always unifiable only when the input variables are present, if any, and for performance they are always unified before user-defined clauses where possible. The result of the operation is output in the last argument.</p>
+
+      <a name="arithmetic_operator_clauses"></a>
+      <h3>Arithmetic operator clauses</h3>
+
+      <p>The inputs must be numeric to unify.</p>
+
+      <dl>
+        <dt>add(Numeric1, Numeric2, Output).</dt>
+        <dd>Unifies with the result of the addition of the two inputs</dd>
+
+        <dt>sub(Numeric1, Numeric2, Output).</dt>
+        <dd>Unifies with the result of the subtraction of Input1 with Input2</dd>
+
+        <dt>mul(Numeric1, Numeric2, Output).</dt>
+        <dd>Unifies with the result of the multiplication of the two inputs</dd>
+
+        <dt>div(Numeric1, Numeric2, Output).</dt>
+        <dd>Unifies with the result of the division of the two inputs; integer division is used if both inputs are integer</dd>
+
+        <dt>mod(Numeric1, Numeric2, Output).</dt>
+        <dd>Unifies with the rest of the integer division of the two inputs</dd>
+
+        <dt>pow(Numeric1, Numeric2, Output).</dt>
+        <dd>Unifies with the result ofInput1 to the power of Input2</dd>
+
+        <dt>sqrt(Numeric, Output).</dt>
+        <dd>Unifies with the result of the square root of Input</dd>
+
+        <dt>log(Numeric1, Numeric2, Output).</dt>
+        <dd>Unifies with the logarithmic base Input2 of Input1</dd>
+
+        <dt>round(Numeric1, Numeric2, Output).</dt>
+        <dd>Unifies with the rounded value of Input1 to Input2 decimal cases</dd>
+
+        <dt>trunc(Numeric, Output).</dt>
+        <dd>Unifies with the value of Input without decimal part</dd>
+
+        <dt>floor(Numeric, Output).</dt>
+        <dd>Unifies with the largest integer value that is less or equal to the input</dd>
+
+        <dt>ceil(Numeric, Output).</dt>
+        <dd>Unifies with the smallest integer value that is greater or equal to the input</dd>
+
+        <dt>abs(Numeric, Output).</dt>
+        <dd>Unifies with the absolute value of the input</dd>
+      </dl>
+
+      <a name="bitwise_operator_clauses"></a>
+      <h3>Bitwise operator clauses</h3>
+
+      <p>The inputs must be of type Integer to unify.</p>
+
+      <dl>
+        <dt>bit_and(Integer1, Integer2, Output).</dt>
+        <dd>Unifies with the bitwise AND of the two inputs</dd>
+
+        <dt>bit_or(Integer1, Integer2, Output).</dt>
+        <dd>Unifies with the bitwise OR of the two inputs</dd>
+
+        <dt>bit_xor(Integer1, Integer2, Output).</dt>
+        <dd>Unifies with the bitwise XOR of the two inputs</dd>
+
+        <dt>bit_neg(Integer, Output).</dt>
+        <dd>Unifies with the bitwise inversion of the bits of the input</dd>
+
+        <dt>bit_shift_left(Integer1, Integer2, Output).</dt>
+        <dd>Unifies with the left shifted value of Integer1 by Integer2</dd>
+
+        <dt>bit_shift_right(Integer1, Integer2, Output).</dt>
+        <dd>Unifies with the right shifted value of Integer1 by Integer2</dd>
+      </dl>
+
+      <a name="comparison_operator_clauses"></a>
+      <h3>Comparison operator clauses</h3>
+
+      <p>The inputs must be both numeric or both strings to unify.</p>
+
+      <dl>
+        <dt>eql(Input1, Input2, Output).</dt>
+        <dd>Unifies if the values are equal; with the string literal <code>'yes'</code></dd>
+
+        <dt>neq(Input1, Input2, Output).</dt>
+        <dd>Unifies if the values are not equal; with the string literal <code>'yes'</code></dd>
+
+        <dt>max(Input1, Input2, Output).</dt>
+        <dd>Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric</dd>
+
+        <dt>min(Input1, Input2, Output).</dt>
+        <dd>Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric</dd>
+
+        <dt>gt(Input1, Input2, Output).</dt>
+        <dd>Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; unifies with the string literal <code>'yes'</code></dd>
+
+        <dt>lt(Input1, Input2, Output).</dt>
+        <dd>Unifies if Input1 is lower than Input2; if any of the inputs is a string, string comparison is used instead of numeric; unifies with the string literal <code>'yes'</code></dd>
+
+        <dt>gte(Input1, Input2, Output).</dt>
+        <dd>Unifies if Input1 is greater or equal to Input2; if any of the inputs is a string, string comparison is used instead of numeric; unifies with the string literal <code>'yes'</code></dd>
+
+        <dt>lte(Input1, Input2, Output).</dt>
+        <dd>Unifies if Input1 is lower or equal to Input2; if any of the inputs is a string, string comparison is used instead of numeric; unifies with the string literal <code>'yes'</code></dd>
+      </dl>
+
+      <a name="type_casting_operator_clauses"></a>
+      <h3>Type casting operator clauses</h3>
+
+      <p>The inputs must be of the correct data type to unify.</p>
+
+      <dl>
+        <dt>as_string(Input, Output).</dt>
+        <dd>Unifies with the text representation of the input (of any type)</dd>
+
+        <dt>as_string(Integer1, Integer2, Output).</dt>
+        <dd>Unifies with the text representation of Integer1, with the base specified by Integer2</dd>
+
+        <dt>as_integer(Input, Output).</dt>
+        <dd>Unifies with the integer value of the input (of any type); will truncate floating point values</dd>
+
+        <dt>as_integer(String1, Integer2, Output).</dt>
+        <dd>Unifies with the integer value of String1, with the base specified by Integer2</dd>
+
+        <dt>as_float(Input, Output).</dt>
+        <dd>Unifies with the floating point value of the input (of any type)</dd>
+      </dl>
+
+      <a name="string_operator_clauses"></a>
+      <h3>String operator clauses</h3>
+
+      <p>The inputs must be of the correct data type to unify.</p>
+
+      <dl>
+        <dt>len(String, Output).</dt>
+        <dd>Unifies with the number of characters of a string input</dd>
+
+        <dt>concat(String1, String2, Output).</dt>
+        <dd>Unifies with the concatenation of two string inputs</dd>
+
+        <dt>slice(String1, Integer2, Integer3, Output).</dt>
+        <dd>Unifies with the remainder of a string String1 starting at integer Integer2 and ending at integer Integer3</dd>
+
+        <dt>index(String1, String2, Integer3, Output).</dt>
+        <dd>Unifies with the integer position of String2 if found in String1, or integer literal <code>-1</code>; searching starting from Integer3</dd>
+
+        <dt>ord(String, Output).</dt>
+        <dd>Unifies with the numeric ASCII value of the first character in the string input</dd>
+
+        <dt>char(Integer, Output).</dt>
+        <dd>Unifies with a string with the ASCII character found for the integer input</dd>
+      </dl>
+
+      <a name="other_operator_clauses"></a>
+      <h3>Other operator clauses</h3>
+
+      <p>These always unify.</p>
+
+      <dl>
+        <dt>rand(Output).</dt>
+        <dd>Unifies with a random floating point value between 0 and 1</dd>
+
+        <dt>type(Input, Output).</dt>
+        <dd>Unifies with the string literal of the name of the data type of Input: <code>'string'</code>, <code>'integer'</code> or <code>'float'</code></dd>
+
+        <dt>print(Input, Output).</dt>
+        <dd>Print the Input to the console; unifies with the string literal <code>'yes'</code></dd>
+
+        <dt>time(Output).</dt>
+        <dd>Unifies with the integer number of milliseconds since the UNIX epoch</dd>
+
+        <dt>time(Input, Output).</dt>
+        <dd>Unifies with the integer number of milliseconds since the UNIX epoch; the input is just used as a requirement to enforce order of execution</dd>
+      </dl>
+
+      <p>Operator clauses cannot be overwritten or retracted with clauses with the same name and arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.</p>
+
+      <p>Let's now go back to how to implement a program that returns the value of the Fibonacci sequence at position N. At first glance, the solution in Daki would be:</p>
+
+      <pre>
+  > fib(1, 1).
+  > fib(2, 1).
+  > fib(N, Res) :- gt(N, 2, Y), sub(N, 1, N1), sub(N, 2, N2), fib(N1, F1), fib(N2, F2), \
+                   add(F1, F2, Res).
+      </pre>
+
+      <p>Since this solution is recursive: a dependency on <code>fib</code> will try all solutions by expanding all clauses named <code>fib</code>, including itself; does this result in an infinite cycle? Not quite. The Daki interpreter is smart enough to stop the whole tail calculation when one of it's parts is proven impossible to unify, and most cases we don't have to thing hard about this: operator clauses have higher priority to being processed, and thus the expansion of the clause tail can be aborted sooner.</p>
+
+      <a name="clause_conditions"></a>
+      <h2>Clause conditions</h2>
+
+      <p>The Daki interpreter, however, is not all-knowing. A more complex example may require many clause expansions to reach a falsifiable part. The best solution would be to avoid expanding the clause tail in the first place.</p>
+
+      <p>This is best achieved by using what we call clause conditions. Clause conditions are boolean tests on candidate variable values, evaluated before a clause is even expanded. With clause conditions our Fibonacci program becomes:</p>
+
+      <pre>
+  > fib(1, 1).
+  > fib(2, 1).
+  > fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+      </pre>
+
+      <p>The clause condition <code>fib(N > 2, Res)</code> restricts matching N to values greater than the numeric value 2. The full list of operators is as follows.</p>
+
+      <a name="operators"></a>
+      <h3>Operators</h3>
+
+      <dl>
+        <dt><</dt>
+        <dd>Tests if the variable is lower than the constant</dd>
+
+        <dt><=</dt>
+        <dd>Tests if the variable is lower or equal to the constant</dd>
+
+        <dt>></dt>
+        <dd>Tests if the variable is greater than the constant</dd>
+
+        <dt>>=</dt>
+        <dd>Tests if the variable is greater or equal to the constant</dd>
+
+        <dt><></dt>
+        <dd>Tests if the variable is not equal to the constant</dd>
+
+        <dt>:</dt>
+        <dd>Tests if the data type of the variable is the constant value (from <code>'integer'</code>, <code>'float'</code> or <code>'string'</code>)</dd>
+      </dl>
+
+      <p>Clause conditions are exclusively between a variable and a constant value, and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types do unify. The comparison operators use alphabetical order for strings.</p>
+
+      <p>Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:</p>
+
+      <pre>
+  > positive_except_five1(0 < N, N <> 5.0).
+  > positive_except_five(N) :- positive_except_five1(N, N).
+  >
+  > positive_except_five(3)?
+  positive_except_five(3).
+
+  > positive_except_five(4.50)?
+  positive_except_five(4.5).
+
+  > positive_except_five(5)?
+  No solution
+
+  > positive_except_five(-3)?
+  No solution
+
+  > positive_except_five('1')?
+  No solution
+
+  > is_string(X: 'string').
+  > is_string(1)?
+  No solution
+
+  > is_string(1.0)?
+  No solution
+
+  > is_string("1")?
+  is_string('1').
+
+  > is_float(X: 'float').
+  > is_float(1)?
+  No solution
+
+  > is_float(1.0)?
+  is_float(1.0).
+
+  > is_float("1")?
+  No solution
+
+  > is_integer(X: 'integer').
+  > is_integer(1)?
+  is_integer(1).
+
+  > is_integer(1.0)?
+  No solution
+
+  > is_integer("1")?
+  No solution
+
+  > is_numeric(X) :- is_float(X); is_integer(X).
+  > is_numeric(1)?
+  is_numeric(1).
+
+  > is_numeric(1.0)?
+  is_numeric(1.0).
+
+  > is_numeric("1")?
+  No solution
+      </pre>
+
+      <p>As a last example, we can also benchmark how fast our two Fibonacci functions are, by making use of the <code>time/2</code> and <code>time/3</code> operator clauses:</p>
+
+      <pre>
+  > % Using only operator clauses
+  > fib1(1, 1).
+  > fib1(2, 1).
+  > fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), \
+                    fib1(N2, X2), add(X1, X2, Res).
+  > time_fib1(N, Val, Elapsed) :- time(StartTime), fib1(N, Val), time(Val, EndTime), \
+                                  sub(EndTime, StartTime, Elapsed).
+  >
+  > time_fib1(10, Val, Elapsed)?
+  time_fib1(12, 144, 161).
+
+  > % Using a clause condition
+  > fib2(1, 1).
+  > fib2(2, 1).
+  > fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), \
+                        add(X1, X2, Res).
+  > time_fib2(N, Val, Elapsed) :- time(StartTime), fib2(N, Val), time(Val, EndTime), \
+                                  sub(EndTime, StartTime, Elapsed).
+  >
+  > time_fib2(10, Val, Elapsed)?
+  time_fib2(12, 144, 99).
+      </pre>
+
+      <p>As you can see, using only operator clauses where a clause condition could've been used can result in a large performance penalty. Operator clauses are obviously still useful for intermediate calculations, but should be avoided for logic control.</p>
+
+      <a name="memoization"></a>
+      <h2>Memoization</h2>
+
+      <p>In the last example, when calculating the value of position N of the Fibonacci sequence, we are recalculating many intermediate values. In some contexts, this is required, because a clause can be expanded in many ways; in mathematical formulas however this doesn't happen, and we can apply memoization to the known unifiable forms of the clause.</p>
+
+      In the Daki language this is done by telling the interpreter what functions can be memoized:
+
+      <pre>
+  > % Having fib1, fib2, time_fib1 and time_fib2 defined before
+  >
+  > add_memo fib1/2
+  OK
+
+  > add_memo fib2/2
+  OK
+
+  >
+  > time_fib1(12, Val, Elapsed)?
+  time_fib1(12, 144, 11).
+
+  > time_fib2(12, Val, Elapsed)?
+  time_fib2(12, 144, 8).
+
+  >
+  > % Values have already been completely memoized:
+  >
+  > time_fib1(12, Val, Elapsed)?
+  time_fib1(12, 144, 0).
+
+  > time_fib2(12, Val, Elapsed)?
+  time_fib2(12, 144, 0).
+      </pre>
+
+      <p>In this example, we have instructed the interpreter to remember the configurations at which our functions are unified, and, where possible, to reuse those configurations instead of starting new searches. We must be very careful to be consistent in how we expand our requirements on a memoized clause. If we later tried to find out all positions in the Fibonacci sequence for which the value is 1, it would fail to give all the solutions, because it has already cached one configuration that unifies:</p>
+
+      <pre>
+  > fib2(X, 1)?
+  fib2(2, 1).
+      </pre>
+
+      <p>Memoization is always relative to a global clauses table. Changing to another table will use another memoization tree. Adding or retracting individual clauses does not affect what clauses are memoized, nor is the process memory cleared, use the built-in commands <code>rem_memo</code> and <code>clear_memo</code> for that.</p>
+
+      <hr/>
+
+      <p>Copyright (c) 2020 Gonçalo Antunes Mendes Ferreira</p>
+
+      <p>Permission to use, copy, modify, and/or distribute this document for any purpose
+      with or without fee is hereby granted, provided that the above copyright notice
+      and this permission notice appear in all copies.</p>
+    </div>
+  </body>
+</html>
