@@ -53,6 +53,7 @@ Option | Description
 
 ## Future work
 
-- Add shortcut operators, to allow writing `func(N - 1)` instead of `sub(N, 1, N1), func(N1)`?
-- Extend test suite - cover the solver
+- Add more inline arithmetic operators: division remainder, exponentiation and bitwise operations
+- Extend parser test suite
+- Start solver test suite
 - Explore the variable unification of list elements (head\|tail)
