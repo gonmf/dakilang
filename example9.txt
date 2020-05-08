@@ -9,34 +9,34 @@ value(1.000, X)?
 value([1], X)?
 
 
-% Using only operator clauses
+# Using only operator clauses
 fib1(1, 1).
 fib1(2, 1).
 fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), fib1(N2, X2), add(X1, X2, Res).
 time_fib1(N, Val, Elapsed) :- time(StartTime), fib1(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 
-time_fib1(12, Val, Elapsed)? % Yes
+time_fib1(12, Val, Elapsed)? # Yes
 
-% Using clause conditions
+# Using clause conditions
 fib2(1, 1).
 fib2(2, 1).
 fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), add(X1, X2, Res).
 time_fib2(N, Val, Elapsed) :- time(StartTime), fib2(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 
-time_fib2(12, Val, Elapsed)? % Yes
+time_fib2(12, Val, Elapsed)? # Yes
 
-% Now with memoization:
+# Now with memoization:
 
 add_memo fib1/2
 add_memo fib2/2
 
-time_fib1(12, Val, Elapsed)? % Yes
-time_fib2(12, Val, Elapsed)? % Yes
+time_fib1(12, Val, Elapsed)? # Yes
+time_fib2(12, Val, Elapsed)? # Yes
 
-% Values have already been completely memoized:
+# Values have already been completely memoized:
 
-time_fib1(12, Val, Elapsed)? % Yes
-time_fib2(12, Val, Elapsed)? % Yes
+time_fib1(12, Val, Elapsed)? # Yes
+time_fib2(12, Val, Elapsed)? # Yes
 
 fib2(X, 1)?
 
@@ -44,10 +44,10 @@ list_memo
 
 rem_memo fib2/2
 
-time_fib1(12, Val, Elapsed)? % Yes
-time_fib2(12, Val, Elapsed)? % Yes
+time_fib1(12, Val, Elapsed)? # Yes
+time_fib2(12, Val, Elapsed)? # Yes
 
 clear_memo
 
-time_fib1(12, Val, Elapsed)? % Yes but faster than fib2 now because is memoized
-time_fib2(12, Val, Elapsed)? % Yes
+time_fib1(12, Val, Elapsed)? # Yes but faster than fib2 now because is memoized
+time_fib2(12, Val, Elapsed)? # Yes

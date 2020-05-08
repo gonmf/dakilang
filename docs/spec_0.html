@@ -86,7 +86,7 @@
         </ul>
         <li><a href="#inline-operations">Inline Operations</a></li>
         <ul>
-          <li><a href="#arithmetic-operators">Arithmetic Operators</a></li>
+          <li><a href="#inline-operators">Inline Operators</a></li>
         </ul>
         <li><a href="#memoization">Memoization</a></li>
       </ul>
@@ -113,12 +113,12 @@
       <a name="comments"></a>
       <h2>Comments</h2>
 
-      <p>Comments start with the "<code>%</code>" character, and everything after this character is ignored by the interpreter.</p>
+      <p>Comments start with the "<code>#</code>" character, and everything after this character is ignored by the interpreter.</p>
 
       <pre>
-  > % I am a comment
+  > # I am a comment
   >
-  > fact('john', 'mary', 1). % I am a comment too
+  > fact('john', 'mary', 1). # I am a comment too
       </pre>
 
       <h2>Declarations</h2>
@@ -136,7 +136,7 @@
 
       <pre>
   > rule(x) :- reason1(x); reason2(x).
-  > % is the same in Daki as
+  > # is the same in Daki as
   > rule(x) :- reason1(x).
   > rule(x) :- reason2(x).
       </pre>
@@ -171,15 +171,15 @@
       <p>Integer literals can be specified in decimal, octal, hexadecimal or binary notation:</p>
 
       <pre>
-  > value(119).       % decimal
-  > value(0170).      % octal
-  > value(0x7a).      % hexadecimal
-  > value(0b1111011). % binary
+  > value(119).       # decimal
+  > value(0170).      # octal
+  > value(0x7a).      # hexadecimal
+  > value(0b1111011). # binary
   > listing
-  value(119).
-  value(120).
-  value(122).
-  value(123).
+  1: value(119).
+  2: value(120).
+  3: value(122).
+  4: value(123).
       </pre>
 
       <p>String literals can be enclosed both by the characters "<code>'</code>" and "<code>"</code>", and both of these can be escaped with "<code>\</code>". The character "<code>\</code>" itself is escaped with "<code>\\</code>". You can write "<code>"'"</code>" and "<code>'"'</code>", but need to escape it if the character is used for delimiting the string: "<code>"\""</code>" and "<code>'\''</code>". The character "<code>\</code>" is also used to denote line continuation: when placed at the end of a line, it is discarded and the line is join with the line bellow.</p>
@@ -536,6 +536,9 @@
       <p>These always unify.</p>
 
       <dl>
+        <dt>set(Input, Output).</dt>
+        <dd>Just transposes the input to the ouput variable</dd>
+
         <dt>rand(Output).</dt>
         <dd>Unifies with a random floating point value between 0 and 1</dd>
 
@@ -674,7 +677,7 @@
       <p>As a last example, we can also benchmark how fast our two Fibonacci functions are, by making use of the <code>time/2</code> and <code>time/3</code> operator clauses:</p>
 
       <pre>
-  > % Using only operator clauses
+  > # Using only operator clauses
   > fib1(1, 1).
   > fib1(2, 1).
   > fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), \
@@ -686,7 +689,7 @@
   Val = 144
   Elapsed = 161
 
-  > % Using a clause condition
+  > # Using a clause condition
   > fib2(1, 1).
   > fib2(2, 1).
   > fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), \
@@ -723,12 +726,12 @@
   Yes
       </pre>
 
-      <p>Inline operations are limited to the four basic numeric operations and the use of parenthesis. Invalid operations like dividing by zero do not unify.</p>
+      <p>Inline operations are limited to the following numeric operations and the use of parenthesis. Invalid operations like dividing by zero do not unify.</p>
 
       <p><span class="highlight">Currently the reference interpreter does not support clauses with at the same time a tail with logical OR operands, and a tail with clauses with inlined operators.</span> Use operator clauses in these clauses for now.</p>
 
-      <a name="arithmetic-operators"></a>
-      <h3>Arithmetic Operators</h3>
+      <a name="inline-operators"></a>
+      <h3>Inline Operators</h3>
 
       <dl>
         <dt>+</dt>
@@ -742,6 +745,21 @@
 
         <dt>/</dt>
         <dd>Numeric division; integer division if both operands are integer</dd>
+
+        <dt>%</dt>
+        <dd>Remainder of the numeric division</dd>
+
+        <dt>&</dt>
+        <dd>Bitwise AND</dd>
+
+        <dt>|</dt>
+        <dd>Bitwise OR</dd>
+
+        <dt>^</dt>
+        <dd>Bitwise XOR</dd>
+
+        <dt>~</dt>
+        <dd>Bitwise NOT</dd>
       </dl>
 
       <p>In practice, inline operations are expanded into a private operator clause invocation. You can see this seamless expansions by using the command <code>listing</code>.</p>
@@ -754,7 +772,7 @@
       In the Daki language this is done by telling the interpreter what functions can be memoized:
 
       <pre>
-  > % Having fib1, fib2, time_fib1 and time_fib2 defined before
+  > # Having fib1, fib2, time_fib1 and time_fib2 defined before
   >
   > add_memo fib1/2
   OK
@@ -772,7 +790,7 @@
   Elapsed = 8
 
   >
-  > % Values have already been completely memoized:
+  > # Values have already been completely memoized:
   >
   > time_fib1(12, Val, Elapsed)?
   Val = 144

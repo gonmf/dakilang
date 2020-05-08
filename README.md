@@ -53,7 +53,7 @@ Option | Description
 
 ## Future work
 
-- Add more inline arithmetic operators: division remainder, exponentiation and bitwise operations
 - Extend parser test suite
+- Allow mixing OR tail clauses and inline operations
 - Start solver test suite
 - Explore the variable unification of list elements (head\|tail)

@@ -1,19 +1,19 @@
 
 xpto(N <> 2, N <> 3) :- eql(N, N, X).
 xpto(3, N)?
-% No
+# No
 
 xpto(4, N)?
-% Unifies
+# Unifies
 
 
 
 
 
-% fib(1, -1).
-% fib(N > 1, X) :- sub(N, 1, N1), fib(N1, X).
-%
-% fib(4, N)?
+# fib(1, -1).
+# fib(N > 1, X) :- sub(N, 1, N1), fib(N1, X).
+#
+# fib(4, N)?
 
 
 

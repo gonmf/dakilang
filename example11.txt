@@ -14,7 +14,7 @@ print_fib(N) :- time_fib2(N, Out, Elapsed), join(Out, ", ", Seq), concat("Sequen
 
 print_fib(20)?
 
-%%%%%%%%%%%%%%%%%%%%%%%%%
+######################################
 
 listing
 

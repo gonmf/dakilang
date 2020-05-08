@@ -27,9 +27,9 @@ class Variable < Atom
           value = "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
         end
 
-        "#{debug ? '%' : ''}#{name} #{condition} #{value}"
+        "#{debug ? '#' : ''}#{name} #{condition} #{value}"
       else
-        "#{debug ? '%' : ''}#{name}"
+        "#{debug ? '#' : ''}#{name}"
       end
     end
   end

@@ -73,6 +73,7 @@ class DakiLangInterpreter
     'join/3',
     'init/3',
     # Other
+    'set/2',
     'rand/1',
     'type/2',
     'print/2',
@@ -85,7 +86,7 @@ class DakiLangInterpreter
 
   NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
   NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
-  VAR_EQUATION_CHARS = (["\r", "\t", ' ', '-', '_', '(', ')', '+', '-', '*', '/', '.', 'x'] + ('a'..'f').to_a + ('A'..'F').to_a + ('0'..'9').to_a).join(' ').freeze
+  VAR_EQUATION_CHARS = (["\r", "\t", ' ', '-', '_', '(', ')', '+', '-', '*', '/', '%', '&', '|', '^', '~', '.', 'x'] + ('a'..'f').to_a + ('A'..'F').to_a + ('0'..'9').to_a).join(' ').freeze
   WHITESPACE_CHARS = ["\r", "\t", ' '].freeze
 
   COMPATIBLE_CONDITIONS = {
@@ -213,12 +214,12 @@ class DakiLangInterpreter
     puts '    ./dakilang [OPTIONS]'
     puts
     puts 'OPTIONS'
-    puts '-h, --help                 % Print out the program manual and exit'
-    puts '-v, --version              % Print out the program name and version, and exit'
-    puts '-c file, --consult file    % Read file with path "file" and interpret each line'
-    puts '-i, --interactive          % Activate interactive mode after finishing consulting all files'
-    puts '-d, --debug                % Activate debug mode, which shows extra output and disables some performance improvements'
-    puts '-t seconds, --time seconds % Changes the default query timeout time; "seconds" is a floating point value in seconds'
+    puts '-h, --help                 # Print out the program manual and exit'
+    puts '-v, --version              # Print out the program name and version, and exit'
+    puts '-c file, --consult file    # Read file with path "file" and interpret each line'
+    puts '-i, --interactive          # Activate interactive mode after finishing consulting all files'
+    puts '-d, --debug                # Activate debug mode, which shows extra output and disables some performance improvements'
+    puts '-t seconds, --time seconds # Changes the default query timeout time; "seconds" is a floating point value in seconds'
     puts
   end
 
@@ -238,7 +239,7 @@ class DakiLangInterpreter
     lines.each do |line|
       puts "> #{line}" unless @interactive
 
-      down_line = line.split('%').first.to_s.strip.downcase
+      down_line = line.split('#').first.to_s.strip.downcase
       if down_line == 'quit'
         if @interactive
           exit(0)
@@ -624,7 +625,7 @@ class DakiLangInterpreter
       if arg_list_mode && tokens.include?(['sep'])
         atom = look_ahead(text_chars, idx)
 
-        if !['\'', '"'].any? { |v| atom.include?(v) } && ['+', '-', '*', '/'].any? { |v| atom.include?(v) }
+        if !['\'', '"'].any? { |v| atom.include?(v) } && ['+', '-', '*', '/', '%', '&', '|', '^', '~'].any? { |v| atom.include?(v) }
           tested_part = text_chars.slice(idx, text_chars.count).join
 
           text_chars = (text_chars.slice(0, idx).join + (' ' * (1 + atom.size)) + tested_part.slice(1 + atom.size, tested_part.size)).split('')
@@ -749,7 +750,7 @@ class DakiLangInterpreter
         parser_error("Syntax error at #{text}", 'unexpected [ character')
       end
 
-      if c == '%' # Comment
+      if c == '#' # Comment
         break
       end
 
@@ -800,15 +801,6 @@ class DakiLangInterpreter
         next
       end
 
-      if c == '~'
-        if tokens.any? { |a| a[0].end_with?('_finish') }
-          parser_error("Syntax error at #{text}", 'unexpected ~ character')
-        end
-
-        tokens.push(['retract_finish'])
-        next
-      end
-
       if c == '"' || c == "'"
         if string.size > 0
           parser_error("Syntax error at #{text}", 'unexpected end of string')
@@ -828,6 +820,15 @@ class DakiLangInterpreter
         tokens.push(['name', string])
         string = ''
         tokens.push(['args_start'])
+        next
+      end
+
+      if c == '~'
+        if tokens.any? { |a| a[0].end_with?('_finish') }
+          parser_error("Syntax error at #{text}", 'unexpected ~ character')
+        end
+
+        tokens.push(['retract_finish'])
         next
       end
 

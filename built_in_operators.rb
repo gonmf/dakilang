@@ -441,6 +441,12 @@ module OperatorClauses
   end
 
   # Other operator clauses
+  def oper_set(args)
+    a, = args
+
+    a
+  end
+
   def oper_rand(_)
     rand
   end

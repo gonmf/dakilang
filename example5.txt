@@ -20,7 +20,7 @@ rand(X)?
 print('Olá mundo', X)?
 time(X)?
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+######################################
 
 time_fib(N, Val, Elapsed) :- time(StartTime), fib(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 time_fib(10, Val, Elapsed)?

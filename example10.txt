@@ -1,4 +1,4 @@
-% Different integer formats
+# Different integer formats
 
 number(121, 'decimal').
 number(0172, 'octal').
