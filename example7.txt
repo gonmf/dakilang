@@ -2,18 +2,18 @@ parent("john", "mary").
 parent("victor", "john").
 grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
 
-grandparent(A, B)? % OK
-grandparent(A, A)? % No solution
+grandparent(A, B)? % Yes
+grandparent(A, A)? % No
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 
 positive_except_five2(0 < N, N <> 5).
 positive_except_five(N) :- positive_except_five2(N, N).
 
-positive_except_five(4)? % OK
-positive_except_five(4.50)? % OK
-positive_except_five(5)? % No solution
-positive_except_five("3")? % No solution
+positive_except_five(4)? % Yes
+positive_except_five(4.50)? % Yes
+positive_except_five(5)? % No
+positive_except_five("3")? % No
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -23,7 +23,7 @@ fib1(2, 1).
 fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), fib1(N2, X2), add(X1, X2, Res).
 time_fib1(N, Val, Elapsed) :- time(StartTime), fib1(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 
-time_fib1(12, Val, Elapsed)? % OK
+time_fib1(12, Val, Elapsed)? % Yes
 
 % Using clause conditions
 fib2(1, 1).
@@ -31,18 +31,18 @@ fib2(2, 1).
 fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), add(X1, X2, Res).
 time_fib2(N, Val, Elapsed) :- time(StartTime), fib2(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
 
-time_fib2(12, Val, Elapsed)? % OK
+time_fib2(12, Val, Elapsed)? % Yes
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-not_found('true')? % No solution
+not_found('true')? % No
 
 found('true').
 
-found('true')? % OK
+found('true')? % Yes
 
-div(4, 0, X)? % No solution
+div(4, 0, X)? % No
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%

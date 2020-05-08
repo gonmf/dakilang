@@ -11,6 +11,6 @@ fib_seq(N > 0, Out) :- fib(N, Val), init(1, Val, Out2), \
 
 time_fib2(N, Out, Elapsed) :- time(StartTime), fib_seq(N, Out), time(Out, EndTime), sub(EndTime, StartTime, Elapsed).
 
-print_fib(N) :- time_fib2(N, Out, Elapsed), as_string(Out, Seq), concat("Sequence: ", Seq, Line1), print(Line1, Ok1), as_string(Elapsed, ElapsedStr), concat("Elapsed (ms): ", ElapsedStr, Line2), print(Line2, Ok2).
+print_fib(N) :- time_fib2(N, Out, Elapsed), join(Out, ", ", Seq), concat("Sequence: ", Seq, Line1), print(Line1, Ok1), as_string(Elapsed, ElapsedStr), concat("Elapsed (ms): ", ElapsedStr, Line2), print(Line2, Ok2).
 
 print_fib(20)?

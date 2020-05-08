@@ -26,11 +26,16 @@ alpha2(A, B)?
 
 listing
 
+parent("john", "anna").
 parent("john", "mary").
 parent("victor", "john").
+parent("sophia", "john").
+parent("victor", "victor jr").
+parent("sophia", "victor jr").
 grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
 
 grandparent(A, B)?
+grandparent('sophia', 'mary')?
 grandparent(A, A)?
 
 
@@ -50,3 +55,7 @@ value(1.0).
 value('1')?
 value(1)?
 value(1.000)?
+
+abc(A, B, C) :- div(A, B, C).
+
+abc(20, 3.0, X)?

@@ -293,6 +293,7 @@ class DakiLangInterpreter
         execute_query(tokens, false)
       when 'retract_finish'
         retract_rule(tokens)
+        puts
       end
     end
   end
@@ -345,14 +346,28 @@ class DakiLangInterpreter
     if solutions.nil?
       puts 'Search timeout'
     elsif solutions.any?
-      solutions.uniq.each do |arr1|
-        puts "#{arr1}."
+      printed_any = false
+      solutions.uniq.each do |solution|
+        head.arg_list.each.with_index do |arg, idx|
+          if !arg.const?
+            printed_any = true
+            value = solution.arg_list[idx]
+
+            puts "#{arg.name} = #{value}"
+          end
+        end
+
+        puts if printed_any
+      end
+
+      unless printed_any
+        puts 'Yes'
+        puts
       end
     else
-      puts 'No solution'
+      puts 'No'
+      puts
     end
-
-    puts
   end
 
   def add_rule(tokens)
@@ -510,6 +525,10 @@ class DakiLangInterpreter
       if c == ']'
         if list_mode_count <= 0
           parser_error("Syntax error at #{text}", 'unexpected ] character')
+        end
+
+        if last_non_whitespace == ','
+          parser_error("Syntax error at #{text}", 'unexpected dangling comma at end of list')
         end
 
         if string.size > 0
@@ -892,13 +911,13 @@ class DakiLangInterpreter
         chrs = s[1].name.chars
 
         if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
-          parser_error("Syntax error at #{text}", "illegal character in variable name")
+          parser_error("Syntax error at #{text}", 'illegal character in variable name')
         end
       elsif s[0] == 'name'
         chrs = s[1].chars
 
         if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
-          parser_error("Syntax error at #{text}", "illegal character in clause name")
+          parser_error("Syntax error at #{text}", 'illegal character in clause name')
         end
       elsif s[0] == 'const'
         s[1] = Literal.new(s[1])

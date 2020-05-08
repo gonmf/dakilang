@@ -23,8 +23,16 @@ class Literal < Atom
         s = "#{rand}#{rand}#{rand}".tr('0', '')
 
         "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
+      elsif value.is_a?(Float)
+        s = sprintf('%0.12f', value)
+
+        while s.end_with?('0') && !s.end_with?('.0')
+          s = s.chomp('0')
+        end
+
+        s
       else
-        value
+        value.to_s
       end
     end
   end

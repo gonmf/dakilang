@@ -54,6 +54,5 @@ Option | Description
 ## Future work
 
 - Add shortcut operators, to allow writing `func(N - 1)` instead of `sub(N, 1, N1), func(N1)`?
-- Show values of unified variables or 'yes', instead of showing unified clauses?
 - Extend test suite - cover the solver
 - Explore the variable unification of list elements (head\|tail)

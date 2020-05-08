@@ -240,4 +240,19 @@ assert(
   :error
 )
 
+assert(
+  'number([1,2,"3", \'4\', [-1, 56, \'const\',]]).',
+  :error
+)
+
+assert(
+  'number([1,2,"3", \'4\', [-1, 56, \'const\'],]).',
+  :error
+)
+
+assert(
+  'number([1,2,"3", \'4\', [-1, 56, \'const\'],[,]]).',
+  :error
+)
+
 puts 'Tests passed'

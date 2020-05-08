@@ -142,25 +142,22 @@
       <p>Constant types are not automatically coerced or matched, for example:</p>
 
       <pre>
-  > value('1').
-  > value(1).
-  > value(1.0).
-  > value([1]).
+  > value('1', 1).
+  > value(1, 2).
+  > value(1.0, 3).
+  > value([1], 4).
   >
-  > value('1')?
-  value('1').
+  > value('1', X)?
+  X = 1
 
-  > value(1)?
-  value(1).
+  > value(1, X)?
+  X = 2
 
-  > value(1.000)?
-  value(1.0).
+  > value(1.000, X)?
+  X = 3
 
-  > value([1])?
-  value([1]).
-
-  > value([1.0])?
-  No solution
+  > value([1], X)?
+  X = 4
       </pre>
 
       <p>Integer literals can be specified in decimal, octal, hexadecimal or binary notation:</p>
@@ -190,24 +187,45 @@
 
       <p>The search will try to find all solutions for which the original query has no outstanding variables, showing the constants that have filled it. When all variables of a clause are replaced, we say it has unified.</p>
 
-      <p>The interpreter will print out every solution found or return "<code>No solution</code>".</p>
+      <p>The interpreter will print the values of the variable arguments of every solution found, or return "<code>Yes</code>" if a solution exists but the query had no variable arguments, or return "<code>No</code>" if no solution was found.</p>
 
       <pre>
-  > grandparent("john", someone)?
-  grandparent('john', 'mary').
+  > parent("john", "anna").
+  > parent("john", "mary").
+  > parent("victor", "john").
+  > parent("sophia", "john").
+  > parent("victor", "victor jr").
+  > parent("sophia", "victor jr").
+  > grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
+  >
+  > grandparent(A, B)?
+  A = 'victor'
+  B = 'anna'
 
-  > grandparent("mary", someone)?
-  No solution
+  A = 'sophia'
+  B = 'anna'
+
+  A = 'victor'
+  B = 'mary'
+
+  A = 'sophia'
+  B = 'mary'
+
+  > grandparent('sophia', 'mary')?
+  Yes
+
+  > grandparent(A, A)?
+  No
       </pre>
 
-      <p>These queries that return all the solutions are called full queries. If the clause is ended with a "<code>!</code>" instead of "<code>?</code>", a short query is performed. A short query terminates as soon as the first solution is found. They only return one answer, or "<code>No solution</code>":</p>
+      <p>These queries that return all the solutions are called full queries. If the clause is ended with a "<code>!</code>" instead of "<code>?</code>", a short query is performed. A short query terminates as soon as the first solution is found. They only return one answer, or "<code>No</code>":</p>
 
       <pre>
   > month('January').
   > month('February').
   > month('March').
   > month(name)!
-  month('January').
+  month = 'January'
       </pre>
 
       <p>Queries have a time limit to be completed. If a query times out the interpreter prints the message "<code>Search timeout</code>". A full query can timeout even after finding at least part of the solution. The default time limit is interpreter or system specific.</p>
@@ -582,59 +600,59 @@
   > positive_except_five(N) :- positive_except_five1(N, N).
   >
   > positive_except_five(3)?
-  positive_except_five(3).
+  Yes
 
   > positive_except_five(4.50)?
-  positive_except_five(4.5).
+  Yes
 
   > positive_except_five(5)?
-  No solution
+  No
 
   > positive_except_five(-3)?
-  No solution
+  No
 
   > positive_except_five('1')?
-  No solution
+  No
 
   > is_string(X: 'string').
   > is_string(1)?
-  No solution
+  No
 
   > is_string(1.0)?
-  No solution
+  No
 
   > is_string("1")?
-  is_string('1').
+  Yes
 
   > is_float(X: 'float').
   > is_float(1)?
-  No solution
+  No
 
   > is_float(1.0)?
-  is_float(1.0).
+  Yes
 
   > is_float("1")?
-  No solution
+  No
 
   > is_integer(X: 'integer').
   > is_integer(1)?
-  is_integer(1).
+  Yes
 
   > is_integer(1.0)?
-  No solution
+  No
 
   > is_integer("1")?
-  No solution
+  No
 
   > is_numeric(X) :- is_float(X); is_integer(X).
   > is_numeric(1)?
-  is_numeric(1).
+  Yes
 
   > is_numeric(1.0)?
-  is_numeric(1.0).
+  Yes
 
   > is_numeric("1")?
-  No solution
+  No
       </pre>
 
       <p>As a last example, we can also benchmark how fast our two Fibonacci functions are, by making use of the <code>time/2</code> and <code>time/3</code> operator clauses:</p>
@@ -649,7 +667,8 @@
                                   sub(EndTime, StartTime, Elapsed).
   >
   > time_fib1(10, Val, Elapsed)?
-  time_fib1(12, 144, 161).
+  Val = 144
+  Elapsed = 161
 
   > % Using a clause condition
   > fib2(1, 1).
@@ -660,7 +679,8 @@
                                   sub(EndTime, StartTime, Elapsed).
   >
   > time_fib2(10, Val, Elapsed)?
-  time_fib2(12, 144, 99).
+  Val = 144
+  Elapsed = 99
       </pre>
 
       <p>As you can see, using only operator clauses where a clause condition could've been used can result in a large performance penalty. Operator clauses are obviously still useful for intermediate calculations, but should be avoided for logic control.</p>
@@ -683,26 +703,30 @@
 
   >
   > time_fib1(12, Val, Elapsed)?
-  time_fib1(12, 144, 11).
+  Val = 144
+  Elapsed = 11
 
   > time_fib2(12, Val, Elapsed)?
-  time_fib2(12, 144, 8).
+  Val = 144
+  Elapsed = 8
 
   >
   > % Values have already been completely memoized:
   >
   > time_fib1(12, Val, Elapsed)?
-  time_fib1(12, 144, 0).
+  Val = 144
+  Elapsed = 0
 
   > time_fib2(12, Val, Elapsed)?
-  time_fib2(12, 144, 0).
+  Val = 144
+  Elapsed = 0
       </pre>
 
       <p>In this example, we have instructed the interpreter to remember the configurations at which our functions are unified, and, where possible, to reuse those configurations instead of starting new searches. We must be very careful to be consistent in how we expand our requirements on a memoized clause. If we later tried to find out all positions in the Fibonacci sequence for which the value is 1, it would fail to give all the solutions, because it has already cached one configuration that unifies:</p>
 
       <pre>
   > fib2(X, 1)?
-  fib2(2, 1).
+  X = 1
       </pre>
 
       <p>Memoization is always relative to a global clauses table. Changing to another table will use another memoization tree. Adding or retracting individual clauses does not affect what clauses are memoized, nor is the process memory cleared, use the built-in commands <code>rem_memo</code> and <code>clear_memo</code> for that.</p>
@@ -726,16 +750,16 @@
   > time_fib2(N, Out, Elapsed) :- time(StartTime), fib_seq(N, Out), time(Out, EndTime), \
                                   sub(EndTime, StartTime, Elapsed).
   >
-  > print_fib(N) :- time_fib2(N, Out, Elapsed), as_string(Out, Seq), \
+  > print_fib(N) :- time_fib2(N, Out, Elapsed), join(Out, ", ", Seq), \
                     concat("Sequence: ", Seq, Line1), print(Line1, Ok1), \
                     as_string(Elapsed, ElapsedStr), \
                     concat("Elapsed (ms): ", ElapsedStr, Line2), print(Line2, Ok2).
   >
   > print_fib(20)?
-  Sequence: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4
-  181, 6765]
-  Elapsed (ms): 99
-  print_fib(20).
+  Sequence: 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 41
+  81, 6765]
+  Elapsed (ms): 98
+  Yes
       </pre>
 
       <hr/>
