@@ -12,8 +12,8 @@ class Fact
     @arity_name ||= "#{name}/#{arg_list.count}"
   end
 
-  def to_s
-    "#{name}(#{arg_list.map(&:to_s).join(', ')})"
+  def to_s(debug = false)
+    "#{name}(#{arg_list.map { |var| var.to_s(debug) }.join(', ')})"
   end
 
   def eql?(other)

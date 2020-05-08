@@ -53,5 +53,6 @@ Option | Description
 
 ## Future work
 
+- Show values of unified variables or 'yes', instead of showing unified clauses?
 - Extend test suite - cover the solver
-- Explore a list data type, operators and unification of list elements (head\|tail)
+- Explore the variable unification of list elements (head\|tail)

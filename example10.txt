@@ -6,4 +6,3 @@ number(0b1111011, 'binary').
 number(0x7c, 'hexadecimal').
 
 number(N, Format)?
-

@@ -16,7 +16,7 @@ class Variable < Atom
     end
   end
 
-  def to_s
+  def to_s(debug = false)
     @to_s ||= begin
       if condition
         value = condition_value
@@ -27,9 +27,9 @@ class Variable < Atom
           value = "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
         end
 
-        "#{name} #{condition} #{value}"
+        "#{debug ? '%' : ''}#{name} #{condition} #{value}"
       else
-        name.to_s
+        "#{debug ? '%' : ''}#{name}"
       end
     end
   end

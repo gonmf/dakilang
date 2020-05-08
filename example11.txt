@@ -1,0 +1,16 @@
+add_memo fib/2
+
+fib(1, 1).
+fib(2, 1).
+fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+
+fib_seq(0, []).
+fib_seq(N > 0, Out) :- fib(N, Val), init(1, Val, Out2), \
+                       sub(N, 1, N1), fib_seq(N1, Out1), \
+                       concat(Out1, Out2, Out).
+
+time_fib2(N, Out, Elapsed) :- time(StartTime), fib_seq(N, Out), time(Out, EndTime), sub(EndTime, StartTime, Elapsed).
+
+print_fib(N) :- time_fib2(N, Out, Elapsed), as_string(Out, Seq), concat("Sequence: ", Seq, Line1), print(Line1, Ok1), as_string(Elapsed, ElapsedStr), concat("Elapsed (ms): ", ElapsedStr, Line2), print(Line2, Ok2).
+
+print_fib(20)?

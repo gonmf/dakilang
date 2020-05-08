@@ -50,12 +50,28 @@ class DakiLangInterpreter
     'as_integer/3',
     'as_float/2',
     # Strings
+    'ord/2',
+    'char/2',
+    'split/3',
+    # Strings and Lists
     'len/2',
     'concat/3',
     'slice/4',
     'index/4',
-    'ord/2',
-    'char/2',
+    # Lists
+    'head/2',
+    'tail/2',
+    'push/3',
+    'append/3',
+    'put/4',
+    'unique/2',
+    'reverse/2',
+    'sort/2',
+    'sum/2',
+    'max/2',
+    'min/2',
+    'join/3',
+    'init/3',
     # Other
     'rand/1',
     'type/2',
@@ -67,6 +83,79 @@ class DakiLangInterpreter
   NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
   NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
   WHITESPACE_CHARS = ["\r", "\t", ' '].freeze
+
+  COMPATIBLE_CONDITIONS = {
+    '<' => {
+      'string' => {
+        'string' => true, 'list' => false, 'integer' => false, 'float' => false
+      },
+      'list' => {
+        'string' => false, 'list' => true, 'integer' => false, 'float' => false
+      },
+      'integer' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      },
+      'float' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      }
+    },
+    '<=' => {
+      'string' => {
+        'string' => true, 'list' => false, 'integer' => false, 'float' => false
+      },
+      'list' => {
+        'string' => false, 'list' => true, 'integer' => false, 'float' => false
+      },
+      'integer' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      },
+      'float' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      }
+    },
+    '>' => {
+      'string' => {
+        'string' => true, 'list' => false, 'integer' => false, 'float' => false
+      },
+      'list' => {
+        'string' => false, 'list' => true, 'integer' => false, 'float' => false
+      },
+      'integer' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      },
+      'float' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      }
+    },
+    '>=' => {
+      'string' => {
+        'string' => true, 'list' => false, 'integer' => false, 'float' => false
+      },
+      'list' => {
+        'string' => false, 'list' => true, 'integer' => false, 'float' => false
+      },
+      'integer' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      },
+      'float' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      }
+    },
+    '<>' => {
+      'string' => {
+        'string' => true, 'list' => false, 'integer' => false, 'float' => false
+      },
+      'list' => {
+        'string' => false, 'list' => true, 'integer' => false, 'float' => false
+      },
+      'integer' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      },
+      'float' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
+      }
+    }
+  }.freeze
 
   attr_accessor :search_time_limit, :debug
 
@@ -395,6 +484,7 @@ class DakiLangInterpreter
     number_mode = false
     floating_point_mode = false
     separator_mode = false
+    list_mode_count = 0
     operator_mode = false
     string_delimiter = nil
     string = ''
@@ -415,6 +505,32 @@ class DakiLangInterpreter
         else
           parser_error("Syntax error at #{text}", 'expected :-')
         end
+      end
+
+      if c == ']'
+        if list_mode_count <= 0
+          parser_error("Syntax error at #{text}", 'unexpected ] character')
+        end
+
+        if string.size > 0
+          if number_mode
+            if floating_point_mode
+              tokens.push(['const', string.to_f])
+              floating_point_mode = false
+            else
+              tokens.push(['const', string.to_i])
+            end
+            number_mode = false
+          else
+            parser_error("Syntax error at #{text}", 'unexpected ] character')
+          end
+
+          string = ''
+        end
+
+        tokens.push(['const_list_end'])
+        list_mode_count -= 1
+        next
       end
 
       if string_mode
@@ -541,6 +657,16 @@ class DakiLangInterpreter
         floating_point_mode = false
         string = c
         next
+      end
+
+      if c == '['
+        if string.size == 0 && arg_list_mode
+          tokens.push(['const_list_start'])
+          list_mode_count += 1
+          next
+        end
+
+        parser_error("Syntax error at #{text}", 'unexpected [ character')
       end
 
       if c == '%' # Comment
@@ -734,11 +860,10 @@ class DakiLangInterpreter
           s[1] = invert_operator(s[1])
         end
 
-        if s[1] == ':' && !['integer', 'float', 'string'].include?(const[1])
+        if s[1] == ':' && !['integer', 'float', 'string', 'list'].include?(const[1])
           parser_error("Syntax error at #{text}", 'invalid argument for : operator')
         end
 
-        const_class_letter = const[1].class.to_s.downcase[0]
         tokens[idx - 1] = ['var', Variable.new(var[1], s[1], const[1].class.to_s.downcase, const[1])]
         tokens[idx] = nil
         tokens[idx + 1] = nil
@@ -748,7 +873,7 @@ class DakiLangInterpreter
     end
 
     tokens.each.with_index do |token, idx|
-      if token && token[0] == 'var' && token[1].is_a?(String)
+      if token && token[0] == 'var' && (token[1].is_a?(String) || token[1].is_a?(Array))
         tokens[idx] = ['var', Variable.new(token[1])]
       end
     end
@@ -782,7 +907,15 @@ class DakiLangInterpreter
       end
     end
 
-    tokens
+    tokens.each.with_index do |token, idx|
+      if token && token[0] == 'const_list_start'
+        val = recursive_build_array(tokens, idx)
+
+        tokens[idx] = ['const', Literal.new(val)]
+      end
+    end
+
+    tokens.compact
   rescue ParserError => e
     raise if @test_mode
 
@@ -795,6 +928,27 @@ class DakiLangInterpreter
     end
 
     []
+  end
+
+  def recursive_build_array(tokens, idx)
+    ret = []
+
+    ((idx + 1)..tokens.count).each do |idx2|
+      type, value = tokens[idx2]
+
+      if type == 'const_list_start'
+        tokens[idx2] = nil
+        ret.push(recursive_build_array(tokens, idx2))
+      elsif type == 'const_list_end'
+        tokens[idx2] = nil
+        break
+      elsif type == 'const'
+        ret.push(tokens[idx2][1].value)
+        tokens[idx2] = nil
+      end
+    end
+
+    ret
   end
 
   def select_table(name, output)
@@ -913,7 +1067,7 @@ class DakiLangInterpreter
               return false
             end
           else
-            if (const.type == 'string') != (var3.condition_type == 'string') || !const.value.send(var3.real_condition, var3.condition_value)
+            if !COMPATIBLE_CONDITIONS[var3.condition][const.type][var3.condition_type] || !const.value.send(var3.real_condition, var3.condition_value)
               return false
             end
           end
@@ -928,7 +1082,7 @@ class DakiLangInterpreter
               return false
             end
           else
-            if (const.type == 'string') != (var3.condition_type == 'string') || !const.value.send(var3.real_condition, var3.condition_value)
+            if !COMPATIBLE_CONDITIONS[var3.condition][const.type][var3.condition_type] || !const.value.send(var3.real_condition, var3.condition_value)
               return false
             end
           end
@@ -1094,7 +1248,7 @@ class DakiLangInterpreter
         solution_set.each.with_index do |solution, idx|
           puts "  Solution #{idx + 1}"
           solution.each do |head1|
-            puts "    #{head1[1] ? '*' : ''}#{head1[0]}."
+            puts "    #{head1[1] ? '*' : ''}#{head1[0].to_s(true)}."
           end
         end
       end
@@ -1139,13 +1293,20 @@ class DakiLangInterpreter
             break
           end
         else
+          # Why = instead of ||=? For some reason, in practise, the performance is much worse if
+          # start by expanding the upper clauses.
           first_solution_clause_idx = idx
         end
       end
 
       next if try_again
 
-      first_solution_clause = first_solution[first_solution_clause_by_builtin_idx || first_solution_clause_idx]
+      first_solution_clause_idx = first_solution_clause_by_builtin_idx || first_solution_clause_idx
+      if first_solution_clause_idx.nil?
+        return []
+      end
+
+      first_solution_clause = first_solution[first_solution_clause_idx]
       first_solution_clause[1] = true
 
       if first_solution_clause_by_builtin_idx
@@ -1246,8 +1407,9 @@ end
 
 interpreter = DakiLangInterpreter.new
 enter_interactive = false
+argv = ARGV.dup
 
-ARGV.each.with_index do |command, idx|
+argv.each.with_index do |command, idx|
   if command == '-h' || command == '--help'
     interpreter.print_help
     exit(0)
@@ -1260,45 +1422,48 @@ ARGV.each.with_index do |command, idx|
 
   if command == '-d' || command == '--debug'
     interpreter.debug = true
-    ARGV[idx] = nil
+    argv[idx] = nil
   end
 
   if command == '-i' || command == '--interactive'
     enter_interactive = true
-    ARGV[idx] = nil
+    argv[idx] = nil
   end
 end
 
-ARGV.compact.each.with_index do |command, idx|
+argv = argv.compact
+
+argv.each.with_index do |command, idx|
   next if command.nil?
 
   if command == '-t' || command == '--time'
-    new_time = ARGV[idx + 1].to_f
+    new_time = argv[idx + 1].to_f
 
-    if ARGV[idx + 1] && new_time > 0
+    if argv[idx + 1] && new_time > 0
       interpreter.search_time_limit = new_time
-      ARGV[idx] = nil
-      ARGV[idx + 1] = nil
+      argv[idx] = nil
+      argv[idx + 1] = nil
     else
-      puts "Illegal time limit argument #{ARGV[idx + 1]}"
+      puts "Illegal time limit argument #{argv[idx + 1]}"
       exit(1)
     end
   end
 end
 
+argv = argv.compact
 to_consult = []
 
-ARGV.compact.each.with_index do |command, idx|
+argv.each.with_index do |command, idx|
   next if command.nil?
 
   if command == '-c' || command == '--command'
-    to_consult.push(ARGV[idx + 1])
-    ARGV[idx] = nil
-    ARGV[idx + 1] = nil
+    to_consult.push(argv[idx + 1])
+    argv[idx] = nil
+    argv[idx + 1] = nil
   end
 end
 
-if ARGV.compact.any?
+if argv.compact.any?
   puts 'Illegal arguments'
   puts
   exit(1)

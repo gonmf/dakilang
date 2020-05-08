@@ -8,12 +8,18 @@ class Literal < Atom
   end
 
   def type
-    @type ||= value.class.to_s.downcase
+    @type ||= value.is_a?(Array) ? 'list' : value.class.to_s.downcase
   end
 
-  def to_s
+  def to_s(debug = false)
     @to_s ||= begin
-      if value.is_a?(String)
+      if value.is_a?(Array)
+        values = value.map do |val|
+          Literal.new(val).to_s
+        end
+
+        "[#{values.join(', ')}]"
+      elsif value.is_a?(String)
         s = "#{rand}#{rand}#{rand}".tr('0', '')
 
         "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')

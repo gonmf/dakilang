@@ -73,6 +73,7 @@
           <li><a href="#comparison_operator_clauses">Equality/order operator clauses</a></li>
           <li><a href="#type_casting_operator_clauses">Type casting operator clauses</a></li>
           <li><a href="#string_operator_clauses">String operator clauses</a></li>
+          <li><a href="#list_operator_clauses">List operator clauses</a></li>
           <li><a href="#other_operator_clauses">Other operator clauses</a></li>
         </ul>
         <li><a href="#clause_conditions">Clause conditions</a></li>
@@ -136,12 +137,15 @@
 
       <p>The elements of clauses always have open brackets and are declared with one or more strings. Those strings can be constants - with a specific data type - or variables.</p>
 
-      <p>The Daki data types are <strong>string</strong> (<code>'daki'</code>), <strong>integer</strong> (<code>42</code>) and <strong>float</strong>, for IEEE 754 floating point numbers (<code>3.14</code>). This document also uses the term numeric to mean both integer and floating point values. Constant types are not automatically coerced or matched, for example:</p>
+      <p>The Daki data types are <strong>string</strong> (<code>'daki'</code>), <strong>integer</strong> (<code>42</code>), <strong>float</strong>, for IEEE 754 floating point numbers (<code>3.14</code>) and <strong>list</strong> (<code>['john', 24, ['skiing', 'running']]</code>). This document also uses the term numeric to mean both integer and floating point values. Notice list typed literals do not have to be one dimensional.</p>
+
+      <p>Constant types are not automatically coerced or matched, for example:</p>
 
       <pre>
   > value('1').
   > value(1).
   > value(1.0).
+  > value([1]).
   >
   > value('1')?
   value('1').
@@ -151,6 +155,12 @@
 
   > value(1.000)?
   value(1.0).
+
+  > value([1])?
+  value([1]).
+
+  > value([1.0])?
+  No solution
       </pre>
 
       <p>Integer literals can be specified in decimal, octal, hexadecimal or binary notation:</p>
@@ -416,7 +426,7 @@
         <dd>Unifies with the concatenation of two string inputs</dd>
 
         <dt>slice(String1, Integer2, Integer3, Output).</dt>
-        <dd>Unifies with the remainder of a string String1 starting at integer Integer2 and ending at integer Integer3</dd>
+        <dd>Unifies with the remainder of a string String1 starting at index Integer2 and ending at index Integer3, or the end of the string</dd>
 
         <dt>index(String1, String2, Integer3, Output).</dt>
         <dd>Unifies with the integer position of String2 if found in String1, or integer literal <code>-1</code>; searching starting from Integer3</dd>
@@ -426,6 +436,67 @@
 
         <dt>char(Integer, Output).</dt>
         <dd>Unifies with a string with the ASCII character found for the integer input</dd>
+
+        <dt>split(String1, String2, Output).</dt>
+        <dd>Unifies with a list of the separate string characters of String1, separated by String2; if String2 is the empty string (<code>''</code>), every character is separated</dd>
+      </dl>
+
+      <a name="list_operator_clauses"></a>
+      <h3>List operator clauses</h3>
+
+      <p>The inputs must be of the correct data type to unify.</p>
+
+      <dl>
+        <dt>head(List, Output).</dt>
+        <dd>Unifies with the first element of the list; list must not be empty</dd>
+
+        <dt>tail(List, Output).</dt>
+        <dd>Unifies with the remaining elements of the lest after the first one; will unify with empty list (<code>[]</code>) for inputs with a single element, and will not unify with empty lists</dd>
+
+        <dt>push(List1, Input2, Output).</dt>
+        <dd>Unifies with a list with Input2 added at the beginning of List1</dd>
+
+        <dt>append(List1, Input2, Output).</dt>
+        <dd>Unifies with a list with Input2 added at the end of List1</dd>
+
+        <dt>put(List1, Input2, Integer3, Output).</dt>
+        <dd>Unifies with a list with Input2 added at position Integer3 of List1; position Integer3 must be valid</dd>
+
+        <dt>len(List, Output).</dt>
+        <dd>Unifies with the number of elements in the list</dd>
+
+        <dt>concat(List1, List2, Output).</dt>
+        <dd>Unifies with the concatenation of the two list inputs into one</dd>
+
+        <dt>slice(List1, Integer2, Integer3, Output).</dt>
+        <dd>Unifies with the remainder of list List1 starting at index Integer2 and ending at index Integer3, or the end of the list</dd>
+
+        <dt>index(List1, Input2, Integer3, Output).</dt>
+        <dd>Unifies with the integer position of Input2 if found in List1, or integer literal <code>-1</code>; the search starts from index Integer3</dd>
+
+        <dt>unique(List, Output).</dt>
+        <dd>Unifies with the the list of unique elements</dd>
+
+        <dt>reverse(List, Output).</dt>
+        <dd>Unifies with the the list with all elements in the inverse positions</dd>
+
+        <dt>sort(List, Output).</dt>
+        <dd>Sorts all the elements of the list; all must be of a similar type: numeric, strings or lists</dd>
+
+        <dt>sum(List, Output).</dt>
+        <dd>Sum all the elements of the list; all must be of a similar type: numeric, strings or lists; the sum of strings will have a similar output to <code>join/3</code>, and the sum of lists a similar output to <code>concat/3</code></dd>
+
+        <dt>max(List, Output).</dt>
+        <dd>Find the maximum value of all the elements of the list; all must be of a similar type: numeric, strings or lists</dd>
+
+        <dt>min(List, Output).</dt>
+        <dd>Find the minimum value of all the elements of the list; all must be of a similar type: numeric, strings or lists</dd>
+
+        <dt>join(List1, String2, Output).</dt>
+        <dd>Converts each element of the list to string and joins the strings with the String2 separator</dd>
+
+        <dt>init(Integer1, Input2, Output).</dt>
+        <dd>Unifies with a list of size Integer1 with each element set to Input2</dd>
       </dl>
 
       <a name="other_operator_clauses"></a>
@@ -473,7 +544,8 @@
       <pre>
   > fib(1, 1).
   > fib(2, 1).
-  > fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+  > fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), \
+                       add(X1, X2, Res).
       </pre>
 
       <p>The clause condition <code>fib(N > 2, Res)</code> restricts matching N to values greater than the numeric value 2. The full list of operators is as follows.</p>
@@ -483,25 +555,25 @@
 
       <dl>
         <dt><</dt>
-        <dd>Tests if the variable is lower than the constant</dd>
+        <dd>Tests if the variable is lower than the constant; not available for <code>list</code> types</dd>
 
         <dt><=</dt>
-        <dd>Tests if the variable is lower or equal to the constant</dd>
+        <dd>Tests if the variable is lower or equal to the constant; not available for <code>list</code> types</dd>
 
         <dt>></dt>
-        <dd>Tests if the variable is greater than the constant</dd>
+        <dd>Tests if the variable is greater than the constant; not available for <code>list</code> types</dd>
 
         <dt>>=</dt>
-        <dd>Tests if the variable is greater or equal to the constant</dd>
+        <dd>Tests if the variable is greater or equal to the constant; not available for <code>list</code> types</dd>
 
         <dt><></dt>
         <dd>Tests if the variable is not equal to the constant</dd>
 
         <dt>:</dt>
-        <dd>Tests if the data type of the variable is the constant value (from <code>'integer'</code>, <code>'float'</code> or <code>'string'</code>)</dd>
+        <dd>Tests if the data type of the variable is the constant value (from <code>'integer'</code>, <code>'float'</code>, <code>'string'</code> or <code>'list'</code>)</dd>
       </dl>
 
-      <p>Clause conditions are exclusively between a variable and a constant value, and numeric types never unify with string data types. Notice that in the usual unification rules, an integer literal in a clause will not match a floating point literal. In clause conditions and many operation clauses, however, these numeric types do unify. The comparison operators use alphabetical order for strings.</p>
+      <p>Clause conditions are exclusively between a variable and a constant value, and different data type never unify, except if they are both numeric. This contrasts with the usual clause matching rules that do not unify integer with floating point literals. The comparison operators use alphabetical order for strings.</p>
 
       <p>Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:</p>
 
@@ -634,6 +706,37 @@
       </pre>
 
       <p>Memoization is always relative to a global clauses table. Changing to another table will use another memoization tree. Adding or retracting individual clauses does not affect what clauses are memoized, nor is the process memory cleared, use the built-in commands <code>rem_memo</code> and <code>clear_memo</code> for that.</p>
+
+      <p>As a last example, let's create a small program that prints the first twenty elements of the Fibonnaci sequence, using memoization and lists:</p>
+
+      <pre>
+  > add_memo fib/2
+  OK
+
+  >
+  > fib(1, 1).
+  > fib(2, 1).
+  > fib(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib(N1, X1), fib(N2, X2), \
+                       add(X1, X2, Res).
+  >
+  > fib_seq(0, []).
+  > fib_seq(N > 0, Out) :- fib(N, Val), init(1, Val, Out2),  sub(N, 1, N1), \
+                           fib_seq(N1, Out1), concat(Out1, Out2, Out).
+  >
+  > time_fib2(N, Out, Elapsed) :- time(StartTime), fib_seq(N, Out), time(Out, EndTime), \
+                                  sub(EndTime, StartTime, Elapsed).
+  >
+  > print_fib(N) :- time_fib2(N, Out, Elapsed), as_string(Out, Seq), \
+                    concat("Sequence: ", Seq, Line1), print(Line1, Ok1), \
+                    as_string(Elapsed, ElapsedStr), \
+                    concat("Elapsed (ms): ", ElapsedStr, Line2), print(Line2, Ok2).
+  >
+  > print_fib(20)?
+  Sequence: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4
+  181, 6765]
+  Elapsed (ms): 99
+  print_fib(20).
+      </pre>
 
       <hr/>
 
