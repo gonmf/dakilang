@@ -230,4 +230,14 @@ assert(
   :error
 )
 
+assert(
+  'number([1,2,"3", \'4\', [-1, 56]]).',
+  'name(number) | args_start | const([1, 2, \'3\', \'4\', [-1, 56]]) | args_end | clause_finish'
+)
+
+assert(
+  'number([1,2,"3", \'4\', [-1, 56, variable]]).',
+  :error
+)
+
 puts 'Tests passed'
