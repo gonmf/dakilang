@@ -78,11 +78,14 @@ class DakiLangInterpreter
     'print/2',
     'print/3',
     'time/1',
-    'time/2'
+    'time/2',
+    # Private
+    '_eval/3'
   ]).freeze
 
   NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
   NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
+  VAR_EQUATION_CHARS = (["\r", "\t", ' ', '-', '_', '(', ')', '+', '-', '*', '/', '.', 'x'] + ('a'..'f').to_a + ('A'..'F').to_a + ('0'..'9').to_a).join(' ').freeze
   WHITESPACE_CHARS = ["\r", "\t", ' '].freeze
 
   COMPATIBLE_CONDITIONS = {
@@ -271,6 +274,10 @@ class DakiLangInterpreter
         consult_file(line.split(' ')[1], consult_chain)
         next
       end
+      if down_line.start_with?('retract ')
+        retract_rule_by_index(line.split(' ')[1])
+        next
+      end
       if down_line == 'version'
         print_version
         next
@@ -293,13 +300,28 @@ class DakiLangInterpreter
       when 'full_query_finish'
         execute_query(tokens, false)
       when 'retract_finish'
-        retract_rule(tokens)
+        retract_rule_by_full_match(tokens)
         puts
       end
     end
   end
 
-  def retract_rule(tokens)
+  def retract_rule_by_index(idx_str)
+    idx = idx_str.to_i
+    if idx.to_s != idx_str || idx < 0 || idx >= @table[@table_name].count
+      puts 'Invalid clause index'
+      puts
+      return
+    end
+
+    @table[@table_name][idx] = nil
+    @table[@table_name] = @table[@table_name].compact
+
+    puts 'Clause removed'
+    puts
+  end
+
+  def retract_rule_by_full_match(tokens)
     head, last_idx = build_fact(tokens)
 
     if head && OPERATOR_CLAUSES.include?(head.arity_name)
@@ -489,6 +511,27 @@ class DakiLangInterpreter
     end
   end
 
+  def look_ahead(text_chars, start_idx)
+    string = ''
+    depth_counter = 0
+
+    text_chars.slice(start_idx, text_chars.count).each do |c|
+      if c == ','
+        break
+      elsif c == '('
+        depth_counter += 1
+      elsif c == ')'
+        depth_counter -= 1
+
+        break if depth_counter < 0
+      end
+
+      string += c
+    end
+
+    string
+  end
+
   def tokenizer(text)
     text_chars = text.chars
 
@@ -576,6 +619,19 @@ class DakiLangInterpreter
         end
 
         next
+      end
+
+      if arg_list_mode && tokens.include?(['sep'])
+        atom = look_ahead(text_chars, idx)
+
+        if !['\'', '"'].any? { |v| atom.include?(v) } && ['+', '-', '*', '/'].any? { |v| atom.include?(v) }
+          tested_part = text_chars.slice(idx, text_chars.count).join
+
+          text_chars = (text_chars.slice(0, idx).join + (' ' * (1 + atom.size)) + tested_part.slice(1 + atom.size, tested_part.size)).split('')
+
+          tokens.push(['var', atom.strip])
+          next
+        end
       end
 
       if number_mode
@@ -667,7 +723,7 @@ class DakiLangInterpreter
         end
       elsif ['<', '>', ':'].include?(c) && arg_list_mode
         if string.size > 0
-          tokens.push(['var', string])
+          tokens.push(['var', string.strip])
           string = ''
         end
 
@@ -700,8 +756,8 @@ class DakiLangInterpreter
       if WHITESPACE_CHARS.include?(c) # Whitespace is ignored outside of string literals
         if string.size > 0
           if arg_list_mode
-            tokens.push(['var', string])
-            string = ''
+            string += c
+            next
           else
             tokens.push(['name', string])
             string = ''
@@ -786,7 +842,7 @@ class DakiLangInterpreter
 
         arg_list_mode = false
         if string.size > 0
-          tokens.push(['var', string])
+          tokens.push(['var', string.strip])
           string = ''
         elsif tokens.last == ['args_start']
           parser_error("Syntax error at #{text}", 'unexpected end of empty argument list')
@@ -799,7 +855,7 @@ class DakiLangInterpreter
       if c == ','
         if arg_list_mode
           if string.size > 0
-            tokens.push(['var', string])
+            tokens.push(['var', string.strip])
             string = ''
           elsif tokens.last == ['args_start']
             parser_error("Syntax error at #{text}", 'invalid , at argument list start')
@@ -902,7 +958,10 @@ class DakiLangInterpreter
       end
     end
 
+    vari = 0
     tokens = tokens.compact
+    new_tokens = tokens.dup
+    sep_token_idx = tokens.index { |t| t == ['sep'] }
 
     tokens.each.with_index do |s, idx|
       if s[0] == 'name' && (tokens[idx + 1].nil? || tokens[idx + 1][0] != 'args_start')
@@ -913,10 +972,70 @@ class DakiLangInterpreter
       end
 
       if s[0] == 'var'
+
         chrs = s[1].name.chars
 
         if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
-          parser_error("Syntax error at #{text}", 'illegal character in variable name')
+          if sep_token_idx.nil? || (sep_token_idx > idx && !chrs.any? { |c| !VAR_EQUATION_CHARS.include?(c) })
+            parser_error("Syntax error at #{text}", 'illegal character in variable name')
+          elsif tokens.include?(['or'])
+            parser_error("Syntax error at #{text}", 'illegal to mix logical OR clauses with inlined variable operations')
+          else
+            # Variable equation
+            equ = s[1].name.tr(' ', '')
+
+            var_name_mode = false
+            var_names = []
+            string = ''
+            equ.chars.each.with_index do |c, idx2|
+              if var_name_mode
+                if NAME_ALLOWED_REMAINING_CHARS.include?(c)
+                  string += c
+                else
+                  var_names.push(string)
+                  string = ''
+                  var_name_mode = false
+                end
+              else
+                if NAME_ALLOWED_FIRST_CHARS.include?(c)
+                  var_name_mode = true
+                  string += c
+                end
+              end
+            end
+
+            if var_name_mode
+              var_names.push(string)
+            end
+
+            var_names = var_names.uniq
+
+            if var_names.count == 0
+              parser_error("Syntax error at #{text}", 'equation missing variable name')
+            end
+            if var_names.count > 1
+              parser_error("Syntax error at #{text}", 'multiple variable names in single variable equation')
+            end
+
+            var_name = var_names.first
+
+            vari += 1
+            new_var_name = "$#{vari.to_s(16)}"
+            equation = equ.gsub(var_name, '$')
+
+            new_clause = [
+              ['name', '_eval'],
+              ['args_start'],
+              ['var', Variable.new(var_name)],
+              ['const', Literal.new(equation)],
+              ['var', Variable.new(new_var_name)],
+              ['args_end'],
+              ['and']
+            ]
+            s[1] = Variable.new(new_var_name)
+
+            new_tokens = new_tokens.slice(0, sep_token_idx + 1) + new_clause + new_tokens.slice(sep_token_idx + 1, new_tokens.count)
+          end
         end
       elsif s[0] == 'name'
         chrs = s[1].chars
@@ -930,6 +1049,8 @@ class DakiLangInterpreter
         next
       end
     end
+
+    tokens = new_tokens
 
     tokens.each.with_index do |token, idx|
       if token && token[0] == 'const_list_start'
@@ -992,8 +1113,15 @@ class DakiLangInterpreter
   end
 
   def table_listing
-    @table[@table_name].each do |arr|
-      puts "#{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}."
+    indent = 1
+    count = @table[@table_name].count
+    while count > 10
+      count /= 10
+      indent += 1
+    end
+
+    @table[@table_name].each.with_index do |arr, idx|
+      puts "#{idx.to_s.rjust(indent)}: #{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}."
     end
 
     puts

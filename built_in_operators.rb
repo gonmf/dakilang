@@ -467,6 +467,16 @@ module OperatorClauses
     (Time.now.to_f * 1000).to_i
   end
 
+  def oper__eval(args)
+    a, b = args
+
+    if numeric?(a) && b.is_a?(String)
+      eval(b.gsub('$', a.to_s))
+    end
+  rescue StandardError
+    nil
+  end
+
   private
 
   def numeric?(obj)
