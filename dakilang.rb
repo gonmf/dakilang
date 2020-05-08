@@ -76,6 +76,7 @@ class DakiLangInterpreter
     'rand/1',
     'type/2',
     'print/2',
+    'print/3',
     'time/1',
     'time/2'
   ]).freeze
