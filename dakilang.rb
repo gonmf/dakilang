@@ -17,7 +17,7 @@ end
 class DakiLangInterpreter
   include OperatorClauses
 
-  VERSION = '0.21'
+  VERSION = '0.22'
 
   OPERATOR_CLAUSES = Set.new([
     # Arithmetic
