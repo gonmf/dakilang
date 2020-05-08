@@ -255,4 +255,44 @@ assert(
   :error
 )
 
+assert(
+  'number(X, B) :- var(\'test\', A > 3, B, 4).',
+  :error
+)
+
+assert(
+  'number(X <> Y, B).',
+  :error
+)
+
+assert(
+  'number(X <> Y, B) :- val(Y, B, X).',
+  :error
+)
+
+assert(
+  'number(X, B), numb(O) :- val(Y, B, X).',
+  :error
+)
+
+assert(
+  'number(X, B); numb(O) :- val(Y, B, X).',
+  :error
+)
+
+assert(
+  'number(X, B) :- (val(Y, B, X), val(B, X, Y).',
+  :error
+)
+
+assert(
+  'number(X, B) :- val(Y, B, X), val(B, X, Y); val(Y, B, X), val(B, X, Y).',
+  :error
+)
+
+assert(
+  'number(X, B) :- val(Y, B, X), val(B, X, Y)).',
+  :error
+)
+
 puts 'Tests passed'

@@ -656,6 +656,10 @@ class DakiLangInterpreter
           string += c
           next
         else
+          if tokens.include?(['sep'])
+            parser_error("Syntax error at #{text}", 'clause conditions at clause tail instead of head')
+          end
+
           tokens.push(['oper', string])
           string = ''
           operator_mode = false
