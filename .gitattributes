@@ -1,1 +1,2 @@
-*.txt linguist-language=Prolog
+*.dl linguist-language=Prolog
+*.out linguist-language=Prolog

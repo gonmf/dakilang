@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# rm tests/*.output
+# rm tests/*.out
 
-for i in ./tests/*.input; do
-  output_file=${i%.input}.output
-  test_name=${i%.input}
+for i in ./tests/*.dl; do
+  output_file=${i%.dl}.out
+  test_name=${i%.dl}
   test_name=${test_name#./}
   echo "Test ${test_name}"
 
-  # To create all .output files
+  # To create all .out files
   # ./dakilang -c $i > $output_file
 
   diff -y --suppress-common-lines <(./dakilang -c $i) $output_file || (echo "Test ${test_name} FAILED" && exit 1)

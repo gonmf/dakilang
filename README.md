@@ -27,13 +27,13 @@ In non-interactive mode a syntax error will end the program, whereas nothing is 
 To launch the interpreter in non-interactive mode, use `-c` with the file path to be executed:
 
 ```sh
-./dakilang -c examples/example1.txt
+./dakilang -c examples/example1.dl
 ```
 
 You can mix the modes, you can start the interpreter by including - _consulting_ - one or more files, and afterwards switching to interactive mode:
 
 ```sh
-./dakilang -i -c examples/example1.txt -c examples/example2.txt
+./dakilang -i -c examples/example1.dl -c examples/example2.dl
 ```
 
 Switching to interactive mode is always performed only after every consulted file is interpreted, in order.
