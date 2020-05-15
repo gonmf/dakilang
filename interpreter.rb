@@ -18,7 +18,7 @@ module DakiLang
   class Interpreter
     include OperatorClauses
 
-    VERSION = '0.22'
+    VERSION = '0.23'
 
     OPERATOR_CLAUSES = Set.new([
       # Arithmetic
@@ -206,7 +206,7 @@ module DakiLang
     end
 
     def print_version
-      puts "dakilang #{VERSION}"
+      puts "dakilang interpreter v#{VERSION}"
       puts
     end
 
@@ -285,10 +285,6 @@ module DakiLang
         end
         if down_line.start_with?('retract ')
           retract_rule_by_index(line.split(' ')[1])
-          next
-        end
-        if down_line == 'version'
-          print_version
           next
         end
 

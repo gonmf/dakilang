@@ -1,5 +1,3 @@
-version
-
 author(X, Y) :- author(X, Y).
 
 author('roberto', X)?

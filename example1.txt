@@ -1,5 +1,3 @@
-version
-
 beta(A) :- test(A).
 charlie("exists").
 delta("exists").

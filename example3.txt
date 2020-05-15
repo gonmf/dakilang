@@ -1,5 +1,3 @@
-version
-
 parent('john', 'damian').
 parent('john', 'ellie').
 parent('sarah', 'john').

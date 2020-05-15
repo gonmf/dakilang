@@ -1,5 +1,3 @@
-version
-
 actor("chaplin").
 athlete('ronaldo').
 athlete('messi').
