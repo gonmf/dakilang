@@ -1,0 +1,11 @@
+> beta(A) :- test(A).
+> charlie("exists").
+> delta("exists").
+> delta("blob").
+> test(B) :- delta(B).
+>
+> test(A)?
+A = 'exists'
+
+A = 'blob'
+

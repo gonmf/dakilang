@@ -51,6 +51,22 @@ Option | Description
 -d, --debug | Activate debug mode, which shows extra output and disables some performance improvements
 -t, --time | Changes the default query timeout time; N is a floating point value in seconds
 
+## Tests
+
+The tests are still under heavy development.
+
+Some tests, interpreter independent, are ran using:
+
+```bash
+./test.sh
+```
+
+Other, parser specific tests for this interpreter, are ran with:
+
+```bash
+ruby parser_test.rb
+```
+
 ## Future work
 
 - Extend parser test suite

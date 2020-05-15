@@ -1,12 +1,12 @@
-#!/usr/bin/env ruby
+# frozen_string_literal: true
 
-require_relative 'dakilang'
+require_relative 'interpreter'
 
 def assert(query, expected)
-  parsed = DakiLangInterpreter.new.debug_tokenizer(query)
+  parsed = DakiLang::Interpreter.new.debug_tokenizer(query)
   return if parsed == expected || (parsed.start_with?('Syntax error') && expected == :error)
 
-  puts "Test failed: #{query}\nExpected: #{expected}\nReceived: #{parsed}"
+  puts "Parser test failed: #{query}\nExpected: #{expected}\nReceived: #{parsed}"
   exit(1)
 end
 

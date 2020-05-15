@@ -3,7 +3,7 @@ rvm:
  - 2.5.3
 
 script:
-- ./test.rb
+- ./test.sh && ruby parser_test.rb
 
 os:
 - linux
