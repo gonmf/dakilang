@@ -1,0 +1,50 @@
+> actor("chaplin").
+> athlete('ronaldo').
+> athlete('messi').
+> politician("ghandi").
+> politician("arnold").
+> politician(123).
+> actor("arnold").
+> athlete("arnold").
+>
+> famous(X) :- actor(X);  athlete(X); politician(X).
+>
+> listing
+ 0: actor('chaplin').
+ 1: athlete('ronaldo').
+ 2: athlete('messi').
+ 3: politician('ghandi').
+ 4: politician('arnold').
+ 5: politician(123).
+ 6: actor('arnold').
+ 7: athlete('arnold').
+ 8: famous(X) :- actor(X).
+ 9: famous(X) :- athlete(X).
+10: famous(X) :- politician(X).
+
+>
+> famous(X)?
+X = 'chaplin'
+
+X = 'arnold'
+
+X = 'ronaldo'
+
+X = 'messi'
+
+X = 'ghandi'
+
+X = 123
+
+>
+>
+> other(X) :- abc(X, "gual").
+> other(X) :- abc(X, "guali").
+> other(X) :- abc(X, "gual"). # This instruction will produce a warning
+Clause already exists
+
+>
+> other(X) :- abc(X, "guali"); abc(X, "gual").
+>
+> %%%%%%%%%%%%%
+Syntax error at %%%%%%%%%%%%%: unterminated text

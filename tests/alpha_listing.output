@@ -1,0 +1,33 @@
+>
+> alpha("hello", "world").
+>
+> alpha2(A, B) :- alpha(A, B).
+>
+> alpha2(A, B)?
+A = 'hello'
+B = 'world'
+
+>
+> listing
+0: alpha('hello', 'world').
+1: alpha2(A, B) :- alpha(A, B).
+
+>
+> alpha2("goodbye", B)?
+No
+
+> alpha2(X, "world")?
+X = 'hello'
+
+> alpha2(A, A)?
+No
+
+> alpha2(A, B)?
+A = 'hello'
+B = 'world'
+
+>
+> listing
+0: alpha('hello', 'world').
+1: alpha2(A, B) :- alpha(A, B).
+

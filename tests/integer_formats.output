@@ -1,0 +1,20 @@
+> # Different integer formats
+>
+> number(121, 'decimal').
+> number(0172, 'octal').
+> number(0b1111011, 'binary').
+> number(0x7c, 'hexadecimal').
+>
+> number(N, Format)?
+N = 121
+Format = 'decimal'
+
+N = 122
+Format = 'octal'
+
+N = 123
+Format = 'binary'
+
+N = 124
+Format = 'hexadecimal'
+

@@ -1,0 +1,4 @@
+
+add(X, Y, Z).
+add(X, Y, Z)~
+

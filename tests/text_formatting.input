@@ -1,0 +1,6 @@
+
+
+abc1("ab'cd").
+abc2(A > "def ' def").
+abc3(A > 'def \' def').
+listing

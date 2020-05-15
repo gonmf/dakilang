@@ -1,0 +1,39 @@
+>
+> beta(A) :- test(A)~
+Clause not found
+
+> beta(A) :- test(A)~
+Clause not found
+
+>
+> MyRule("john", "mary").
+> MyRule("john", "mary")~
+Clause removed
+
+>
+> MyRule("john", "mary").
+>
+>
+> listing
+0: MyRule('john', 'mary').
+
+>
+> retract 1
+Invalid clause index
+
+>
+> listing
+0: MyRule('john', 'mary').
+
+>
+> retract 20
+Invalid clause index
+
+>
+> retract -20
+Invalid clause index
+
+>
+> listing
+0: MyRule('john', 'mary').
+

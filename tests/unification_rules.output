@@ -1,0 +1,18 @@
+> value('1', 1).
+> value(1, 2).
+> value(1.0, 3).
+> value([1], 4).
+>
+> value('1', X)?
+X = 1
+
+> value(1, X)?
+X = 2
+
+> value(1.000, X)?
+X = 3
+
+> value([1], X)?
+X = 4
+
+>

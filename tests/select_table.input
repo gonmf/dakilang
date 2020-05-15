@@ -1,0 +1,22 @@
+
+other(X) :- abc(X, "gual").
+other(X) :- abc(X, "guali").
+other(X) :- abc(X, "gual"). # This instruction will produce a warning
+
+other(X) :- abc(X, "guali"); abc(X, "gual").
+
+listing
+
+select_table 9
+
+listing
+
+select_table 0
+
+listing
+
+select_table
+
+
+
+

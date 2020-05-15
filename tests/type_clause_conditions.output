@@ -1,0 +1,69 @@
+> is_string(X: 'string').
+> is_string(1)?
+No
+
+> is_string(1.0)?
+No
+
+> is_string("1")?
+Yes
+
+> is_string([1])?
+No
+
+>
+> is_float(X: 'float').
+> is_float(1)?
+No
+
+> is_float(1.0)?
+Yes
+
+> is_float("1")?
+No
+
+> is_float([1])?
+No
+
+>
+> is_integer(X: 'integer').
+> is_integer(1)?
+Yes
+
+> is_integer(1.0)?
+No
+
+> is_integer("1")?
+No
+
+> is_integer([1])?
+No
+
+>
+> is_numeric(X) :- is_float(X); is_integer(X).
+> is_numeric(1)?
+Yes
+
+> is_numeric(1.0)?
+Yes
+
+> is_numeric("1")?
+No
+
+> is_numeric([1])?
+No
+
+>
+> is_list(X: 'list').
+> is_list(1)?
+No
+
+> is_list(1.0)?
+No
+
+> is_list("1")?
+No
+
+> is_list([1])?
+Yes
+

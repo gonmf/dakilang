@@ -1,0 +1,10 @@
+>
+>
+> abc1("ab'cd").
+> abc2(A > "def ' def").
+> abc3(A > 'def \' def').
+> listing
+0: abc1('ab\'cd').
+1: abc2(A > 'def \' def').
+2: abc3(A > 'def \' def').
+

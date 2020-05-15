@@ -1,0 +1,70 @@
+>
+> # Using only operator clauses
+> fib1(1, 1).
+> fib1(2, 1).
+> fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), fib1(N2, X2), add(X1, X2, Res).
+> time_fib1(N, Val) :- time(StartTime), fib1(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+>
+> time_fib1(5, Val)? # Yes
+Val = 5
+
+>
+> # Using clause conditions
+> fib2(1, 1).
+> fib2(2, 1).
+> fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), add(X1, X2, Res).
+> time_fib2(N, Val) :- time(StartTime), fib2(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+>
+> time_fib2(5, Val)? # Yes
+Val = 5
+
+>
+> # Now with memoization:
+>
+> add_memo fib1/2
+OK
+
+> add_memo fib2/2
+OK
+
+>
+> time_fib1(5, Val)? # Yes
+Val = 5
+
+> time_fib2(5, Val)? # Yes
+Val = 5
+
+>
+> # Values have already been completely memoized:
+>
+> time_fib1(5, Val)? # Yes
+Val = 5
+
+> time_fib2(5, Val)? # Yes
+Val = 5
+
+>
+> list_memo
+fib1/2
+fib2/2
+
+>
+> rem_memo fib2/2
+OK
+
+>
+> time_fib1(5, Val)? # Yes
+Val = 5
+
+> time_fib2(5, Val)? # Yes
+Val = 5
+
+>
+> clear_memo
+>
+> time_fib1(5, Val)? # Yes but faster than fib2 now because is memoized
+Val = 5
+
+> time_fib2(5, Val)? # Yes
+Val = 5
+

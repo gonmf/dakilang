@@ -1,0 +1,14 @@
+>
+> month('January').
+> month('February').
+> month('March').
+> month(name)!
+name = 'January'
+
+> month(name)?
+name = 'January'
+
+name = 'February'
+
+name = 'March'
+

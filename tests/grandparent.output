@@ -1,0 +1,28 @@
+>
+> parent("john", "anna").
+> parent("john", "mary").
+> parent("victor", "john").
+> parent("sophia", "john").
+> parent("victor", "victor jr").
+> parent("sophia", "victor jr").
+> grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
+>
+> grandparent(A, B)?
+A = 'victor'
+B = 'anna'
+
+A = 'sophia'
+B = 'anna'
+
+A = 'victor'
+B = 'mary'
+
+A = 'sophia'
+B = 'mary'
+
+> grandparent('sophia', 'mary')?
+Yes
+
+> grandparent(A, A)?
+No
+

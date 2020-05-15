@@ -1,0 +1,37 @@
+>
+> other(X) :- abc(X, "gual").
+> other(X) :- abc(X, "guali").
+> other(X) :- abc(X, "gual"). # This instruction will produce a warning
+Clause already exists
+
+>
+> other(X) :- abc(X, "guali"); abc(X, "gual").
+>
+> listing
+0: other(X) :- abc(X, 'gual').
+1: other(X) :- abc(X, 'guali').
+
+>
+> select_table 9
+Table changed to 9
+
+>
+> listing
+
+>
+> select_table 0
+Table changed to 0
+
+>
+> listing
+0: other(X) :- abc(X, 'gual').
+1: other(X) :- abc(X, 'guali').
+
+>
+> select_table
+Current table is 0
+
+>
+>
+>
+>

@@ -1,0 +1,16 @@
+
+# Using only operator clauses
+fib1(1, 1).
+fib1(2, 1).
+fib1(N, Res) :- gt(N, 2, gt), sub(N, 1, N1), sub(N, 2, N2), fib1(N1, X1), fib1(N2, X2), add(X1, X2, Res).
+time_fib1(N, Val) :- time(StartTime), fib1(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+
+time_fib1(5, Val)? # Yes
+
+# Using clause conditions
+fib2(1, 1).
+fib2(2, 1).
+fib2(N > 2, Res) :- sub(N, 1, N1), sub(N, 2, N2), fib2(N1, X1), fib2(N2, X2), add(X1, X2, Res).
+time_fib2(N, Val) :- time(StartTime), fib2(N, Val), time(Val, EndTime), sub(EndTime, StartTime, Elapsed).
+
+time_fib2(5, Val)? # Yes

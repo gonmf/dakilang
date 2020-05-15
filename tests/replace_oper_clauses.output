@@ -1,0 +1,8 @@
+>
+> add(X, Y, Z).
+Built-in operator clause already exists
+
+> add(X, Y, Z)~
+Built-in operator clause cannot be removed
+
+>

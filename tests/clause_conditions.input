@@ -1,0 +1,33 @@
+
+xpto(N <> 2, N <> 3) :- eql(N, N, X).
+xpto(3, N)?
+# No
+
+xpto(4, N)?
+# Unifies
+
+
+
+
+div(4, 0, X)? # No
+
+
+# fib(1, -1).
+# fib(N > 1, X) :- sub(N, 1, N1), fib(N1, X).
+#
+# fib(4, N)?
+
+
+
+
+natural_except_five1(N > 0, N <> 5, R) :- eql(N, N, R).
+natural_except_five(N, R) :- natural_except_five1(N, N, R).
+natural_except_five(3, R)?
+natural_except_five(5, R)?
+natural_except_five(-3, T)?
+natural_except_five('1', T)?
+
+natural_except_five2(N > 0, N <> 5).
+natural_except_five(N) :- natural_except_five2(N, N).
+natural_except_five(4)?
+natural_except_five(5)?

@@ -1,0 +1,21 @@
+
+beta(A) :- test(A)~
+beta(A) :- test(A)~
+
+MyRule("john", "mary").
+MyRule("john", "mary")~
+
+MyRule("john", "mary").
+
+
+listing
+
+retract 1
+
+listing
+
+retract 20
+
+retract -20
+
+listing
