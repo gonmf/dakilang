@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'interpreter'
+require_relative 'src/interpreter'
 
 def assert(query, expected)
   parsed = DakiLang::Interpreter.new.debug_tokenizer(query)

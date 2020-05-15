@@ -69,7 +69,7 @@ ruby parser_test.rb
 
 ## Future work
 
-- Extend parser test suite
+- Improve parser code
+- Improve parser test suite
 - Allow mixing OR tail clauses and inline operations
-- Start solver test suite
 - Explore the variable unification of list elements (head\|tail)

@@ -9,6 +9,7 @@ end
 require 'set'
 
 Dir['**/*.rb'].each do |filename|
+  filename.sub!('src/', '')
   next if ['parser_test.rb', 'dakilang.rb', 'interpreter.rb'].include?(filename)
 
   require_relative filename
