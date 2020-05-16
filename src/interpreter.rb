@@ -37,6 +37,7 @@ module DakiLang
       'floor/2',
       'ceil/2',
       'abs/2',
+      'eval/3',
       # Equality/order
       'eql/3',
       'neq/3',
@@ -82,9 +83,7 @@ module DakiLang
       'print/2',
       'print/3',
       'time/1',
-      'time/2',
-      # Private
-      '_eval/3'
+      'time/2'
     ]).freeze
 
     NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
@@ -1078,7 +1077,7 @@ module DakiLang
               equation = equ.gsub(var_name, '$')
 
               new_clause = [
-                ['name', '_eval'],
+                ['name', 'eval'],
                 ['args_start'],
                 ['var', Variable.new(var_name)],
                 ['const', Literal.new(equation)],

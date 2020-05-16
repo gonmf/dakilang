@@ -107,6 +107,16 @@ module DakiLang
       end
     end
 
+    def oper_eval(args)
+      a, b = args
+
+      if numeric?(a) && b.is_a?(String)
+        expr = b.tr(' ', '').gsub('$', a.to_s)
+
+        expr_eval(expr)
+      end
+    end
+
     # Bitwise operator clauses
     def bit_and(args)
       a, b = args
@@ -474,18 +484,6 @@ module DakiLang
       (Time.now.to_f * 1000).to_i
     end
 
-    def oper__eval(args)
-      a, b = args
-
-      if numeric?(a) && b.is_a?(String)
-        expr = b.gsub('$', a.to_s)
-
-        eval(expr) # TODO: Actually implement instead of relying on Ruby
-      end
-    rescue StandardError
-      nil
-    end
-
     private
 
     def numeric?(obj)
@@ -494,6 +492,127 @@ module DakiLang
 
     def similar_types?(a, b)
       (numeric?(a) && numeric?(b)) || (a.is_a?(String) && b.is_a?(String)) || (a.is_a?(Array) && b.is_a?(Array))
+    end
+
+    def expr_val(str)
+      str.include?('.') ? str.to_f : str.to_i
+    end
+
+    def sub_exp(str)
+      depth = 0
+
+      str.chars.each.with_index do |c, i|
+        if c == ')'
+          if depth == 0
+            return str.slice(0, i)
+          elsif depth > 0
+            depth -= 1
+          else
+            break
+          end
+        elsif c == '('
+          depth += 1
+        end
+      end
+
+      nil
+    end
+
+    def expr_eval(str)
+      string = ''
+      value = nil
+      op = nil
+
+      str.chars.each.with_index do |c, i|
+        if c == '('
+          exp = sub_exp(str.slice(i + 1, str.size))
+          return nil unless exp
+
+          val = expr_eval(exp)
+          return nil unless val
+
+          new_exp = str.sub("(#{exp})", val.to_s)
+
+          return expr_eval(new_exp)
+        end
+
+        if c == ')'
+          return nil
+        end
+
+        if c == '~'
+          if value || op || string.size > 0
+            return nil
+          end
+
+          op = '~'
+          next
+        end
+
+        if ['+', '-', '*', '/', '%', '&', '|', '^'].include?(c)
+          if c == '-' && value && op && string == ''
+            string += '-'
+            next
+          end
+          if ['+', '-'].include?(c) && value.nil? && string == ''
+            value = 0
+            op = '-'
+            next
+          end
+
+          if !value && string.size > 0
+            if op == '~'
+              begin
+                value = expr_val(string).send('~')
+              rescue StandardError
+                return nil
+              end
+            else
+              value = expr_val(string)
+            end
+
+            op = c
+            string = ''
+            next
+          elsif value && string.size > 0
+            begin
+              value = value.send(op, expr_val(string))
+            rescue StandardError
+              return nil
+            end
+
+            op = c
+            string = ''
+            next
+          else
+            next
+          end
+        end
+
+        string += c
+      end
+
+      if string.size > 0
+        if op == '~'
+          return nil if value
+
+          begin
+            value = expr_val(string).send('~')
+          rescue StandardError
+            return nil
+          end
+        elsif op && value
+          begin
+            value = value.send(op, expr_val(string))
+          rescue StandardError
+            return nil
+          end
+        elsif !op && !value
+          value = expr_val(string)
+        end
+      end
+
+      value
     end
   end
 end

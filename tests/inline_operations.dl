@@ -9,6 +9,6 @@ is_power(4, 12)? # No
 print_more(N) :- print(N, Out), print(N * 2, Out), print(N * N, Out), print((N + 1) * N + 1, Out).
 print_more(5)?
 
-not(X, Y) :- eql(~X, Y).
+not(X, Y) :- eql(X, Y).
 
 not(3, 4)?

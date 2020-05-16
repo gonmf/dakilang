@@ -357,6 +357,9 @@
 
         <dt>abs(Numeric, Output).</dt>
         <dd>Unifies with the absolute value of the input</dd>
+
+        <dt>eval(Numeric1, String2, Output).</dt>
+        <dd>Replaces the instances of character "<code>$</code>" in String2 with Numeric1, and resolves the resulting equation; ignores whitespace</dd>
       </dl>
 
       <a name="bitwise-operator-clauses"></a>
@@ -753,7 +756,9 @@
         <dd>Bitwise NOT</dd>
       </dl>
 
-      <p>In practice, inline operations are expanded into a private operator clause invocation. You can see this seamless expansions by using the command <code>listing</code>.</p>
+      <p>In practice, inline operations are expanded into using the <code>eval</code> operator clause with an intermediate variable. You can see this seamless expansions by using the command <code>listing</code>.</p>
+
+      <p>Inline operations, the <code>eval</code> operator clause and in fact the entire parsing algorithm uses <i>deterministic finite-state machines</i> for the evaluation. Because of this the operators do not have an intrinsic operator priority, they are evaluated sequentially. Use parenthesis to enforce an evaluation order.</p>
 
       <a name="memoization"></a>
       <h2>Memoization</h2>
