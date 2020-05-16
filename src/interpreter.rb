@@ -20,7 +20,7 @@ module DakiLang
   class Interpreter
     include OperatorClauses
 
-    VERSION = '0.23'
+    VERSION = '0.24'
 
     OPERATOR_CLAUSES = Set.new([
       # Arithmetic
@@ -415,13 +415,7 @@ module DakiLang
         bodies.push(body) if body
       end
 
-      # if tokens.include?(['or'])
-      #   bodies.each do |body|
-      #     table_add_clause(head, [body], bodies.count == 1)
-      #   end
-      # else
-        table_add_clause(head, bodies, warn_if_exists)
-      # end
+      table_add_clause(head, bodies, warn_if_exists)
     end
 
     def build_fact(tokens, start_index = 0)

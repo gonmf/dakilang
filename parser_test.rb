@@ -335,4 +335,4 @@ assert(
   :error
 )
 
-puts 'Tests passed'
+puts 'Parser tests passed'
