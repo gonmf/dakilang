@@ -1,0 +1,11 @@
+test1(X, Res) :- eval(X, "($0 - 2) + 43 * (3 + $0)", Res).
+test1(3, Res)?
+
+
+test11(X, Y, Res) :- eval(X, Y, "$0 * ($1 + 2)", Res).
+test11(3, 2, Res)?
+
+test12(X, Y, Res) :- set(X * (Y + 2), Res).
+test12(3, 2, Res)?
+
+listing

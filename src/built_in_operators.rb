@@ -4,10 +4,8 @@ module DakiLang
   module OperatorClauses
     # Arithmetic operator clauses
     def oper_add(args)
-      a, b = args
-
-      if numeric?(a) && numeric?(b)
-        a + b
+      if args.all? { |a| numeric?(a) }
+        args.sum
       end
     end
 
@@ -20,10 +18,14 @@ module DakiLang
     end
 
     def oper_mul(args)
-      a, b = args
+      if args.all? { |a| numeric?(a) }
+        res = 1
 
-      if numeric?(a) && numeric?(b)
-        a * b
+        args.each do |arg|
+          res += arg
+        end
+
+        res
       end
     end
 
@@ -108,12 +110,27 @@ module DakiLang
     end
 
     def oper_eval(args)
-      a, b = args
+      vars = args.slice(0, args.size - 1)
+      str = args.last
 
-      if numeric?(a) && b.is_a?(String)
-        expr = b.tr(' ', '').gsub('$', a.to_s)
+      if vars.all? { |a| numeric?(a) } && str.is_a?(String)
+        expr = str.tr(' ', '')
 
-        expr_eval(expr)
+        vars.each.with_index do |_, idx|
+          idx = vars.count - idx - 1
+          val = vars[idx]
+          new_expr = expr.gsub("$#{idx}", val.to_s)
+
+          if expr == new_expr # Some variable was not unified
+            return nil
+          end
+
+          expr = new_expr
+        end
+
+        if !expr.include?('$') # Some variable was not unified
+          expr_eval(expr)
+        end
       end
     end
 
@@ -180,22 +197,6 @@ module DakiLang
 
       if a != b
         'yes'
-      end
-    end
-
-    def oper_max(args)
-      a, b = args
-
-      if similar_types?(a, b)
-        [a, b].max
-      end
-    end
-
-    def oper_min(args)
-      a, b = args
-
-      if similar_types?(a, b)
-        [a, b].min
       end
     end
 
@@ -276,10 +277,16 @@ module DakiLang
     end
 
     def oper_concat(args)
-      a, b = args
+      if args.all? { |a| a.is_a?(String) }
+        args.join
+      elsif args.all? { |a| a.is_a?(Array) }
+        res = []
 
-      if (a.is_a?(String) && b.is_a?(String)) || (a.is_a?(Array) && b.is_a?(Array))
-        a + b
+        args.each do |a|
+          res += a
+        end
+
+        res
       end
     end
 
@@ -416,20 +423,28 @@ module DakiLang
     end
 
     def oper_max(args)
-      a, = args
+      if args.count == 1
+        a, = args
 
-      if a.is_a?(Array)
-        a.max
+        if a.is_a?(Array)
+          a.max
+        end
+      elsif similar_types?(args)
+        args.max
       end
     rescue StandardError
       nil
     end
 
     def oper_min(args)
-      a, = args
+      if args.count == 1
+        a, = args
 
-      if a.is_a?(Array)
-        a.min
+        if a.is_a?(Array)
+          a.min
+        end
+      elsif similar_types?(args)
+        args.min
       end
     rescue StandardError
       nil
@@ -490,8 +505,12 @@ module DakiLang
       obj.is_a?(Integer) || obj.is_a?(Float)
     end
 
-    def similar_types?(a, b)
-      (numeric?(a) && numeric?(b)) || (a.is_a?(String) && b.is_a?(String)) || (a.is_a?(Array) && b.is_a?(Array))
+    def similar_types?(args)
+      a = args.first
+
+      args.all? do |b|
+        (numeric?(a) && numeric?(b)) || (a.is_a?(String) && b.is_a?(String)) || (a.is_a?(Array) && b.is_a?(Array))
+      end
     end
 
     def expr_val(str)

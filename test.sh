@@ -5,7 +5,7 @@
 for i in ./tests/*.dl; do
   output_file=${i%.dl}.out
   test_name=${i%.dl}
-  test_name=${test_name#./}
+  test_name=${test_name#./tests/}
   echo "Test ${test_name}"
 
   # To create all .out files

@@ -20,71 +20,71 @@ module DakiLang
   class Interpreter
     include OperatorClauses
 
-    VERSION = '0.24'
+    VERSION = '0.25'
 
-    OPERATOR_CLAUSES = Set.new([
+    MAX_FUNC_ARITY = 20
+
+    OPERATOR_CLAUSES = [
       # Arithmetic
-      'add/3',
-      'sub/3',
-      'mul/3',
-      'div/3',
-      'mod/3',
-      'pow/3',
-      'sqrt/2',
-      'log/3',
-      'round/3',
-      'trunc/2',
-      'floor/2',
-      'ceil/2',
-      'abs/2',
-      'eval/3',
-      # Equality/order
-      'eql/3',
-      'neq/3',
-      'max/3',
-      'min/3',
-      'gt/3',
-      'lt/3',
-      'gte/3',
-      'lte/3',
+      ['add',        3, true], # Variable arity
+      ['sub',        3],
+      ['mul',        3, true], # Variable arity
+      ['div',        3],
+      ['mod',        3],
+      ['pow',        3],
+      ['sqrt',       2],
+      ['log',        3],
+      ['round',      3],
+      ['trunc',      2],
+      ['floor',      2],
+      ['ceil',       2],
+      ['abs',        2],
+      ['eval',       3, true], # Variable arity
+      # Equality and comparison
+      ['eql',        3],
+      ['neq',        3],
+      ['max',        2, true], # Variable arity
+      ['min',        2, true], # Variable arity
+      ['gt',         3],
+      ['lt',         3],
+      ['gte',        3],
+      ['lte',        3],
       # Casts
-      'as_string/2',
-      'as_string/3',
-      'as_integer/2',
-      'as_integer/3',
-      'as_float/2',
+      ['as_string',  2],
+      ['as_string',  3],
+      ['as_integer', 2],
+      ['as_integer', 3],
+      ['as_float',   2],
       # Strings
-      'ord/2',
-      'char/2',
-      'split/3',
+      ['ord',        2],
+      ['char',       2],
+      ['split',      3],
       # Strings and Lists
-      'len/2',
-      'concat/3',
-      'slice/4',
-      'index/4',
+      ['len',        2],
+      ['concat',     3, true], # Variable arity
+      ['slice',      4],
+      ['index',      4],
       # Lists
-      'head/2',
-      'tail/2',
-      'push/3',
-      'append/3',
-      'put/4',
-      'unique/2',
-      'reverse/2',
-      'sort/2',
-      'sum/2',
-      'max/2',
-      'min/2',
-      'join/3',
-      'init/3',
+      ['head',       2],
+      ['tail',       2],
+      ['push',       3],
+      ['append',     3],
+      ['put',        4],
+      ['unique',     2],
+      ['reverse',    2],
+      ['sort',       2],
+      ['sum',        2],
+      ['join',       3],
+      ['init',       3],
       # Other
-      'set/2',
-      'rand/1',
-      'type/2',
-      'print/2',
-      'print/3',
-      'time/1',
-      'time/2'
-    ]).freeze
+      ['set',        2],
+      ['rand',       1],
+      ['type',       2],
+      ['print',      2],
+      ['print',      3],
+      ['time',       1],
+      ['time',       2]
+    ].freeze
 
     NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
     NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
@@ -172,6 +172,8 @@ module DakiLang
       @table = {}
       @memo_tree = {}
       @to_memo = {}
+
+      init_oper_clauses
 
       select_table('0', false)
     end
@@ -330,7 +332,7 @@ module DakiLang
     def retract_rule_by_full_match(tokens)
       head, last_idx = build_fact(tokens)
 
-      if head && OPERATOR_CLAUSES.include?(head.arity_name)
+      if head && @operator_clauses.include?(head.arity_name)
         puts 'Built-in operator clause cannot be removed'
         return
       end
@@ -402,7 +404,7 @@ module DakiLang
     def add_rule(tokens, warn_if_exists)
       head, last_idx = build_fact(tokens)
 
-      if head && OPERATOR_CLAUSES.include?(head.arity_name)
+      if head && @operator_clauses.include?(head.arity_name)
         puts 'Built-in operator clause already exists'
         puts
         return
@@ -464,7 +466,7 @@ module DakiLang
         puts 'Clause name is invalid'
       elsif @to_memo[@table_name].include?(name)
         puts 'Clause is already being memoized'
-      elsif OPERATOR_CLAUSES.include?(name)
+      elsif @operator_clauses.include?(name)
         puts 'Cannot memoize built-in operator clause'
       else
         @to_memo[@table_name].add(name)
@@ -1066,21 +1068,19 @@ module DakiLang
               if var_names.count == 0
                 parser_error("Syntax error at #{text}", 'inline operation missing variable name')
               end
-              if var_names.count > 1
-                parser_error("Syntax error at #{text}", 'multiple variable names in single variable inline operation')
-              end
-
-              var_name = var_names.first
 
               vari += 1
+              var_names = var_names.sort_by { |s| -s.size }
               new_var_name = "$#{vari.to_s(16)}"
-              equation = equ.gsub(var_name, '$')
+              var_names.each.with_index do |var_name, idx2|
+                equ = equ.gsub(var_name, "$#{idx2}")
+              end
 
               new_clause = [
                 ['name', 'eval'],
-                ['args_start'],
-                ['var', Variable.new(var_name)],
-                ['const', Literal.new(equation)],
+                ['args_start']
+              ] + var_names.map { |var_name| ['var', Variable.new(var_name)] } + [
+                ['const', Literal.new(equ)],
                 ['var', Variable.new(new_var_name)],
                 ['args_end'],
                 ['and']
@@ -1105,6 +1105,22 @@ module DakiLang
         end
 
         token_set[token_set_idx] = new_tokens.compact
+      end
+
+      # Validate maximum number of variables in a clause
+      token_set.each do |tokens|
+        vars_in_same_clause = 0
+        tokens.each.with_index do |token, idx|
+          if token[0] == 'var'
+            vars_in_same_clause += 1
+
+            if vars_in_same_clause > MAX_FUNC_ARITY
+              parser_error("Syntax error at #{text}", "Too many arguments in a single clause (max is #{MAX_FUNC_ARITY}): this is an interpreter-specific setting")
+            end
+          elsif token[0] == 'args_start'
+            vars_in_same_clause = 0
+          end
+        end
       end
 
       token_set
@@ -1141,6 +1157,22 @@ module DakiLang
       end
 
       ret
+    end
+
+    def init_oper_clauses
+      @operator_clauses = Set.new
+
+      OPERATOR_CLAUSES.each do |clause|
+        name, arity, variable_arity = clause
+
+        if variable_arity
+          (arity..MAX_FUNC_ARITY).each do |alt_arity|
+            @operator_clauses.add("#{name}/#{alt_arity}")
+          end
+        else
+          @operator_clauses.add("#{name}/#{arity}")
+        end
+      end
     end
 
     def select_table(name, output)
@@ -1479,7 +1511,7 @@ module DakiLang
         first_solution.each.with_index do |solution_clause, idx|
           next if solution_clause[1]
 
-          if OPERATOR_CLAUSES.include?(solution_clause[0].arity_name)
+          if @operator_clauses.include?(solution_clause[0].arity_name)
             built_in_response = clause_match_built_in_eval(solution_clause[0])
             if built_in_response
               first_solution_clause_by_builtin_idx = idx

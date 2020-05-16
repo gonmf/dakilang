@@ -313,19 +313,21 @@
 
       <p>Operator clauses are always unifiable only when the input variables are present, if any, and for performance they are always unified before user-defined clauses where possible. The result of the operation is output in the last argument.</p>
 
+      <p>Some operator clauses have variants with same name but higher arity. This is represented by "<code>...</code>", and it means that it accepts a variable number of input arguments.</p>
+
       <a name="arithmetic-operator-clauses"></a>
       <h3>Arithmetic operator clauses</h3>
 
       <p>The inputs must be numeric to unify.</p>
 
       <dl>
-        <dt>add(Numeric1, Numeric2, Output).</dt>
-        <dd>Unifies with the result of the addition of the two inputs</dd>
+        <dt>add(Numeric1, Numeric2, ...., Output).</dt>
+        <dd>Unifies with the result of the addition of the inputs</dd>
 
         <dt>sub(Numeric1, Numeric2, Output).</dt>
         <dd>Unifies with the result of the subtraction of Input1 with Input2</dd>
 
-        <dt>mul(Numeric1, Numeric2, Output).</dt>
+        <dt>mul(Numeric1, Numeric2, ..., Output).</dt>
         <dd>Unifies with the result of the multiplication of the two inputs</dd>
 
         <dt>div(Numeric1, Numeric2, Output).</dt>
@@ -358,8 +360,8 @@
         <dt>abs(Numeric, Output).</dt>
         <dd>Unifies with the absolute value of the input</dd>
 
-        <dt>eval(Numeric1, String2, Output).</dt>
-        <dd>Replaces the instances of character "<code>$</code>" in String2 with Numeric1, and resolves the resulting equation; ignores whitespace</dd>
+        <dt>eval(Numeric1, ..., StringN, Output).</dt>
+        <dd>Replaces the instances of a placeholder for each variable "<code>$N</code>" in StringN with each numeric value with the same index, and resolves the resulting equation; ignores whitespace; instead of using this clause directly, see <a href="#inline-operations">online operations</a></dd>
       </dl>
 
       <a name="bitwise-operator-clauses"></a>
@@ -399,11 +401,11 @@
         <dt>neq(Input1, Input2, Output).</dt>
         <dd>Unifies if the values are not equal; with the string literal <code>'yes'</code></dd>
 
-        <dt>max(Input1, Input2, Output).</dt>
-        <dd>Unifies with the maximum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric</dd>
+        <dt>max(Input1, Input2, ..., Output).</dt>
+        <dd>Unifies with the maximum value between the inputs; if the inputs are strings, string comparison is used instead of numeric</dd>
 
-        <dt>min(Input1, Input2, Output).</dt>
-        <dd>Unifies with the minimum value between Input1 and Input2; if any of the inputs is a string, string comparison is used instead of numeric</dd>
+        <dt>min(Input1, Input2, ..., Output).</dt>
+        <dd>Unifies with the minimum value between the inputs; if the inputs are strings, string comparison is used instead of numeric</dd>
 
         <dt>gt(Input1, Input2, Output).</dt>
         <dd>Unifies if Input1 is greater than Input2; if any of the inputs is a string, string comparison is used instead of numeric; unifies with the string literal <code>'yes'</code></dd>
@@ -449,8 +451,8 @@
         <dt>len(String, Output).</dt>
         <dd>Unifies with the number of characters of a string input</dd>
 
-        <dt>concat(String1, String2, Output).</dt>
-        <dd>Unifies with the concatenation of two string inputs</dd>
+        <dt>concat(String1, String2, ..., Output).</dt>
+        <dd>Unifies with the concatenation of the string inputs</dd>
 
         <dt>slice(String1, Integer2, Integer3, Output).</dt>
         <dd>Unifies with the remainder of a string String1 starting at index Integer2 and ending at index Integer3, or the end of the string</dd>
@@ -492,8 +494,8 @@
         <dt>len(List, Output).</dt>
         <dd>Unifies with the number of elements in the list</dd>
 
-        <dt>concat(List1, List2, Output).</dt>
-        <dd>Unifies with the concatenation of the two list inputs into one</dd>
+        <dt>concat(List1, List2, ..., Output).</dt>
+        <dd>Unifies with the concatenation of the list inputs into one</dd>
 
         <dt>slice(List1, Integer2, Integer3, Output).</dt>
         <dd>Unifies with the remainder of list List1 starting at index Integer2 and ending at index Integer3, or the end of the list</dd>
@@ -572,7 +574,7 @@
 
       <p>The Daki interpreter, however, is not all-knowing. A more complex example may require many clause expansions to reach a falsifiable part. The best solution would be to avoid expanding the clause tail in the first place.</p>
 
-      <p>This is best achieved by using what we call clause conditions. Clause conditions are boolean tests on candidate variable values, evaluated before a clause is even expanded. With clause conditions our Fibonacci program becomes:</p>
+      <p>This is best achieved by using what we call clause conditions. Clause conditions are boolean tests on variables of the head of candidate clauses to be evaluated. The condition is tested at the clause selection phase, which is more efficient. With clause conditions our Fibonacci program becomes:</p>
 
       <pre>
   > fib(1, 1).
@@ -703,19 +705,19 @@
       <a name="inline-operations"></a>
       <h2>Inline Operations</h2>
 
-      Even though operator clauses are very powerful, it is still somewhat cumbersome to write mathematical formulas using them. In Daki numeric formulas with a single free variable of a tail clause can be written inlined, as such:
+      Even though operator clauses are very powerful, it can still be somewhat cumbersome to write mathematical formulas using them. Even though inline operations are not very idiomatic of Daki, numeric operations can still be used <i>inline</i>, as such:
 
       <pre>
   > is_power(N, N2) :- eql(N * N, N2, Res).
   > is_power(3, 9)?
   Yes
 
-  > print_more(N) :- print(N, Out), \
-                     print(N * 2, Out), \
-                     print(N * N, Out), \
-                     print((N + 1) * N + 1, Out).
-  > print_more(5)?
-  5
+  > print_more(N, L) :- print(N + (L * 2), Out), \
+                        print(N * 2, Out), \
+                        print(N * N, Out), \
+                        print((N + 1) * N + 1, Out).
+  > print_more(5, 2)?
+  9
   10
   25
   31
@@ -753,10 +755,21 @@
         <dd>Bitwise XOR</dd>
 
         <dt>~</dt>
-        <dd>Bitwise NOT</dd>
+        <dd>Bitwise complement</dd>
       </dl>
 
-      <p>In practice, inline operations are expanded into using the <code>eval</code> operator clause with an intermediate variable. You can see this seamless expansions by using the command <code>listing</code>.</p>
+      <p>Notice the bitwise complement operator is the only one with a single operand. It is used as, for example "<code>~123</code>", so you may need to surround it with parenthesis if in the middle of a longer expression.</p>
+
+      <p>In practice, inline operations are expanded into using the <code>eval</code> operator clause with an intermediate variable for the output. You can see this seamless expansions by using the command <code>listing</code>.</p>
+
+      <pre>
+  > sum_of_powers(X, Y, Res) :- set((X * X) + (Y * Y), Res).
+  > sum_of_powers(3, 2, Sum)?
+  Sum = 13
+
+  > listing
+  0: sum_of_powers(X, Y, Res) :- eval(X, Y, '($0*$0)+($1*$1)', $1), set($1, Res).
+      </pre>
 
       <p>Inline operations, the <code>eval</code> operator clause and in fact the entire parsing algorithm uses <i>deterministic finite-state machines</i> for the evaluation. Because of this the operators do not have an intrinsic operator priority, they are evaluated sequentially. Use parenthesis to enforce an evaluation order.</p>
 

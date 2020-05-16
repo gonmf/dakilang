@@ -70,6 +70,5 @@ ruby parser_test.rb
 ## Future work
 
 - Improve parser to allow all numeric formats in inline operations
-- Support a variable number of arguments in eval clause
 - Improve parser code
 - Explore the variable unification of list elements (head\|tail)
