@@ -51,13 +51,53 @@ assert(
 )
 
 assert(
+  'parent("victor",\'john\') :- par(X); ; par(Y).',
+  :error
+)
+
+assert(
+  'parent("victor",\'john\') :- par(X) ;; par(Y).',
+  :error
+)
+
+assert(
+  'parent("victor",\'john\') :- par(X) ; ;par(Y).',
+  :error
+)
+
+assert(
+  'parent("victor",\'john\') :- par(X);  ;par(Y).',
+  :error
+)
+
+assert(
+  'parent("victor",\'john\') :- par(X), , par(Y).',
+  :error
+)
+
+assert(
+  'parent("victor",\'john\') :- par(X) ,, par(Y).',
+  :error
+)
+
+assert(
+  'parent("victor",\'john\') :- par(X) , ,par(Y).',
+  :error
+)
+
+assert(
+  'parent("victor",\'john\') :- par(X),  ,par(Y).',
+  :error
+)
+
+assert(
   'grandparent(X, Y) :- parent(X, Z), parent(Z, Y).',
   'name(grandparent) | args_start | var(X) | var(Y) | args_end | sep | name(parent) | args_start | var(X) | var(Z) | args_end | and | name(parent) | args_start | var(Z) | var(Y) | args_end | clause_finish'
 )
 
 assert(
   'grandparent(X, Y) :- parent(X, Z); parent(Z, Y).',
-  'name(grandparent) | args_start | var(X) | var(Y) | args_end | sep | name(parent) | args_start | var(X) | var(Z) | args_end | or | name(parent) | args_start | var(Z) | var(Y) | args_end | clause_finish'
+  'name(grandparent) | args_start | var(X) | var(Y) | args_end | sep | name(parent) | args_start | var(X) | var(Z) | args_end | clause_finish OR name(grandparent) | args_start | var(X) | var(Y) | args_end | sep | name(parent) | args_start | var(Z) | var(Y) | args_end | clause_finish'
 )
 
 assert(

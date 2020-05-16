@@ -71,5 +71,4 @@ ruby parser_test.rb
 
 - Improve parser code
 - Improve parser test suite
-- Allow mixing OR tail clauses and inline operations
 - Explore the variable unification of list elements (head\|tail)

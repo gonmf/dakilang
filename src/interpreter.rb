@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 begin
+  # Just for development
   require 'rb-readline'
   require 'pry'
 rescue Exception
@@ -228,9 +229,11 @@ module DakiLang
     def debug_tokenizer(line)
       @test_mode = true
 
-      tokens = tokenizer(line)
+      token_set = tokenizer(line)
 
-      tokens.map { |token| token[1] ? "#{token[0]}(#{token[1].to_s})" : token[0] }.join(' | ')
+      token_set.map do |tokens|
+        tokens.map { |token| token[1] ? "#{token[0]}(#{token[1].to_s})" : token[0] }.join(' | ')
+      end.join(' OR ')
     rescue ParserError => e
       e.to_s
     end
@@ -289,21 +292,23 @@ module DakiLang
           next
         end
 
-        tokens = tokenizer(line)
-        next if tokens.empty?
+        token_set = tokenizer(line)
+        next if token_set.flatten.empty?
 
-        puts tokens.map { |a| a.join(':') }.join(', ') if @debug
+        token_set.each do |tokens|
+          puts tokens.map { |a| a.join(':') }.join(', ') if @debug
 
-        case tokens.last.first
-        when 'clause_finish'
-          add_rule(tokens)
-        when 'short_query_finish'
-          execute_query(tokens, true)
-        when 'full_query_finish'
-          execute_query(tokens, false)
-        when 'retract_finish'
-          retract_rule_by_full_match(tokens)
-          puts
+          case tokens.last.first
+          when 'clause_finish'
+            add_rule(tokens, token_set.count == 1)
+          when 'short_query_finish'
+            execute_query(token_set.first, true)
+          when 'full_query_finish'
+            execute_query(token_set.first, false)
+          when 'retract_finish'
+            retract_rule_by_full_match(token_set.first)
+            puts
+          end
         end
       end
     end
@@ -395,7 +400,7 @@ module DakiLang
       end
     end
 
-    def add_rule(tokens)
+    def add_rule(tokens, warn_if_exists)
       head, last_idx = build_fact(tokens)
 
       if head && OPERATOR_CLAUSES.include?(head.arity_name)
@@ -410,13 +415,13 @@ module DakiLang
         bodies.push(body) if body
       end
 
-      if tokens.include?(['or'])
-        bodies.each do |body|
-          table_add_clause(head, [body], bodies.count == 1)
-        end
-      else
-        table_add_clause(head, bodies.any? ? bodies : [], true)
-      end
+      # if tokens.include?(['or'])
+      #   bodies.each do |body|
+      #     table_add_clause(head, [body], bodies.count == 1)
+      #   end
+      # else
+        table_add_clause(head, bodies, warn_if_exists)
+      # end
     end
 
     def build_fact(tokens, start_index = 0)
@@ -916,6 +921,7 @@ module DakiLang
         string += c
       end
 
+      # Some global validations
       if string.size > 0
         parser_error("Syntax error at #{text}", 'unterminated text')
       end
@@ -924,6 +930,7 @@ module DakiLang
         parser_error("Syntax error at #{text}", 'unterminated clause')
       end
 
+      # Reorder and fix clause conditions
       tokens.each.with_index do |s, idx|
         next if s.nil? || s[0] != 'oper'
 
@@ -954,36 +961,87 @@ module DakiLang
         end
       end
 
+      # Type conversion
       tokens.each.with_index do |token, idx|
         if token && token[0] == 'var' && (token[1].is_a?(String) || token[1].is_a?(Array))
           tokens[idx] = ['var', Variable.new(token[1])]
         end
       end
 
-      vari = 0
+      # Further validations
       tokens = tokens.compact
-      new_tokens = tokens.dup
-      sep_token_idx = tokens.index { |t| t == ['sep'] }
-
       tokens.each.with_index do |s, idx|
-        if s[0] == 'name' && (tokens[idx + 1].nil? || tokens[idx + 1][0] != 'args_start')
+        if s[0] == 'and' && tokens[idx + 1] == ['and']
+          parser_error("Syntax error at #{text}", 'unexpected , character')
+        elsif s[0] == 'name' && (tokens[idx + 1].nil? || tokens[idx + 1][0] != 'args_start')
           parser_error("Syntax error at #{text}", 'clause without arguments list')
-        end
-        if s[0] == 'args_start' && tokens[idx + 1] && tokens[idx + 1][0] == 'args_end'
+        elsif s[0] == 'args_start' && tokens[idx + 1] && tokens[idx + 1][0] == 'args_end'
           parser_error("Syntax error at #{text}", 'empty arguments list')
+        elsif s[0] == 'name'
+          chrs = s[1].chars
+
+          if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
+            parser_error("Syntax error at #{text}", 'illegal character in clause name')
+          end
+        elsif s[0] == 'const'
+          s[1] = Literal.new(s[1])
+        else
+          next
+        end
+      end
+
+      # Separate clause into multiple clauses for logical OR tail dependencies
+      sep_index = tokens.index(['sep'])
+      if sep_index.nil? || tokens.index(['and']).to_i > sep_index
+        # Logical AND or no tail
+        token_set = [tokens]
+      else
+        # Logical OR
+        tokens_head = tokens.slice(0, sep_index + 1)
+        tokens_body = tokens.slice(sep_index + 1, tokens.count - 2 - sep_index)
+
+        parts = []
+        part = []
+        tokens_body.each do |token|
+          if token == ['or']
+            if part.empty?
+              parser_error("Syntax error at #{text}", 'unexpected ; character')
+            end
+
+            part.push(tokens.last)
+            parts.push(part)
+            part = []
+          else
+            part.push(token)
+          end
         end
 
-        if s[0] == 'var'
+        if part.empty?
+          parser_error("Syntax error at #{text}", 'unexpected ; character')
+        end
+
+        part.push(tokens.last)
+        parts.push(part)
+
+        token_set = parts.map { |p| tokens_head + p }
+      end
+
+      token_set.each.with_index do |tokens, token_set_idx|
+        # Validate variable names and inline operations
+        vari = 0
+        new_tokens = tokens.dup
+        sep_token_idx = tokens.index { |t| t == ['sep'] }
+
+        tokens.each.with_index do |s, idx|
+          next unless s[0] == 'var'
 
           chrs = s[1].name.chars
 
           if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
             if sep_token_idx.nil? || (sep_token_idx > idx && !chrs.any? { |c| !VAR_EQUATION_CHARS.include?(c) })
               parser_error("Syntax error at #{text}", 'illegal character in variable name')
-            elsif tokens.include?(['or'])
-              parser_error("Syntax error at #{text}", 'illegal to mix logical OR clauses with inlined variable operations')
             else
-              # Variable equation
+              # Variable inline operation
               equ = s[1].name.tr(' ', '')
 
               var_name_mode = false
@@ -1013,10 +1071,10 @@ module DakiLang
               var_names = var_names.uniq
 
               if var_names.count == 0
-                parser_error("Syntax error at #{text}", 'equation missing variable name')
+                parser_error("Syntax error at #{text}", 'inline operation missing variable name')
               end
               if var_names.count > 1
-                parser_error("Syntax error at #{text}", 'multiple variable names in single variable equation')
+                parser_error("Syntax error at #{text}", 'multiple variable names in single variable inline operation')
               end
 
               var_name = var_names.first
@@ -1039,30 +1097,24 @@ module DakiLang
               new_tokens = new_tokens.slice(0, sep_token_idx + 1) + new_clause + new_tokens.slice(sep_token_idx + 1, new_tokens.count)
             end
           end
-        elsif s[0] == 'name'
-          chrs = s[1].chars
+        end
 
-          if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
-            parser_error("Syntax error at #{text}", 'illegal character in clause name')
+        token_set[token_set_idx] = new_tokens
+        tokens = token_set[token_set_idx]
+
+        # Parse array constants
+        tokens.each.with_index do |token, idx|
+          if token && token[0] == 'const_list_start'
+            val = recursive_build_array(tokens, idx)
+
+            tokens[idx] = ['const', Literal.new(val)]
           end
-        elsif s[0] == 'const'
-          s[1] = Literal.new(s[1])
-        else
-          next
         end
+
+        token_set[token_set_idx] = new_tokens.compact
       end
 
-      tokens = new_tokens
-
-      tokens.each.with_index do |token, idx|
-        if token && token[0] == 'const_list_start'
-          val = recursive_build_array(tokens, idx)
-
-          tokens[idx] = ['const', Literal.new(val)]
-        end
-      end
-
-      tokens.compact
+      token_set
     rescue ParserError => e
       raise if @test_mode
 
