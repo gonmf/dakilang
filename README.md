@@ -69,6 +69,6 @@ ruby parser_test.rb
 
 ## Future work
 
+- Replace some convenient Ruby methods with more fundamental implementations, in preparation for rewrite in C
 - Improve parser code
-- Improve parser test suite
 - Explore the variable unification of list elements (head\|tail)

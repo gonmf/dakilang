@@ -478,7 +478,9 @@ module DakiLang
       a, b = args
 
       if numeric?(a) && b.is_a?(String)
-        eval(b.gsub('$', a.to_s))
+        expr = b.gsub('$', a.to_s)
+
+        eval(expr) # TODO: Actually implement instead of relying on Ruby
       end
     rescue StandardError
       nil

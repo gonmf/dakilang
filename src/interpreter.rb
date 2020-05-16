@@ -149,7 +149,7 @@ module DakiLang
           'string' => false, 'list' => false, 'integer' => true, 'float' => true
         }
       },
-      '<>' => {
+      '!=' => {
         'string' => {
           'string' => true, 'list' => false, 'integer' => false, 'float' => false
         },
@@ -1267,7 +1267,7 @@ module DakiLang
                 return false
               end
             else
-              if !COMPATIBLE_CONDITIONS[var3.condition][const.type][var3.condition_type] || !const.value.send(var3.real_condition, var3.condition_value)
+              if !COMPATIBLE_CONDITIONS[var3.condition][const.type][var3.condition_type] || !const.value.send(var3.condition, var3.condition_value)
                 return false
               end
             end
@@ -1282,7 +1282,7 @@ module DakiLang
                 return false
               end
             else
-              if !COMPATIBLE_CONDITIONS[var3.condition][const.type][var3.condition_type] || !const.value.send(var3.real_condition, var3.condition_value)
+              if !COMPATIBLE_CONDITIONS[var3.condition][const.type][var3.condition_type] || !const.value.send(var3.condition, var3.condition_value)
                 return false
               end
             end
