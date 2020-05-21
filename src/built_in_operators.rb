@@ -135,7 +135,7 @@ module DakiLang
     end
 
     # Bitwise operator clauses
-    def bit_and(args)
+    def oper_bit_and(args)
       a, b = args
 
       if a.is_a?(Integer) && b.is_a?(Integer)
@@ -143,7 +143,7 @@ module DakiLang
       end
     end
 
-    def bit_or(args)
+    def oper_bit_or(args)
       a, b = args
 
       if a.is_a?(Integer) && b.is_a?(Integer)
@@ -151,7 +151,7 @@ module DakiLang
       end
     end
 
-    def bit_xor(args)
+    def oper_bit_xor(args)
       a, b = args
 
       if a.is_a?(Integer) && b.is_a?(Integer)
@@ -159,7 +159,7 @@ module DakiLang
       end
     end
 
-    def bit_neg(args)
+    def oper_bit_neg(args)
       a, = args
 
       if a.is_a?(Integer)
@@ -167,7 +167,7 @@ module DakiLang
       end
     end
 
-    def bit_shift_left(args)
+    def oper_bit_shift_left(args)
       a, b = args
 
       if a.is_a?(Integer) && b.is_a?(Integer)
@@ -175,7 +175,7 @@ module DakiLang
       end
     end
 
-    def bit_shift_right(args)
+    def oper_bit_shift_right(args)
       a, b = args
 
       if a.is_a?(Integer) && b.is_a?(Integer)
@@ -340,7 +340,7 @@ module DakiLang
     end
 
     # List operator clauses
-    def head(args)
+    def oper_head(args)
       a, = args
 
       if a.is_a?(Array)
@@ -348,7 +348,7 @@ module DakiLang
       end
     end
 
-    def tail(args)
+    def oper_tail(args)
       a, = args
 
       if a.is_a?(Array)
@@ -356,7 +356,7 @@ module DakiLang
       end
     end
 
-    def push(args)
+    def oper_push(args)
       a, b = args
 
       if a.is_a?(Array)
@@ -364,7 +364,7 @@ module DakiLang
       end
     end
 
-    def append(args)
+    def oper_append(args)
       a, b = args
 
       if a.is_a?(Array)
@@ -372,7 +372,7 @@ module DakiLang
       end
     end
 
-    def put(args)
+    def oper_put(args)
       a, b, c = args
 
       if a.is_a?(Array) && c.is_a?(Integer) && c >= 0 && c <= a.count
