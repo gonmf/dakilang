@@ -1,0 +1,28 @@
+# Turing completeness test
+
+# List is empty: search is finished
+list_max_depth(list, 0, currDepth, currMax, currMax).
+
+
+list_max_depth(list, len > 0, currDepth, currMax, answer) :- head(list, listHead), \
+                                                             eql(listHead, '(', res), \
+                                                             max(currMax, currDepth + 1, newMax), \
+                                                             tail(list, listTail), \
+                                                             list_max_depth(listTail, len - 1, currDepth + 1, newMax, answer).
+
+list_max_depth(list, len > 0, currDepth, currMax, answer) :- head(list, listHead), \
+                                                             eql(listHead, ')', res), \
+                                                             tail(list, listTail), \
+                                                             list_max_depth(listTail, len - 1, currDepth - 1, currMax, answer).
+
+list_max_depth(list, len > 0, currDepth, currMax, answer) :- head(list, listHead), \
+                                                             neq(listHead, '(', res), \
+                                                             neq(listHead, ')', res), \
+                                                             tail(list, listTail), \
+                                                             list_max_depth(listTail, len - 1, currDepth, currMax, answer).
+
+
+string_max_depth(string, answer) :- split(string, '', list), len(list, listLen), \
+                                    list_max_depth(list, listLen, 0, 0, answer).
+
+string_max_depth("(()(a)()(()) ())", answer)?
