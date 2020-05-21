@@ -629,9 +629,10 @@ module DakiLang
           if !['\'', '"'].any? { |v| atom.include?(v) } && ['+', '-', '*', '/', '%', '&', '|', '^', '~'].any? { |v| atom.include?(v) }
             tested_part = text_chars.slice(idx, text_chars.count).join
 
-            text_chars = (text_chars.slice(0, idx).join + (' ' * (1 + atom.size)) + tested_part.slice(1 + atom.size, tested_part.size)).split('')
+            text_chars = (text_chars.slice(0, idx).join + (' ' * atom.size) + tested_part.slice(atom.size, tested_part.size)).split('')
 
-            tokens.push(['var', atom.strip])
+            string = atom.strip
+            last_non_whitespace = string.chars.last
             next
           end
         end
