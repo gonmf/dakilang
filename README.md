@@ -58,13 +58,13 @@ The tests are still under heavy development.
 Some tests, interpreter independent, are ran using:
 
 ```bash
-./test.sh
+./test_interpreter.sh
 ```
 
 Other, parser specific tests for this interpreter, are ran with:
 
 ```bash
-ruby parser_test.rb
+./test_parser.sh
 ```
 
 ## Future work

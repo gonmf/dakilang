@@ -1,0 +1,71 @@
+abc(A, B0).
+abc(_a).
+abc(a_).
+abc(3a).
+abc(A, 123, 12.3, "123", \'123\', 0>vic, vic <> 0.3, vic > "my_str").
+fib(Pos <= 2, Res) :- sub(Pos, 1, N1), sub(Pos, 2, N2) , fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+parent("victor", \'john\').
+parent("victor",\'john\').
+parent("victor",\'john\') :- par(X); ; par(Y).
+parent("victor",\'john\') :- par(X) ;; par(Y).
+parent("victor",\'john\') :- par(X) ; ;par(Y).
+parent("victor",\'john\') :- par(X);  ;par(Y).
+parent("victor",\'john\') :- par(X), , par(Y).
+parent("victor",\'john\') :- par(X) ,, par(Y).
+parent("victor",\'john\') :- par(X) , ,par(Y).
+parent("victor",\'john\') :- par(X),  ,par(Y).
+grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
+grandparent(X, Y) :- parent(X, Z); parent(Z, Y).
+not_found(\'true\')?
+not_found(\'\')?
+natural_except_five(5)~
+natural_except_five().
+natural_except_five()~
+natural_except_five()?
+natural_except_five()
+natural_except_five() :- amep(); bla(X).
+natural_except_five() :- amep(); bla(X)~
+natural_except_five() :- amep(); bla(X)?
+natural_except_five() :- amep(); bla(X)
+is_string(X: \'string\').
+is_string("1")?
+div(43, 0.32, a_b)?
+div(00_43, 0.32, a_b)?
+div(43, ., a_b)?
+div(43, a_b,)?
+div(43, a_b, )?
+div(, 43, a_b)?
+div(, 43, a_b, )?
+xpto(N <> 2, N <> 3) :- eql(N, N, X).
+xpto(N << 2, N <> 3) :- eql(N, N, X).
+xpto(N < 2, N <> 3) :- eql.
+xpto :- eql(N, N, X).
+xpto(N <> 2, N <> 3) :- eql(N, N, X)?
+number(121).
+number(0172).
+number(019).
+number(0b1111011).
+number(0b1111x011).
+number(0b1112011).
+number(0x7c).
+number(0x7xc).
+number(0x7g).
+number([1,2,"3", \'4\', [-1, 56]]).
+number([1,2,"3", \'4\', [-1, 56, variable]]).
+number([1,2,"3", \'4\', [-1, 56, \'const\',]]).
+number([1,2,"3", \'4\', [-1, 56, \'const\'],]).
+number([1,2,"3", \'4\', [-1, 56, \'const\'],[,]]).
+number(X, B) :- var(\'test\', A > 3, B, 4).
+number(X <> Y, B).
+number(X <> Y, B) :- val(Y, B, X).
+number(X, B), numb(O) :- val(Y, B, X).
+number(X, B); numb(O) :- val(Y, B, X).
+number(X, B) :- (val(Y, B, X), val(B, X, Y).
+number(X, B) :- val(Y, B, X), val(B, X, Y); val(Y, B, X), val(B, X, Y).
+number(X, B) :- val(Y, B, X), val(B, X, Y)).
+test(A, B) :- at(B, A, B, A + 2).
+test(A, B) :- at(B, A, B, (A * 2) + 1).
+test(A, B) :- at(B, A, A + 2, A).
+test(A, B) :- at(B, A, (A * 2) + 1, A).
+test(A, B) :- at(A + 2, A).
+test(A, B) :- at((A * 2) + 1, A).

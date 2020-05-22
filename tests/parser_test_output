@@ -1,0 +1,71 @@
+name(abc) | args_start | var(A) | var(B0) | args_end | clause_finish
+Syntax error at abc(_a).: illegal character in variable name
+name(abc) | args_start | var(a_) | args_end | clause_finish
+Syntax error at abc(3a).: illegal integer hexadecimal format at 3
+Syntax error at abc(A, 123, 12.3, "123", \'123\', 0>vic, vic <> 0.3, vic > "my_str").: unexpected end of string
+name(fib) | args_start | var(Pos <= 2) | var(Res) | args_end | sep | name(sub) | args_start | var(Pos) | const(1) | var(N1) | args_end | and | name(sub) | args_start | var(Pos) | const(2) | var(N2) | args_end | and | name(fib) | args_start | var(N1) | var(X1) | args_end | and | name(fib) | args_start | var(N2) | var(X2) | args_end | and | name(add) | args_start | var(X1) | var(X2) | var(Res) | args_end | clause_finish
+Syntax error at parent("victor", \'john\').: unexpected end of string
+Syntax error at parent("victor",\'john\').: unexpected end of string
+Syntax error at parent("victor",\'john\') :- par(X); ; par(Y).: unexpected end of string
+Syntax error at parent("victor",\'john\') :- par(X) ;; par(Y).: unexpected end of string
+Syntax error at parent("victor",\'john\') :- par(X) ; ;par(Y).: unexpected end of string
+Syntax error at parent("victor",\'john\') :- par(X);  ;par(Y).: unexpected end of string
+Syntax error at parent("victor",\'john\') :- par(X), , par(Y).: unexpected end of string
+Syntax error at parent("victor",\'john\') :- par(X) ,, par(Y).: unexpected end of string
+Syntax error at parent("victor",\'john\') :- par(X) , ,par(Y).: unexpected end of string
+Syntax error at parent("victor",\'john\') :- par(X),  ,par(Y).: unexpected end of string
+name(grandparent) | args_start | var(X) | var(Y) | args_end | sep | name(parent) | args_start | var(X) | var(Z) | args_end | and | name(parent) | args_start | var(Z) | var(Y) | args_end | clause_finish
+name(grandparent) | args_start | var(X) | var(Y) | args_end | sep | name(parent) | args_start | var(X) | var(Z) | args_end | clause_finish OR name(grandparent) | args_start | var(X) | var(Y) | args_end | sep | name(parent) | args_start | var(Z) | var(Y) | args_end | clause_finish
+Syntax error at not_found(\'true\')?: unexpected end of string
+Syntax error at not_found(\'\')?: unexpected end of string
+name(natural_except_five) | args_start | const(5) | args_end | retract_finish
+Syntax error at natural_except_five().: unexpected end of empty argument list
+Syntax error at natural_except_five()~: unexpected end of empty argument list
+Syntax error at natural_except_five()?: unexpected end of empty argument list
+Syntax error at natural_except_five(): unexpected end of empty argument list
+Syntax error at natural_except_five() :- amep(); bla(X).: unexpected end of empty argument list
+Syntax error at natural_except_five() :- amep(); bla(X)~: unexpected end of empty argument list
+Syntax error at natural_except_five() :- amep(); bla(X)?: unexpected end of empty argument list
+Syntax error at natural_except_five() :- amep(); bla(X): unexpected end of empty argument list
+Syntax error at is_string(X: \'string\').: unexpected end of string
+name(is_string) | args_start | const('1') | args_end | full_query_finish
+name(div) | args_start | const(43) | const(0.32) | var(a_b) | args_end | full_query_finish
+Syntax error at div(00_43, 0.32, a_b)?: illegal character in variable name
+Syntax error at div(43, ., a_b)?: unexpected ? character
+Syntax error at div(43, a_b,)?: unexpected dangling comma at end of argument list
+Syntax error at div(43, a_b, )?: unexpected dangling comma at end of argument list
+Syntax error at div(, 43, a_b)?: invalid , at argument list start
+Syntax error at div(, 43, a_b, )?: invalid , at argument list start
+name(xpto) | args_start | var(N <> 2) | var(N <> 3) | args_end | sep | name(eql) | args_start | var(N) | var(N) | var(X) | args_end | clause_finish
+Syntax error at xpto(N << 2, N <> 3) :- eql(N, N, X).: unknown clause condition operator
+Syntax error at xpto(N < 2, N <> 3) :- eql.: unterminated text
+Syntax error at xpto :- eql(N, N, X).: clause without arguments list
+Syntax error at xpto(N <> 2, N <> 3) :- eql(N, N, X)?: unexpected ? character for rule with tail
+name(number) | args_start | const(121) | args_end | clause_finish
+name(number) | args_start | const(122) | args_end | clause_finish
+Syntax error at number(019).: illegal integer octal format at 01
+name(number) | args_start | const(123) | args_end | clause_finish
+Syntax error at number(0b1111x011).: illegal integer format at 0b1111
+Syntax error at number(0b1112011).: illegal integer binary format at 0b111
+name(number) | args_start | const(124) | args_end | clause_finish
+Syntax error at number(0x7xc).: illegal integer format at 0x7
+Syntax error at number(0x7g).: illegal integer hexadecimal format at 0x7
+Syntax error at number([1,2,"3", \'4\', [-1, 56]]).: unexpected end of string
+Syntax error at number([1,2,"3", \'4\', [-1, 56, variable]]).: unexpected end of string
+Syntax error at number([1,2,"3", \'4\', [-1, 56, \'const\',]]).: unexpected end of string
+Syntax error at number([1,2,"3", \'4\', [-1, 56, \'const\'],]).: unexpected end of string
+Syntax error at number([1,2,"3", \'4\', [-1, 56, \'const\'],[,]]).: unexpected end of string
+Syntax error at number(X, B) :- var(\'test\', A > 3, B, 4).: unexpected end of string
+Syntax error at number(X <> Y, B).: invalid clause condition format
+Syntax error at number(X <> Y, B) :- val(Y, B, X).: invalid clause condition format
+Syntax error at number(X, B), numb(O) :- val(Y, B, X).: invalid , character before clause head/tail separator
+Syntax error at number(X, B); numb(O) :- val(Y, B, X).: invalid ; character before clause head/tail separator
+Syntax error at number(X, B) :- (val(Y, B, X), val(B, X, Y).: unexpected start of argument list
+Syntax error at number(X, B) :- val(Y, B, X), val(B, X, Y); val(Y, B, X), val(B, X, Y).: mixing of ; and & logical operators
+Syntax error at number(X, B) :- val(Y, B, X), val(B, X, Y)).: unexpected end of empty argument list
+name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_start | var(A) | const('$0+2') | var($1) | args_end | and | name(at) | args_start | var(B) | var(A) | var(B) | var($1) | args_end | clause_finish
+name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_start | var(A) | const('($0*2)+1') | var($1) | args_end | and | name(at) | args_start | var(B) | var(A) | var(B) | var($1) | args_end | clause_finish
+name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_start | var(A) | const('$0+2') | var($1) | args_end | and | name(at) | args_start | var(B) | var(A) | var($1) | var(A) | args_end | clause_finish
+name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_start | var(A) | const('($0*2)+1') | var($1) | args_end | and | name(at) | args_start | var(B) | var(A) | var($1) | var(A) | args_end | clause_finish
+name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_start | var(A) | const('$0+2') | var($1) | args_end | and | name(at) | args_start | var($1) | var(A) | args_end | clause_finish
+name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_start | var(A) | const('($0*2)+1') | var($1) | args_end | and | name(at) | args_start | var($1) | var(A) | args_end | clause_finish
