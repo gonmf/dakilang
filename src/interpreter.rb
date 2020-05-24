@@ -1498,7 +1498,7 @@ module DakiLang
             end
           end
 
-          successful_solutions = [successful_solutions[0]] if stop_early
+          successful_solutions = [successful_solutions[0]] if stop_early && successful_solutions.any?
 
           return successful_solutions.map { |sol| sol[0][0] }
         end
