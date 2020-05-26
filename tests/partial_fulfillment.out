@@ -1,0 +1,7 @@
+> casal("leonardo", Y).
+> casal(X, "carlota").
+>
+> casal(X, Y)?
+X = 'leonardo'
+Y = 'carlota'
+

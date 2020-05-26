@@ -20,7 +20,7 @@ module DakiLang
   class Interpreter
     include OperatorClauses
 
-    VERSION = '0.25'
+    VERSION = '0.26'
 
     MAX_FUNC_ARITY = 20
 
@@ -1276,7 +1276,7 @@ module DakiLang
       [Fact.new(name, other_args + [value])]
     end
 
-    def clauses_match(h1, h2)
+    def clauses_match(h1, h2, h1_has_body, first_clause)
       return false unless h1.arity_name == h2.arity_name
 
       h1.arg_list.each.with_index do |var1, idx|
@@ -1322,6 +1322,11 @@ module DakiLang
         end
       end
 
+      # If there is no body, the head itself must add information to be matched
+      unless h1_has_body || first_clause
+        return false if h1.hash == h2.hash
+      end
+
       # Ensure there are no incompatible substitutions, like
       # a(A, A).
       # matching
@@ -1330,17 +1335,24 @@ module DakiLang
       h1 = deep_clone(h1)
       h2 = deep_clone(h2)
       dummy_value = rand
+      banned_values = Set.new
 
       h1.arg_list.each.with_index do |var1, idx1|
         var2 = h2.arg_list[idx1]
 
         if var1.const?
           unless var2.const?
+            return false if banned_values.include?(var1.value)
+
             replace_variable_with_literal(var2.name, var1.value, h2)
           end
         elsif var2.const?
+          return false if banned_values.include?(var2.value)
+
           replace_variable_with_literal(var1.name, var2.value, h1)
         else
+          banned_values.add(dummy_value)
+
           replace_variable_with_literal(var1.name, dummy_value, h1)
           replace_variable_with_literal(var2.name, dummy_value, h2)
 
@@ -1470,6 +1482,8 @@ module DakiLang
       iteration = 0
       time_limit = Time.now + @search_time_limit
 
+      query_hash = head.hash
+
       solution_set = [unique_var_names([[deep_clone(head), false]])]
 
       while Time.now < time_limit
@@ -1560,9 +1574,12 @@ module DakiLang
           end
 
           matching_clauses ||= @table[@table_name].select do |table_clause|
-            clauses_match(table_clause[0], head)
+            clauses_match(table_clause[0], head, table_clause[1].any?, head.hash == query_hash)
           end
         end
+
+        solution_set[first_solution_idx] = nil
+        solution_set = solution_set.compact
 
         if matching_clauses.any?
           matching_clauses.each do |clause|
@@ -1570,6 +1587,7 @@ module DakiLang
 
             new_clauses = substitute_variables(new_solution, first_solution_clause[0], deep_clone(clause))
 
+            prev_count = new_solution.count
             new_clauses.each.with_index do |line, idx|
               next if idx == 0
 
@@ -1599,12 +1617,17 @@ module DakiLang
               @debug || kept
             end
 
-            solution_set.push(unique_var_names(new_solution))
+            new_solution = unique_var_names(new_solution)
+
+            new_solution.each.with_index do |solution_line, idx|
+              break if prev_count == idx
+
+              solution_line[1] = !solution_line[0].arg_list.any? { |v| !v.const? }
+            end
+
+            solution_set.push(new_solution) unless solution_set.map(&:hash).include?(new_solution.hash)
           end
         end
-
-        solution_set[first_solution_idx] = nil
-        solution_set = solution_set.compact
       end
 
       nil # Timeout

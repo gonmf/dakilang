@@ -712,10 +712,10 @@
   > is_power(3, 9)?
   Yes
 
-  > print_more(N, L) :- print(N + (L * 2), Out), \
-                        print(N * 2, Out), \
-                        print(N * N, Out), \
-                        print((N + 1) * N + 1, Out).
+  > print_more(N, L) :- print(N + (L * 2), Out1), \
+                        print(N * 2, Out2), \
+                        print(N * N, Out3), \
+                        print((N + 1) * N + 1, Out4).
   > print_more(5, 2)?
   9
   10

@@ -16,8 +16,8 @@ list_max_depth(list, len > 0, currDepth, currMax, answer) :- head(list, listHead
                                                              list_max_depth(listTail, len - 1, currDepth - 1, currMax, answer).
 
 list_max_depth(list, len > 0, currDepth, currMax, answer) :- head(list, listHead), \
-                                                             neq(listHead, '(', res), \
-                                                             neq(listHead, ')', res), \
+                                                             neq(listHead, '(', res1), \
+                                                             neq(listHead, ')', res2), \
                                                              tail(list, listTail), \
                                                              list_max_depth(listTail, len - 1, currDepth, currMax, answer).
 

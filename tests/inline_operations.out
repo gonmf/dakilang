@@ -12,7 +12,7 @@ Yes
 No
 
 >
-> print_more(N) :- print(N, Out), print(N * 2, Out), print(N * N, Out), print((N + 1) * N + 1, Out).
+> print_more(N) :- print(N, Out1), print(N * 2, Out2), print(N * N, Out3), print((N + 1) * N + 1, Out4).
 > print_more(5)?
 5
 10
@@ -21,7 +21,7 @@ No
 Yes
 
 >
-> not(X, Y) :- eql(X, Y).
+> not(X, Y) :- missing_clause(X, Y).
 >
 > not(3, 4)?
 No
