@@ -6,6 +6,11 @@ interpreter = DakiLang::Interpreter.new
 enter_interactive = false
 argv = ARGV.dup
 
+if argv.empty?
+  interpreter.print_help
+  exit(0)
+end
+
 argv.each.with_index do |command, idx|
   if command == '-h' || command == '--help'
     interpreter.print_help
