@@ -14,7 +14,7 @@ module DakiLang
     end
 
     def to_s(debug = false)
-      @to_s ||= begin
+      if debug
         if condition
           value = condition_value
 
@@ -27,6 +27,22 @@ module DakiLang
           "#{debug ? '#' : ''}#{name} #{condition == '!=' ? '<>' : condition} #{value}"
         else
           "#{debug ? '#' : ''}#{name}"
+        end
+      else
+        @to_s ||= begin
+          if condition
+            value = condition_value
+
+            if condition_type == 'string'
+              s = "#{rand}#{rand}#{rand}".tr('0', '')
+
+              value = "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
+            end
+
+            "#{name} #{condition == '!=' ? '<>' : condition} #{value}"
+          else
+            "#{name}"
+          end
         end
       end
     end
