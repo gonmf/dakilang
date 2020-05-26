@@ -1480,6 +1480,7 @@ module DakiLang
     def search(head, stop_early)
       @vari = 0
       iteration = 0
+      solution_set_hashes = Set.new
       time_limit = Time.now + @search_time_limit
 
       query_hash = head.hash
@@ -1625,7 +1626,13 @@ module DakiLang
               solution_line[1] = !solution_line[0].arg_list.any? { |v| !v.const? }
             end
 
-            solution_set.push(new_solution) unless solution_set.map(&:hash).include?(new_solution.hash)
+            new_solution_hash = new_solution.hash
+
+            unless solution_set_hashes.include?(new_solution_hash)
+              solution_set_hashes.add(solution_set_hashes)
+
+              solution_set.push(new_solution)
+            end
           end
         end
       end
