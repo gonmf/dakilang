@@ -20,7 +20,7 @@ module DakiLang
   class Interpreter
     include OperatorClauses
 
-    VERSION = '0.26'
+    VERSION = '0.27'
 
     MAX_FUNC_ARITY = 20
 

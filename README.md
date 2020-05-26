@@ -69,7 +69,6 @@ Other, parser specific tests for this interpreter, are ran with:
 
 ## Known issues
 
-- Explore builtin operator clauses without explicit output when boolean or non-returning like print
 - Parser does not allow inline operations to use non-decimal numeric formats
 - Parser code is very confusing, especially for array data types and inline operations
 
