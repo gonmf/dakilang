@@ -1253,27 +1253,20 @@ module DakiLang
       nil
     end
 
-    def clause_match_built_in_ready(head)
-      arity = head.arg_list.count
-
-      head.arg_list.slice(0, arity - 1).all? { |v| v.const? }
-    end
-
     def clause_match_built_in_eval(head)
-      name = head.name
       arity = head.arg_list.count
 
       other_args = head.arg_list.slice(0, arity - 1)
-      return nil if other_args.any? { |var| !var.const? }
+      return false if other_args.any? { |var| !var.const? } # Not ready to be unified
 
-      value = send("oper_#{name}", other_args.map(&:value))
+      value = send("oper_#{head.name}", other_args.map(&:value))
       return nil unless value
 
       value = Literal.new(value)
 
       return nil if head.arg_list.last.const? && !value.eql?(head.arg_list.last)
 
-      [Fact.new(name, other_args + [value])]
+      [Fact.new(head.name, other_args + [value])]
     end
 
     def clauses_match(h1, h2, h1_has_body, first_clause)
@@ -1532,7 +1525,7 @@ module DakiLang
             if built_in_response
               first_solution_clause_by_builtin_idx = idx
               break
-            elsif clause_match_built_in_ready(solution_clause[0])
+            elsif built_in_response != false
               # Solution can never be unified
               try_again = true
               solution_set[first_solution_idx] = nil
