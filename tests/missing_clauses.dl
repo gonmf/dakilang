@@ -1,0 +1,15 @@
+
+
+alpha(A, B) :- missing(A, B).
+alpha(A, B)?
+
+beta(X) :- missing(X, X, X).
+beta(123)?
+
+charlie(123)?
+
+delta(1, 2).
+
+delta(1)?
+delta(X)?
+

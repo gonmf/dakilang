@@ -1325,39 +1325,47 @@ module DakiLang
       # matching
       # a(A, B).
 
-      h1 = deep_clone(h1)
-      h2 = deep_clone(h2)
-      dummy_value = rand
-      banned_values = Set.new
+      list1 = deep_clone(h1.arg_list)
+      list2 = deep_clone(h2.arg_list)
 
-      h1.arg_list.each.with_index do |var1, idx1|
-        var2 = h2.arg_list[idx1]
+      list1.each.with_index do |var1, idx|
+        var2 = list2[idx]
 
         if var1.const?
-          unless var2.const?
-            return false if banned_values.include?(var1.value)
-
-            replace_variable_with_literal(var2.name, var1.value, h2)
+          if !var2.const?
+            replace_var_with_const(var1, list2, list1, var2.name, nil)
           end
         elsif var2.const?
-          return false if banned_values.include?(var2.value)
-
-          replace_variable_with_literal(var1.name, var2.value, h1)
-        else
-          banned_values.add(dummy_value)
-
-          replace_variable_with_literal(var1.name, dummy_value, h1)
-          replace_variable_with_literal(var2.name, dummy_value, h2)
-
-          dummy_value += 1
+          replace_var_with_const(var2, list1, list2, var1.name, nil)
         end
       end
 
-      h1.arg_list.each.with_index do |var, idx|
-        return false if var.value != h2.arg_list[idx].value
+      (0...list1.count).each do |idx|
+        var1 = list1[idx]
+        var2 = list2[idx]
+
+        if !var1.const? && !var2.const?
+          dummy_value = Literal.new(rand)
+          list1[idx] = dummy_value
+
+          replace_var_with_const(dummy_value, list2, list1, var2.name, var1.name)
+        end
       end
 
-      true
+      list1.all?(&:const?)
+    end
+
+    def replace_var_with_const(const, list1, list2, list1_var_name, list2_var_name)
+      list1.each.with_index do |var1, idx|
+        if !var1.const? && var1.name == list1_var_name
+          list1[idx] = const
+
+          var2 = list2[idx]
+          if !var2.const? && (list2_var_name.nil? || var2.name == list2_var_name)
+            replace_var_with_const(const, list2, list1, list2_var_name || var2.name, list1_var_name)
+          end
+        end
+      end
     end
 
     def replace_variable_with_literal(var_name, literal, head)
@@ -1581,11 +1589,23 @@ module DakiLang
 
             new_clauses = substitute_variables(new_solution, first_solution_clause[0], deep_clone(clause))
 
+            impossible_solution = false
             prev_count = new_solution.count
             new_clauses.each.with_index do |line, idx|
               next if idx == 0
 
-              new_solution.push([line, false])
+              if @operator_clauses.include?(line.arity_name) || @table[@table_name].any? { |table_entry| table_entry[0].arity_name == line.arity_name }
+                new_solution.push([line, false])
+              else
+                impossible_solution = true
+                break
+              end
+            end
+
+            if impossible_solution
+              solution_set[first_solution_idx] = nil
+              solution_set = solution_set.compact
+              break
             end
 
             # Truncate solution to first clause and clauses still to be resolved (it not debugging)

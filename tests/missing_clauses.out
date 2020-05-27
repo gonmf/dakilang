@@ -1,0 +1,25 @@
+>
+>
+> alpha(A, B) :- missing(A, B).
+> alpha(A, B)?
+No
+
+>
+> beta(X) :- missing(X, X, X).
+> beta(123)?
+No
+
+>
+> charlie(123)?
+No
+
+>
+> delta(1, 2).
+>
+> delta(1)?
+No
+
+> delta(X)?
+No
+
+>
