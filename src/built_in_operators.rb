@@ -188,7 +188,7 @@ module DakiLang
       a, b = args
 
       if a == b
-        'yes'
+        'Yes'
       end
     end
 
@@ -196,7 +196,7 @@ module DakiLang
       a, b = args
 
       if a != b
-        'yes'
+        'Yes'
       end
     end
 
@@ -204,7 +204,7 @@ module DakiLang
       a, b = args
 
       if ((a.is_a?(String) == b.is_a?(String)) || (numeric?(a) && numeric?(b))) && a > b
-        'yes'
+        'Yes'
       end
     end
 
@@ -212,7 +212,7 @@ module DakiLang
       a, b = args
 
       if ((a.is_a?(String) == b.is_a?(String)) || (numeric?(a) && numeric?(b))) && a < b
-        'yes'
+        'Yes'
       end
     end
 
@@ -220,7 +220,7 @@ module DakiLang
       a, b = args
 
       if ((a.is_a?(String) == b.is_a?(String)) || (numeric?(a) && numeric?(b))) && a >= b
-        'yes'
+        'Yes'
       end
     end
 
@@ -228,7 +228,7 @@ module DakiLang
       a, b = args
 
       if ((a.is_a?(String) == b.is_a?(String)) || (numeric?(a) && numeric?(b))) && a <= b
-        'yes'
+        'Yes'
       end
     end
 
@@ -492,7 +492,7 @@ module DakiLang
 
       puts a
 
-      'yes'
+      'Yes'
     end
 
     def oper_time(_)

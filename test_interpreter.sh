@@ -11,5 +11,5 @@ for i in ./tests/*.dl; do
   # To create all .out files
   # ./dakilang -c $i > $output_file
 
-  diff -y --suppress-common-lines <(./dakilang -c $i) $output_file || (echo "Test ${test_name} FAILED" && exit 1)
+  diff -y --suppress-common-lines <(./dakilang -c $i) $output_file || exit
 done

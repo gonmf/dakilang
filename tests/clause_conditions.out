@@ -29,7 +29,7 @@ No
 > natural_except_five1(N > 0, N <> 5, R) :- eql(N, N, R).
 > natural_except_five(N, R) :- natural_except_five1(N, N, R).
 > natural_except_five(3, R)?
-R = 'yes'
+R = 'Yes'
 
 > natural_except_five(5, R)?
 No
