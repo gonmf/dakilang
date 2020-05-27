@@ -1,0 +1,13 @@
+alpha("hello", "world").
+beta(A, B) :- alpha(A, B).
+charlie(900, 900).
+delta(A, B) :- charlie(A, B).
+
+beta(A, A)? # No
+delta(A, B)? # A = 900, B = 900
+delta(A, A)? # A = 900
+delta(900, 900)? # Yes
+delta(900, A)? # A = 900
+
+abc(123).
+abc(123)?
