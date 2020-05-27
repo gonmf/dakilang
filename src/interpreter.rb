@@ -378,13 +378,20 @@ module DakiLang
         puts 'Search timeout'
       elsif solutions.any?
         printed_any = false
+
         solutions.uniq.each do |solution|
+          printed = Set.new
+
           head.arg_list.each.with_index do |arg, idx|
             if !arg.const?
               printed_any = true
               value = solution.arg_list[idx]
+              text = "#{arg.name} = #{value}"
 
-              puts "#{arg.name} = #{value}"
+              if !printed.include?(text)
+                printed.add(text)
+                puts text
+              end
             end
           end
 
@@ -1269,8 +1276,9 @@ module DakiLang
       [Fact.new(head.name, other_args + [value])]
     end
 
-    def clauses_match(h1, h2, h1_has_body, first_clause)
+    def clauses_match(h1, h2, h1_has_body)
       return false unless h1.arity_name == h2.arity_name
+      return true if !h1_has_body && h1.hash == h2.hash
 
       h1.arg_list.each.with_index do |var1, idx|
         var2 = h2.arg_list[idx]
@@ -1315,16 +1323,7 @@ module DakiLang
         end
       end
 
-      # If there is no body, the head itself must add information to be matched
-      unless h1_has_body || first_clause
-        return false if h1.hash == h2.hash
-      end
-
-      # Ensure there are no incompatible substitutions, like
-      # a(A, A).
-      # matching
-      # a(A, B).
-
+      # Ensure there are no incompatible substitutions
       list1 = deep_clone(h1.arg_list)
       list2 = deep_clone(h2.arg_list)
 
@@ -1340,19 +1339,15 @@ module DakiLang
         end
       end
 
-      (0...list1.count).each do |idx|
-        var1 = list1[idx]
+      list1.each.with_index do |var1, idx|
+        next unless var1.const?
+
         var2 = list2[idx]
 
-        if !var1.const? && !var2.const?
-          dummy_value = Literal.new(rand)
-          list1[idx] = dummy_value
-
-          replace_var_with_const(dummy_value, list2, list1, var2.name, var1.name)
-        end
+        return false if var1.value != var2.value
       end
 
-      list1.all?(&:const?)
+      true
     end
 
     def replace_var_with_const(const, list1, list2, list1_var_name, list2_var_name)
@@ -1484,8 +1479,6 @@ module DakiLang
       solution_set_hashes = Set.new
       time_limit = Time.now + @search_time_limit
 
-      query_hash = head.hash
-
       solution_set = [unique_var_names([[deep_clone(head), false]])]
 
       while Time.now < time_limit
@@ -1525,6 +1518,7 @@ module DakiLang
         first_solution_clause_by_builtin_idx = nil
         first_solution_clause_idx = nil
         built_in_response = nil
+
         first_solution.each.with_index do |solution_clause, idx|
           next if solution_clause[1]
 
@@ -1550,12 +1544,9 @@ module DakiLang
         next if try_again
 
         first_solution_clause_idx = first_solution_clause_by_builtin_idx || first_solution_clause_idx
-        if first_solution_clause_idx.nil?
-          return []
-        end
-
         first_solution_clause = first_solution[first_solution_clause_idx]
         first_solution_clause[1] = true
+        matching_clauses = nil
 
         if first_solution_clause_by_builtin_idx
           matching_clauses = [built_in_response]
@@ -1576,7 +1567,7 @@ module DakiLang
           end
 
           matching_clauses ||= @table[@table_name].select do |table_clause|
-            clauses_match(table_clause[0], head, table_clause[1].any?, head.hash == query_hash)
+            clauses_match(table_clause[0], head, table_clause[1].any?)
           end
         end
 
@@ -1632,12 +1623,6 @@ module DakiLang
             end
 
             new_solution = unique_var_names(new_solution)
-
-            new_solution.each.with_index do |solution_line, idx|
-              break if prev_count == idx
-
-              solution_line[1] = !solution_line[0].arg_list.any? { |v| !v.const? }
-            end
 
             new_solution_hash = new_solution.hash
 
