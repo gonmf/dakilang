@@ -19,7 +19,7 @@ module DakiLang
           value = condition_value
 
           if condition_type == 'string'
-            s = rand.to_s.tr('.', '')
+            s = rand.to_s
 
             value = "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
           end
@@ -34,7 +34,7 @@ module DakiLang
             value = condition_value
 
             if condition_type == 'string'
-              s = rand.to_s.tr('.', '')
+              s = rand.to_s
 
               value = "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
             end

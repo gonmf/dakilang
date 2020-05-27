@@ -23,7 +23,7 @@ module DakiLang
 
           "[#{values.join(', ')}]"
         elsif value.is_a?(String)
-          s = rand.to_s.tr('.', '')
+          s = rand.to_s
 
           "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
         elsif value.is_a?(Float)
