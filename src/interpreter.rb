@@ -1626,8 +1626,9 @@ module DakiLang
 
             new_solution_hash = new_solution.hash
 
+            # TODO: not required and does not improve performance?
             unless solution_set_hashes.include?(new_solution_hash)
-              solution_set_hashes.add(solution_set_hashes)
+              solution_set_hashes.add(new_solution_hash)
 
               solution_set.push(new_solution)
             end
