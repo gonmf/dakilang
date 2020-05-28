@@ -67,11 +67,7 @@ Other, parser specific tests for this interpreter, are ran with:
 ./test_parser.sh
 ```
 
-## Known issues
-
-- Parser does not allow inline operations to use non-decimal numeric formats
-- Parser code is very confusing, especially for array data types and inline operations
-
 ## Future work
 
+- Parser code is still very confusing
 - Explore the variable unification of list elements (head\|tail)

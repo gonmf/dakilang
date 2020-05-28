@@ -1,0 +1,9 @@
+number(N, 'float', Res) :- set(N + 3.14, Res).
+number(N, 'decimal', Res) :- set(N + 119, Res).
+number(N, 'octal', Res) :- set(N + 0170, Res).
+number(N, 'hexadecimal', Res) :- set(N + 0x79, Res).
+number(N, 'binary', Res) :- set(N + 0b1111010, Res).
+
+number(5, Format, Res)?
+
+listing

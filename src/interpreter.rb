@@ -86,10 +86,15 @@ module DakiLang
       ['time',       2]
     ].freeze
 
+    HEX_CHARS = (('0'..'9').to_a + ('a'..'f').to_a).freeze
+    OCTAL = ('0'..'7').to_a.freeze
+    NUMERIC = ('0'..'9').to_a.freeze
+
     NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
     NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
-    VAR_EQUATION_CHARS = (["\r", "\t", ' ', '-', '_', '(', ')', '+', '-', '*', '/', '%', '&', '|', '^', '~', '.', 'x'] + ('a'..'f').to_a + ('A'..'F').to_a + ('0'..'9').to_a).join(' ').freeze
+
     WHITESPACE_CHARS = ["\r", "\t", ' '].freeze
+    INLINE_OPERATORS = ['-', '+', '-', '*', '/', '%', '&', '|', '^', '~'].freeze
 
     COMPATIBLE_CONDITIONS = {
       '<' => {
@@ -539,6 +544,20 @@ module DakiLang
       end
 
       string
+    end
+
+    def splitter(str, arrs)
+      parts = [" #{str} "]
+
+      arrs.each do |c|
+        parts = parts.map { |s| s == c ? s : s.split(c).map { |v| [c, " #{v} "] }.flatten.slice(1..-1) }.flatten.compact
+      end
+
+      parts.map { |s| s.strip }.select { |s| s.size > 0 }
+    end
+
+    def all_chars?(str, chars)
+      str.chars.all? { |c| chars.include?(c) }
     end
 
     def tokenizer(text)
@@ -1038,66 +1057,92 @@ module DakiLang
         tokens.each.with_index do |s, idx|
           next unless s[0] == 'var'
 
+          var_names = []
           chrs = s[1].name.chars
 
-          if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
-            if sep_token_idx.nil? || (sep_token_idx > idx && !chrs.any? { |c| !VAR_EQUATION_CHARS.include?(c) })
-              parser_error("Syntax error at #{text}", 'illegal character in variable name')
-            else
-              # Variable inline operation
-              equ = s[1].name.tr(' ', '')
+          if NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) && chrs.slice(1, chrs.count).all? { |c| NAME_ALLOWED_REMAINING_CHARS.include?(c) }
+            next
+          end
 
-              var_name_mode = false
-              var_names = []
-              string = ''
-              equ.chars.each.with_index do |c, idx2|
-                if var_name_mode
-                  if NAME_ALLOWED_REMAINING_CHARS.include?(c)
-                    string += c
-                  else
-                    var_names.push(string)
-                    string = ''
-                    var_name_mode = false
-                  end
+          # Variable inline operation
+          equ = s[1].name
+          parts = splitter(s[1].name, INLINE_OPERATORS + [' ', '(', ')'])
+
+          parts.each.with_index do |part, part_id|
+            next if (INLINE_OPERATORS + ['(', ')']).include?(part)
+
+            chrs = part.chars
+            if NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) && chrs.slice(1, chrs.count).all? { |c| NAME_ALLOWED_REMAINING_CHARS.include?(c) }
+              unless var_names.include?(part)
+                var_names.push(part)
+              end
+            elsif NUMERIC.include?(chrs[0])
+              if part.include?('.') # Floating point
+                a, b, c = part.split('.')
+
+                if all_chars?(a, NUMERIC) && all_chars?(b, NUMERIC) && c.nil?
+                  number = part.to_f
                 else
-                  if NAME_ALLOWED_FIRST_CHARS.include?(c)
-                    var_name_mode = true
-                    string += c
-                  end
+                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
+                end
+              elsif part.start_with?('0x') # Hexadecimal
+                a = part.slice(2, part.size)
+
+                if a.size > 0 && all_chars?(a.downcase, HEX_CHARS)
+                  number = part.to_i(16)
+                else
+                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
+                end
+              elsif part.start_with?('0b') # Binary
+                if all_chars?(part.slice(2, part.size), ['0', '1'])
+                  number = part.to_i(2)
+                else
+                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
+                end
+              elsif part[0] == '0' # Octal
+                if all_chars?(part, OCTAL)
+                  number = part.to_i(8)
+                else
+                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
+                end
+              else
+                if all_chars?(part, NUMERIC)
+                  number = part.to_i # Decimal
+                else
+                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
                 end
               end
 
-              if var_name_mode
-                var_names.push(string)
-              end
-
-              var_names = var_names.uniq
-
-              if var_names.count == 0
-                parser_error("Syntax error at #{text}", 'inline operation missing variable name')
-              end
-
-              vari += 1
-              var_names = var_names.sort_by { |s| -s.size }
-              new_var_name = "$#{vari.to_s(16)}"
-              var_names.each.with_index do |var_name, idx2|
-                equ = equ.gsub(var_name, "$#{idx2}")
-              end
-
-              new_clause = [
-                ['name', 'eval'],
-                ['args_start']
-              ] + var_names.map { |var_name| ['var', Variable.new(var_name)] } + [
-                ['const', Literal.new(equ)],
-                ['var', Variable.new(new_var_name)],
-                ['args_end'],
-                ['and']
-              ]
-              s[1] = Variable.new(new_var_name)
-
-              new_tokens = new_tokens.slice(0, sep_token_idx + 1) + new_clause + new_tokens.slice(sep_token_idx + 1, new_tokens.count)
+              parts[part_id] = number.to_s
+            else
+              parser_error("Syntax error at #{text}", 'illegal character in variable name')
             end
           end
+
+          equ = parts.join('')
+
+          vari += 1
+          new_var_name = "$#{vari.to_s(16)}"
+          var_names = var_names.sort_by { |name| -name.size }
+          var_names.each.with_index do |var_name, idx2|
+            equ = equ.gsub(var_name, "$#{idx2}")
+          end
+
+          equ = equ.tr(' ', '')
+
+          new_clause = [
+            ['name', 'eval'],
+            ['args_start']
+          ] + var_names.map { |var_name| ['var', Variable.new(var_name)] } + [
+            ['const', Literal.new(equ)],
+            ['var', Variable.new(new_var_name)],
+            ['args_end'],
+            ['and']
+          ]
+
+          s[1] = Variable.new(new_var_name)
+
+          new_tokens = new_tokens.slice(0, sep_token_idx + 1) + new_clause + new_tokens.slice(sep_token_idx + 1, new_tokens.count)
         end
 
         token_set[token_set_idx] = new_tokens

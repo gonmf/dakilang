@@ -1,0 +1,30 @@
+> number(N, 'float', Res) :- set(N + 3.14, Res).
+> number(N, 'decimal', Res) :- set(N + 119, Res).
+> number(N, 'octal', Res) :- set(N + 0170, Res).
+> number(N, 'hexadecimal', Res) :- set(N + 0x79, Res).
+> number(N, 'binary', Res) :- set(N + 0b1111010, Res).
+>
+> number(5, Format, Res)?
+Format = 'float'
+Res = 8.14
+
+Format = 'decimal'
+Res = 124
+
+Format = 'octal'
+Res = 125
+
+Format = 'hexadecimal'
+Res = 126
+
+Format = 'binary'
+Res = 127
+
+>
+> listing
+0: number(N, 'float', Res) :- eval(N, '$0+3.14', $1), set($1, Res).
+1: number(N, 'decimal', Res) :- eval(N, '$0+119', $1), set($1, Res).
+2: number(N, 'octal', Res) :- eval(N, '$0+120', $1), set($1, Res).
+3: number(N, 'hexadecimal', Res) :- eval(N, '$0+121', $1), set($1, Res).
+4: number(N, 'binary', Res) :- eval(N, '$0+122', $1), set($1, Res).
+
