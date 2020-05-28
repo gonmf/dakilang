@@ -20,7 +20,7 @@ module DakiLang
   class Interpreter
     include OperatorClauses
 
-    VERSION = '0.27'
+    VERSION = '0.28'
 
     MAX_FUNC_ARITY = 20
 
@@ -1491,7 +1491,6 @@ module DakiLang
       while Time.now < time_limit
         if @debug
           iteration += 1
-          # exit(0) if iteration > 7
 
           puts "Iteration #{iteration}"
           solution_set.each.with_index do |solution, idx|
