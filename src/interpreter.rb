@@ -1479,11 +1479,19 @@ module DakiLang
       solution_set_hashes = Set.new
       time_limit = Time.now + @search_time_limit
 
+      dummy_head = Fact.new('0', deep_clone(head.arg_list))
+      dummy_vars = (0...head.arg_list.size).map { |i| Variable.new(('A'.ord + i).chr) }
+      dummy_clause = [Fact.new(dummy_head.name, dummy_vars), [Fact.new(head.name, dummy_vars)]]
+
+      @table[@table_name] = [dummy_clause] + @table[@table_name]
+      head = dummy_head
+
       solution_set = [unique_var_names([[deep_clone(head), false]])]
 
       while Time.now < time_limit
         if @debug
           iteration += 1
+          # exit(0) if iteration > 7
 
           puts "Iteration #{iteration}"
           solution_set.each.with_index do |solution, idx|
@@ -1575,7 +1583,7 @@ module DakiLang
         solution_set = solution_set.compact
 
         if matching_clauses.any?
-          matching_clauses.each do |clause|
+          matching_clauses.each.with_index do |clause, matching_clause_idx|
             new_solution = deep_clone(first_solution)
 
             new_clauses = substitute_variables(new_solution, first_solution_clause[0], deep_clone(clause))
@@ -1597,6 +1605,10 @@ module DakiLang
               solution_set[first_solution_idx] = nil
               solution_set = solution_set.compact
               break
+            end
+
+            if matching_clause_idx > 0 && new_clauses.count == 1
+              new_solution[first_solution_clause_idx][1] = false
             end
 
             # Truncate solution to first clause and clauses still to be resolved (it not debugging)
@@ -1624,9 +1636,9 @@ module DakiLang
 
             new_solution = unique_var_names(new_solution)
 
-            new_solution_hash = new_solution.hash
+            # TODO: can performance be improved?
+            new_solution_hash = new_solution.map { |l| l[0] }.hash
 
-            # TODO: not required and does not improve performance?
             unless solution_set_hashes.include?(new_solution_hash)
               solution_set_hashes.add(new_solution_hash)
 
@@ -1637,6 +1649,8 @@ module DakiLang
       end
 
       nil # Timeout
+    ensure
+      @table[@table_name] = @table[@table_name].slice(1, @table[@table_name].size)
     end
 
     def table_add_clause(head, body, warn_if_exists)
