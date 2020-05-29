@@ -525,6 +525,26 @@ module DakiLang
       end
     end
 
+    def parse_integer(str)
+      if str.start_with?('0x') # Hexadecimal
+        a = str.slice(2, str.size)
+
+        if a.size > 0 && all_chars?(a.downcase, HEX_CHARS)
+          str.to_i(16)
+        end
+      elsif str.start_with?('0b') # Binary
+        if all_chars?(str.slice(2, str.size), ['0', '1'])
+          str.to_i(2)
+        end
+      elsif str[0] == '0' # Octal
+        if all_chars?(str, OCTAL)
+          str.to_i(8)
+        end
+      elsif all_chars?(str, NUMERIC)
+        str.to_i # Decimal
+      end
+    end
+
     def look_ahead(text_chars, start_idx)
       string = ''
       depth_counter = 0
@@ -609,8 +629,9 @@ module DakiLang
                 tokens.push(['const', string.to_f])
                 floating_point_mode = false
               else
-                tokens.push(['const', string.to_i])
+                tokens.push(['const', parse_integer(string)])
               end
+
               number_mode = false
             else
               parser_error("Syntax error at #{text}", 'unexpected ] character')
@@ -1085,30 +1106,10 @@ module DakiLang
                 else
                   parser_error("Syntax error at #{text}", 'illegal character in variable name')
                 end
-              elsif part.start_with?('0x') # Hexadecimal
-                a = part.slice(2, part.size)
-
-                if a.size > 0 && all_chars?(a.downcase, HEX_CHARS)
-                  number = part.to_i(16)
-                else
-                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
-                end
-              elsif part.start_with?('0b') # Binary
-                if all_chars?(part.slice(2, part.size), ['0', '1'])
-                  number = part.to_i(2)
-                else
-                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
-                end
-              elsif part[0] == '0' # Octal
-                if all_chars?(part, OCTAL)
-                  number = part.to_i(8)
-                else
-                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
-                end
               else
-                if all_chars?(part, NUMERIC)
-                  number = part.to_i # Decimal
-                else
+                number = parse_integer(part)
+
+                if number.nil?
                   parser_error("Syntax error at #{text}", 'illegal character in variable name')
                 end
               end
