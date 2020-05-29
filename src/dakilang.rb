@@ -31,6 +31,11 @@ argv.each.with_index do |command, idx|
     enter_interactive = true
     argv[idx] = nil
   end
+
+  if command == '--disable-colors'
+    interpreter.color_output = false
+    argv[idx] = nil
+  end
 end
 
 argv = argv.compact

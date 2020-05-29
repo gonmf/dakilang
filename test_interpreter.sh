@@ -9,7 +9,7 @@ for i in ./tests/*.dl; do
   echo "Test ${test_name}"
 
   # To create all .out files
-  # ./dakilang -c $i > $output_file
+  # ./dakilang --disable-colors -c $i > $output_file
 
-  diff -y --suppress-common-lines <(./dakilang -c $i) $output_file || echo "Test FAILED"
+  diff -y --suppress-common-lines <(./dakilang --disable-colors -c $i) $output_file || echo "Test FAILED"
 done

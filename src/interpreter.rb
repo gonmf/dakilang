@@ -170,10 +170,11 @@ module DakiLang
       }
     }.freeze
 
-    attr_accessor :search_time_limit, :debug
+    attr_accessor :search_time_limit, :color_output, :debug
 
     def initialize
       @search_time_limit = 3.0 # Seconds
+      @color_output = true
 
       @table = {}
       @memo_tree = {}
@@ -197,10 +198,10 @@ module DakiLang
 
     def consult_file(filename, consult_chain = [])
       if !filename || filename.size == 0
-        puts 'File name is missing or invalid'
+        puts red('File name is missing or invalid')
         puts
       elsif consult_chain.include?(filename)
-        puts 'Circular file consult invocation detected'
+        puts red('Circular file consult invocation detected')
         puts
       else
         contents = file_read(filename)
@@ -208,7 +209,7 @@ module DakiLang
         if contents
           run_commands(contents, consult_chain + [filename])
         else
-          puts 'File not found or cannot be read'
+          puts red('File not found or cannot be read')
           puts
         end
       end
@@ -323,7 +324,7 @@ module DakiLang
     def retract_rule_by_index(idx_str)
       idx = idx_str.to_i
       if idx.to_s != idx_str || idx < 0 || idx >= @table[@table_name].count
-        puts 'Invalid clause index'
+        puts red('Invalid clause index')
         puts
         return
       end
@@ -331,7 +332,7 @@ module DakiLang
       @table[@table_name][idx] = nil
       @table[@table_name] = @table[@table_name].compact
 
-      puts 'Clause removed'
+      puts green('Clause removed')
       puts
     end
 
@@ -339,7 +340,7 @@ module DakiLang
       head, last_idx = build_fact(tokens)
 
       if head && @operator_clauses.include?(head.arity_name)
-        puts 'Built-in operator clause cannot be removed'
+        puts red('Built-in operator clause cannot be removed')
         return
       end
 
@@ -367,12 +368,12 @@ module DakiLang
         if are_equal
           @table[@table_name][idx] = nil
           @table[@table_name] = @table[@table_name].compact
-          puts 'Clause removed'
+          puts green('Clause removed')
           return
         end
       end
 
-      puts 'Clause not found'
+      puts red('Clause not found')
     end
 
     def execute_query(tokens, stop_early)
@@ -381,7 +382,7 @@ module DakiLang
       solutions = search(head, stop_early)
 
       if solutions.nil?
-        puts 'Search timeout'
+        puts red('Search timeout')
       elsif solutions.any?
         printed_any = false
 
@@ -396,7 +397,7 @@ module DakiLang
 
               if !printed.include?(text)
                 printed.add(text)
-                puts text
+                puts green(text)
               end
             end
           end
@@ -405,20 +406,28 @@ module DakiLang
         end
 
         unless printed_any
-          puts 'Yes'
+          puts green('Yes')
           puts
         end
       else
-        puts 'No'
+        puts red('No')
         puts
       end
+    end
+
+    def green(str)
+      color_output ? "\e[32m#{str}\e[0m" : str
+    end
+
+    def red(str)
+      color_output ? "\e[31m#{str}\e[0m" : str
     end
 
     def add_rule(tokens, warn_if_exists)
       head, last_idx = build_fact(tokens)
 
       if head && @operator_clauses.include?(head.arity_name)
-        puts 'Built-in operator clause already exists'
+        puts red('Built-in operator clause already exists')
         puts
         return
       end
@@ -476,14 +485,14 @@ module DakiLang
       n, arity, more = name.split('/')
 
       if name.size == 0 || !arity || more || arity != arity.to_i.to_s || arity.to_i < 1
-        puts 'Clause name is invalid'
+        puts red('Clause name is invalid')
       elsif @to_memo[@table_name].include?(name)
-        puts 'Clause is already being memoized'
+        puts red('Clause is already being memoized')
       elsif @operator_clauses.include?(name)
-        puts 'Cannot memoize built-in operator clause'
+        puts red('Cannot memoize built-in operator clause')
       else
         @to_memo[@table_name].add(name)
-        puts 'OK'
+        puts green('OK')
       end
 
       puts
@@ -491,14 +500,14 @@ module DakiLang
 
     def rem_memo(name)
       if !name && name.size == 0
-        puts 'Clause name is invalid'
+        puts red('Clause name is invalid')
       elsif @to_memo[@table_name].include?(name)
         @to_memo[@table_name].delete(name)
         @memo_tree[@table_name][name] = nil
         @memo_tree[@table_name] = @memo_tree[@table_name].compact
-        puts 'OK'
+        puts green('OK')
       else
-        puts 'Clause was not being memoized'
+        puts red('Clause was not being memoized')
       end
 
       puts
@@ -506,7 +515,7 @@ module DakiLang
 
     def list_memo
       @to_memo[@table_name].sort.each do |name|
-        puts name
+        puts green(name)
       end
 
       puts
@@ -1192,9 +1201,9 @@ module DakiLang
         @memo_tree[@table_name] ||= {}
         @to_memo[@table_name] ||= Set.new
 
-        puts "Table changed to #{@table_name}" if output
+        puts green("Table changed to #{@table_name}") if output
       else
-        puts "Current table is #{@table_name}" if output
+        puts green("Current table is #{@table_name}") if output
       end
 
       puts if output
@@ -1209,7 +1218,7 @@ module DakiLang
       end
 
       @table[@table_name].each.with_index do |arr, idx|
-        puts "#{idx.to_s.rjust(indent)}: #{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}."
+        puts green("#{idx.to_s.rjust(indent)}: #{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}.")
       end
 
       puts
@@ -1655,7 +1664,7 @@ module DakiLang
 
     def table_add_clause(head, body, warn_if_exists)
       if !head
-        puts 'Invalid clause format'
+        puts red('Invalid clause format')
         return
       end
 
@@ -1665,7 +1674,7 @@ module DakiLang
 
         if table_head.hash == head.hash && table_body.map(&:hash).sort == body.map(&:hash).sort
           if warn_if_exists
-            puts 'Clause already exists'
+            puts red('Clause already exists')
             puts
           end
           return

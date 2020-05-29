@@ -50,6 +50,7 @@ Option | Description
 -i, --interactive | Activate interactive mode after finishing consulting all files
 -d, --debug | Activate debug mode, which shows extra output and disables some performance improvements
 -t, --time | Changes the default query timeout time; N is a floating point value in seconds
+--disable-colors | Disable the use of colors in the interpreter's output
 
 ## Tests
 
