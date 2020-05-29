@@ -1,7 +1,7 @@
 name(abc) | args_start | var(A) | var(B0) | args_end | clause_finish
 Syntax error at abc(_a).: illegal character in variable name
 name(abc) | args_start | var(a_) | args_end | clause_finish
-Syntax error at abc(3a).: illegal integer hexadecimal format at 3
+Syntax error at abc(3a).: illegal numeric format at 3a
 Syntax error at abc(A, 123, 12.3, "123", \'123\', 0>vic, vic <> 0.3, vic > "my_str").: unexpected end of string
 name(fib) | args_start | var(Pos <= 2) | var(Res) | args_end | sep | name(sub) | args_start | var(Pos) | const(1) | var(N1) | args_end | and | name(sub) | args_start | var(Pos) | const(2) | var(N2) | args_end | and | name(fib) | args_start | var(N1) | var(X1) | args_end | and | name(fib) | args_start | var(N2) | var(X2) | args_end | and | name(add) | args_start | var(X1) | var(X2) | var(Res) | args_end | clause_finish
 Syntax error at parent("victor", \'john\').: unexpected end of string
@@ -43,13 +43,13 @@ Syntax error at xpto :- eql(N, N, X).: clause without arguments list
 Syntax error at xpto(N <> 2, N <> 3) :- eql(N, N, X)?: unexpected ? character for rule with tail
 name(number) | args_start | const(121) | args_end | clause_finish
 name(number) | args_start | const(122) | args_end | clause_finish
-Syntax error at number(019).: illegal integer octal format at 01
+Syntax error at number(019).: illegal numeric format at 019
 name(number) | args_start | const(123) | args_end | clause_finish
-Syntax error at number(0b1111x011).: illegal integer format at 0b1111
-Syntax error at number(0b1112011).: illegal integer binary format at 0b111
+Syntax error at number(0b1111x011).: illegal numeric format at 0b1111x011
+Syntax error at number(0b1112011).: illegal numeric format at 0b1112011
 name(number) | args_start | const(124) | args_end | clause_finish
-Syntax error at number(0x7xc).: illegal integer format at 0x7
-Syntax error at number(0x7g).: illegal integer hexadecimal format at 0x7
+Syntax error at number(0x7xc).: illegal numeric format at 0x7xc
+name(number) | args_start | const(7) | var(g) | args_end | clause_finish
 Syntax error at number([1,2,"3", \'4\', [-1, 56]]).: unexpected end of string
 Syntax error at number([1,2,"3", \'4\', [-1, 56, variable]]).: unexpected end of string
 Syntax error at number([1,2,"3", \'4\', [-1, 56, \'const\',]]).: unexpected end of string

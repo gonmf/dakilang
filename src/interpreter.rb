@@ -89,6 +89,7 @@ module DakiLang
     HEX_CHARS = (('0'..'9').to_a + ('a'..'f').to_a).freeze
     OCTAL = ('0'..'7').to_a.freeze
     NUMERIC = ('0'..'9').to_a.freeze
+    NUMERIC_ALLOWED_CHARS = (['-', '.', 'b', 'x'] + ('0'..'9').to_a + ('a'..'f').to_a + ('A'..'F').to_a).freeze
 
     NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
     NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
@@ -525,23 +526,44 @@ module DakiLang
       end
     end
 
-    def parse_integer(str)
-      if str.start_with?('0x') # Hexadecimal
+    def parse_numeric(str)
+      if str.end_with?('.')
+        return nil
+      end
+
+      if str.start_with?('.')
+        str = "0#{str}"
+      end
+
+      orig_str = str
+
+      str = str.slice(1, str.size) if str[0] == '-'
+
+      return nil if str.size == 0
+
+      if str.include?('.') # Floating point
+        integer, decimal, err = str.split('.')
+        decimal ||= '0'
+
+        if all_chars?(integer, NUMERIC) && all_chars?(decimal, NUMERIC) && !err
+          orig_str.to_f
+        end
+      elsif str.start_with?('0x') # Hexadecimal
         a = str.slice(2, str.size)
 
         if a.size > 0 && all_chars?(a.downcase, HEX_CHARS)
-          str.to_i(16)
+          orig_str.to_i(16)
         end
       elsif str.start_with?('0b') # Binary
         if all_chars?(str.slice(2, str.size), ['0', '1'])
-          str.to_i(2)
+          orig_str.to_i(2)
         end
       elsif str[0] == '0' # Octal
         if all_chars?(str, OCTAL)
-          str.to_i(8)
+          orig_str.to_i(8)
         end
       elsif all_chars?(str, NUMERIC)
-        str.to_i # Decimal
+        orig_str.to_i # Decimal
       end
     end
 
@@ -589,7 +611,6 @@ module DakiLang
       string_mode = false
       escape_mode = false
       number_mode = false
-      floating_point_mode = false
       separator_mode = false
       list_mode_count = 0
       operator_mode = false
@@ -625,12 +646,13 @@ module DakiLang
 
           if string.size > 0
             if number_mode
-              if floating_point_mode
-                tokens.push(['const', string.to_f])
-                floating_point_mode = false
-              else
-                tokens.push(['const', parse_integer(string)])
+              number = parse_numeric(string)
+
+              if number.nil?
+                parser_error("Syntax error at #{text}", 'unexpected ] character')
               end
+
+              tokens.push(['const', number])
 
               number_mode = false
             else
@@ -685,74 +707,18 @@ module DakiLang
         end
 
         if number_mode
-          if floating_point_mode
-            if c == '.'
-              parser_error("Syntax error at #{text}", 'illegal floating point format')
-            elsif c >= '0' && c <= '9'
-              string += c
-              next
-            end
-
-            if ['-', '.'].include?(string.chars.last)
-              parser_error("Syntax error at #{text}", "illegal floating point format at #{string}")
-            end
-            tokens.push(['const', string.to_f])
-          else
-            c_d = c.downcase
-
-            if c_d == '.'
-              floating_point_mode = true
-              string += c_d
-              next
-            elsif c_d == 'b' || c_d == 'x' # Binary or hexadecimal mode
-              if string == '0'
-                string += c_d
-                next
-              else
-                parser_error("Syntax error at #{text}", "illegal integer format at #{string}")
-              end
-            elsif c_d >= '0' && c_d <= '9'
-              if string[0] == '0' && string[1] != 'b' && string[1] != 'x' # Octal mode
-                if c_d > '7'
-                  parser_error("Syntax error at #{text}", "illegal integer octal format at #{string}")
-                else
-                  string += c_d
-                  next
-                end
-              end
-
-              if string[0] == '0' && string[1] == 'b' && c_d > '1' # Binary mode
-                parser_error("Syntax error at #{text}", "illegal integer binary format at #{string}")
-              end
-
-              string += c_d
-              next
-            elsif c_d >= 'a' && c_d <= 'z'
-              if c_d <= 'f' && string[1] == 'x' # Hexadecimal mode
-                string += c_d
-                next
-              else
-                parser_error("Syntax error at #{text}", "illegal integer hexadecimal format at #{string}")
-              end
-            end
-
-            if ['-', '.'].include?(string.chars.last)
-              parser_error("Syntax error at #{text}", "illegal integer format at #{string}")
-            end
-
-            base = 10
-            if string[0] == '0'
-              if string[1] == 'x'
-                base = 16
-              elsif string[1] == 'b'
-                base = 2
-              else
-                base = 8
-              end
-            end
-
-            tokens.push(['const', string.to_i(base)])
+          if NUMERIC_ALLOWED_CHARS.include?(c)
+            string += c
+            next
           end
+
+          number = parse_numeric(string)
+
+          if number.nil?
+            parser_error("Syntax error at #{text}", "illegal numeric format at #{string}")
+          end
+
+          tokens.push(['const', number])
 
           string = ''
           number_mode = false
@@ -784,7 +750,6 @@ module DakiLang
 
         if c == '-' || (c >= '0' && c <= '9') && string.size == 0
           number_mode = true
-          floating_point_mode = false
           string = c
           next
         end
@@ -1097,21 +1062,11 @@ module DakiLang
               unless var_names.include?(part)
                 var_names.push(part)
               end
-            elsif NUMERIC.include?(chrs[0])
-              if part.include?('.') # Floating point
-                a, b, c = part.split('.')
+            elsif (NUMERIC + ['-', '.']).include?(chrs[0])
+              number = parse_numeric(part)
 
-                if all_chars?(a, NUMERIC) && all_chars?(b, NUMERIC) && c.nil?
-                  number = part.to_f
-                else
-                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
-                end
-              else
-                number = parse_integer(part)
-
-                if number.nil?
-                  parser_error("Syntax error at #{text}", 'illegal character in variable name')
-                end
+              if number.nil?
+                parser_error("Syntax error at #{text}", 'illegal character in variable name')
               end
 
               parts[part_id] = number.to_s
