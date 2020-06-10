@@ -1561,6 +1561,12 @@ module DakiLang
         next if try_again
 
         first_solution_clause_idx = first_solution_clause_by_builtin_idx || first_solution_clause_idx
+        if first_solution_clause_idx.nil?
+          solution_set[first_solution_idx] = nil
+          solution_set = solution_set.compact
+          next
+        end
+
         first_solution_clause = first_solution[first_solution_clause_idx]
         first_solution_clause[1] = true
         matching_clauses = nil
