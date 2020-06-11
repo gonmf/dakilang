@@ -1,0 +1,30 @@
+> abc(X) :- print(X, Out).
+>
+> abc(X)?
+No
+
+>
+> abc(X, Y) :- print(X, Out).
+>
+> abc(X, Y)?
+No
+
+>
+> arp(A, B) :- gt(B, 0.2, O1), lt(B, 0.6, O2).
+>
+> arp('name 1', 0.1).
+> arp('name 2', 0.2).
+> arp('name 3', 0.3).
+> arp('name 4', 0.4).
+> arp('name 5', 0.5).
+>
+> arp(A, B)?
+A = 'name 3'
+B = 0.3
+
+A = 'name 4'
+B = 0.4
+
+A = 'name 5'
+B = 0.5
+

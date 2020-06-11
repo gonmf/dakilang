@@ -220,20 +220,6 @@ module DakiLang
       puts
     end
 
-    def print_help
-      puts 'USE'
-      puts '    ./dakilang [OPTIONS]'
-      puts
-      puts 'OPTIONS'
-      puts '-h, --help                 # Print out the program manual and exit'
-      puts '-v, --version              # Print out the program name and version, and exit'
-      puts '-c file, --consult file    # Read file with path "file" and interpret each line'
-      puts '-i, --interactive          # Activate interactive mode after finishing consulting all files'
-      puts '-d, --debug                # Activate debug mode, which shows extra output and disables some performance improvements'
-      puts '-t seconds, --time seconds # Changes the default query timeout time; "seconds" is a floating point value in seconds'
-      puts
-    end
-
     def debug_tokenizer(line)
       @test_mode = true
 
@@ -260,11 +246,6 @@ module DakiLang
           else
             return
           end
-        end
-
-        if down_line == 'help'
-          print_help
-          next
         end
 
         if down_line == 'select_table' || down_line.start_with?('select_table ')
