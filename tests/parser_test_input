@@ -69,3 +69,5 @@ test(A, B) :- at(B, A, A + 2, A).
 test(A, B) :- at(B, A, (A * 2) + 1, A).
 test(A, B) :- at(A + 2, A).
 test(A, B) :- at((A * 2) + 1, A).
+hello("1234567890!'\"#$%&/()=?*+@€£‰¶÷[]≠§±").
+hello(123<>X).

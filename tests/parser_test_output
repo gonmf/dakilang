@@ -69,3 +69,5 @@ name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_s
 name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_start | var(A) | const('($0*2)+1') | var($1) | args_end | and | name(at) | args_start | var(B) | var(A) | var($1) | var(A) | args_end | clause_finish
 name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_start | var(A) | const('$0+2') | var($1) | args_end | and | name(at) | args_start | var($1) | var(A) | args_end | clause_finish
 name(test) | args_start | var(A) | var(B) | args_end | sep | name(eval) | args_start | var(A) | const('($0*2)+1') | var($1) | args_end | and | name(at) | args_start | var($1) | var(A) | args_end | clause_finish
+name(hello) | args_start | const('1234567890!\'"#$%&/()=?*+@€£‰¶÷[]≠§±') | args_end | clause_finish
+name(hello) | args_start | var(X <> 123) | args_end | clause_finish

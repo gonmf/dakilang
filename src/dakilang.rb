@@ -22,7 +22,7 @@ argv.each.with_index do |command, idx|
     puts '    -v, --version              # Print out the program name and version, and exit'
     puts '    -c file, --consult file    # Read file with path "file" and interpret each line'
     puts '    -i, --interactive          # Activate interactive mode after finishing consulting all files'
-    puts '    -d, --debug                # Activate debug mode, which shows extra output and disables some performance improvements'
+    puts '    -d, --debug                # Activate debug mode, which shows the output of the output of clause parsing and a trace of the query solver'
     puts '    -t seconds, --time seconds # Changes the default query timeout time; "seconds" is a floating point value in seconds'
     puts '    --disable-colors           # Disable use of terminal colors in program output'
     puts

@@ -27,8 +27,10 @@ module DakiLang
       separator_mode = false
       list_mode_count = 0
       operator_mode = false
+
       string_delimiter = nil
       string = ''
+
       c = nil
       prev_c = nil
       last_non_whitespace = nil
@@ -44,40 +46,8 @@ module DakiLang
             separator_mode = false
             next
           else
-            parser_error("Syntax error at #{text}", 'expected :-')
+            parser_error(text, 'expected :-')
           end
-        end
-
-        if c == ']'
-          if list_mode_count <= 0
-            parser_error("Syntax error at #{text}", 'unexpected ] character')
-          end
-
-          if last_non_whitespace == ','
-            parser_error("Syntax error at #{text}", 'unexpected dangling comma at end of list')
-          end
-
-          if string.size > 0
-            if number_mode
-              number = parse_numeric(string)
-
-              if number.nil?
-                parser_error("Syntax error at #{text}", 'unexpected ] character')
-              end
-
-              tokens.push(['const', number])
-
-              number_mode = false
-            else
-              parser_error("Syntax error at #{text}", 'unexpected ] character')
-            end
-
-            string = ''
-          end
-
-          tokens.push(['const_list_end'])
-          list_mode_count -= 1
-          next
         end
 
         if string_mode
@@ -87,7 +57,7 @@ module DakiLang
               escape_mode = false
               next
             else
-              parser_error("Syntax error at #{text}", 'string literal escape of unsupported character')
+              parser_error(text, 'string literal escape of unsupported character')
             end
           elsif c == '\\'
             escape_mode = true
@@ -102,6 +72,38 @@ module DakiLang
             string += c
           end
 
+          next
+        end
+
+        if c == ']'
+          if list_mode_count <= 0
+            parser_error(text, 'unexpected ] character')
+          end
+
+          if last_non_whitespace == ','
+            parser_error(text, 'unexpected dangling comma at end of list')
+          end
+
+          if string.size > 0
+            if number_mode
+              number = parse_numeric(string)
+
+              if number.nil?
+                parser_error(text, 'unexpected ] character')
+              end
+
+              tokens.push(['const', number])
+
+              number_mode = false
+            else
+              parser_error(text, 'unexpected ] character')
+            end
+
+            string = ''
+          end
+
+          tokens.push(['const_list_end'])
+          list_mode_count -= 1
           next
         end
 
@@ -128,7 +130,7 @@ module DakiLang
           number = parse_numeric(string)
 
           if number.nil?
-            parser_error("Syntax error at #{text}", "illegal numeric format at #{string}")
+            parser_error(text, "illegal numeric format at #{string}")
           end
 
           tokens.push(['const', number])
@@ -143,7 +145,7 @@ module DakiLang
             next
           else
             if tokens.include?(['sep'])
-              parser_error("Syntax error at #{text}", 'clause conditions at clause tail instead of head')
+              parser_error(text, 'clause conditions at clause tail instead of head')
             end
 
             tokens.push(['oper', string])
@@ -174,7 +176,7 @@ module DakiLang
             next
           end
 
-          parser_error("Syntax error at #{text}", 'unexpected [ character')
+          parser_error(text, 'unexpected [ character')
         end
 
         if c == '#' # Comment
@@ -197,7 +199,7 @@ module DakiLang
 
         if c == '.'
           if tokens.any? { |a| a[0].end_with?('_finish') }
-            parser_error("Syntax error at #{text}", 'unexpected . character')
+            parser_error(text, 'unexpected . character')
           end
 
           tokens.push(['clause_finish'])
@@ -206,10 +208,10 @@ module DakiLang
 
         if c == '?'
           if tokens.any? { |a| a[0].end_with?('_finish') }
-            parser_error("Syntax error at #{text}", 'unexpected ? character')
+            parser_error(text, 'unexpected ? character')
           end
           if tokens.include?(['sep'])
-            parser_error("Syntax error at #{text}", 'unexpected ? character for rule with tail')
+            parser_error(text, 'unexpected ? character for rule with tail')
           end
 
           tokens.push(['full_query_finish'])
@@ -218,10 +220,10 @@ module DakiLang
 
         if c == '!'
           if tokens.any? { |a| a[0].end_with?('_finish') }
-            parser_error("Syntax error at #{text}", 'unexpected ! character')
+            parser_error(text, 'unexpected ! character')
           end
           if tokens.include?(['sep'])
-            parser_error("Syntax error at #{text}", 'unexpected ! character for rule with tail')
+            parser_error(text, 'unexpected ! character for rule with tail')
           end
 
           tokens.push(['short_query_finish'])
@@ -230,7 +232,7 @@ module DakiLang
 
         if c == '"' || c == "'"
           if string.size > 0
-            parser_error("Syntax error at #{text}", 'unexpected end of string')
+            parser_error(text, 'unexpected end of string')
           end
 
           string_delimiter = c
@@ -240,7 +242,7 @@ module DakiLang
 
         if c == '('
           if string.empty?
-            parser_error("Syntax error at #{text}", 'unexpected start of argument list')
+            parser_error(text, 'unexpected start of argument list')
           end
 
           arg_list_mode = true
@@ -252,7 +254,7 @@ module DakiLang
 
         if c == '~'
           if tokens.any? { |a| a[0].end_with?('_finish') }
-            parser_error("Syntax error at #{text}", 'unexpected ~ character')
+            parser_error(text, 'unexpected ~ character')
           end
 
           tokens.push(['retract_finish'])
@@ -261,11 +263,11 @@ module DakiLang
 
         if c == ')'
           if !arg_list_mode
-            parser_error("Syntax error at #{text}", 'unexpected end of empty argument list')
+            parser_error(text, 'unexpected end of empty argument list')
           end
 
           if last_non_whitespace == ','
-            parser_error("Syntax error at #{text}", 'unexpected dangling comma at end of argument list')
+            parser_error(text, 'unexpected dangling comma at end of argument list')
           end
 
           arg_list_mode = false
@@ -273,7 +275,7 @@ module DakiLang
             tokens.push(['var', string.strip])
             string = ''
           elsif tokens.last == ['args_start']
-            parser_error("Syntax error at #{text}", 'unexpected end of empty argument list')
+            parser_error(text, 'unexpected end of empty argument list')
           end
 
           tokens.push(['args_end'])
@@ -286,19 +288,19 @@ module DakiLang
               tokens.push(['var', string.strip])
               string = ''
             elsif tokens.last == ['args_start']
-              parser_error("Syntax error at #{text}", 'invalid , at argument list start')
+              parser_error(text, 'invalid , at argument list start')
             end
           else
             if !tokens.include?(['sep'])
-              parser_error("Syntax error at #{text}", 'invalid , character before clause head/tail separator')
+              parser_error(text, 'invalid , character before clause head/tail separator')
             end
 
             if tokens.include?(['or'])
-              parser_error("Syntax error at #{text}", 'mixing of , and ; logical operators')
+              parser_error(text, 'mixing of , and ; logical operators')
             end
 
             if string.size > 0
-              parser_error("Syntax error at #{text}", 'unexpected , character')
+              parser_error(text, 'unexpected , character')
             end
 
             tokens.push(['and'])
@@ -310,15 +312,15 @@ module DakiLang
 
         if c == ';'
           if !tokens.include?(['sep'])
-            parser_error("Syntax error at #{text}", 'invalid ; character before clause head/tail separator')
+            parser_error(text, 'invalid ; character before clause head/tail separator')
           end
 
           if tokens.include?(['and'])
-            parser_error("Syntax error at #{text}", 'mixing of ; and & logical operators')
+            parser_error(text, 'mixing of ; and & logical operators')
           end
 
           if string.size > 0
-            parser_error("Syntax error at #{text}", 'unexpected ; character')
+            parser_error(text, 'unexpected ; character')
           end
 
           tokens.push(['or'])
@@ -327,7 +329,7 @@ module DakiLang
 
         if c == ':' && !separator_mode
           if arg_list_mode
-            parser_error("Syntax error at #{text}", 'duplicate :- separator')
+            parser_error(text, 'duplicate :- separator')
           end
 
           if string.size > 0
@@ -344,11 +346,11 @@ module DakiLang
 
       # Some global validations
       if string.size > 0
-        parser_error("Syntax error at #{text}", 'unterminated text')
+        parser_error(text, 'unterminated text')
       end
 
       if tokens.any? && !['clause_finish', 'short_query_finish', 'full_query_finish', 'retract_finish'].include?(tokens.last&.first)
-        parser_error("Syntax error at #{text}", 'unterminated clause')
+        parser_error(text, 'unterminated clause')
       end
 
       # Reorder and fix clause conditions
@@ -360,7 +362,7 @@ module DakiLang
           var2 = tokens[idx + 1]
 
           if !var1 || !var2 || ((var1[0] == 'var') == (var2[0] == 'var'))
-            parser_error("Syntax error at #{text}", 'invalid clause condition format')
+            parser_error(text, 'invalid clause condition format')
           end
 
           var = var1[0] == 'var' ? var1 : var2
@@ -371,14 +373,14 @@ module DakiLang
           end
 
           if s[1] == ':' && !['integer', 'float', 'string', 'list'].include?(const[1])
-            parser_error("Syntax error at #{text}", 'invalid argument for : operator')
+            parser_error(text, 'invalid argument for : operator')
           end
 
           tokens[idx - 1] = ['var', Variable.new(var[1], s[1], const[1].class.to_s.downcase, const[1])]
           tokens[idx] = nil
           tokens[idx + 1] = nil
         else
-          parser_error("Syntax error at #{text}", 'unknown clause condition operator')
+          parser_error(text, 'unknown clause condition operator')
         end
       end
 
@@ -393,16 +395,16 @@ module DakiLang
       tokens = tokens.compact
       tokens.each.with_index do |s, idx|
         if s[0] == 'and' && tokens[idx + 1] == ['and']
-          parser_error("Syntax error at #{text}", 'unexpected , character')
+          parser_error(text, 'unexpected , character')
         elsif s[0] == 'name' && (tokens[idx + 1].nil? || tokens[idx + 1][0] != 'args_start')
-          parser_error("Syntax error at #{text}", 'clause without arguments list')
+          parser_error(text, 'clause without arguments list')
         elsif s[0] == 'args_start' && tokens[idx + 1] && tokens[idx + 1][0] == 'args_end'
-          parser_error("Syntax error at #{text}", 'empty arguments list')
+          parser_error(text, 'empty arguments list')
         elsif s[0] == 'name'
           chrs = s[1].chars
 
           if !NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) || chrs.slice(1, chrs.count).any? { |c| !NAME_ALLOWED_REMAINING_CHARS.include?(c) }
-            parser_error("Syntax error at #{text}", 'illegal character in clause name')
+            parser_error(text, 'illegal character in clause name')
           end
         elsif s[0] == 'const'
           s[1] = Literal.new(s[1])
@@ -426,7 +428,7 @@ module DakiLang
         tokens_body.each do |token|
           if token == ['or']
             if part.empty?
-              parser_error("Syntax error at #{text}", 'unexpected ; character')
+              parser_error(text, 'unexpected ; character')
             end
 
             part.push(tokens.last)
@@ -438,7 +440,7 @@ module DakiLang
         end
 
         if part.empty?
-          parser_error("Syntax error at #{text}", 'unexpected ; character')
+          parser_error(text, 'unexpected ; character')
         end
 
         part.push(tokens.last)
@@ -479,12 +481,12 @@ module DakiLang
               number = parse_numeric(part)
 
               if number.nil?
-                parser_error("Syntax error at #{text}", 'illegal character in variable name')
+                parser_error(text, 'illegal character in variable name')
               end
 
               parts[part_id] = number.to_s
             else
-              parser_error("Syntax error at #{text}", 'illegal character in variable name')
+              parser_error(text, 'illegal character in variable name')
             end
           end
 
@@ -537,7 +539,7 @@ module DakiLang
             vars_in_same_clause += 1
 
             if vars_in_same_clause > MAX_FUNC_ARITY
-              parser_error("Syntax error at #{text}", "Too many arguments in a single clause (max is #{MAX_FUNC_ARITY}): this is an interpreter-specific setting")
+              parser_error(text, "Too many arguments in a single clause (max is #{MAX_FUNC_ARITY}): this is an interpreter-specific setting")
             end
           elsif token[0] == 'args_start'
             vars_in_same_clause = 0
@@ -551,7 +553,9 @@ module DakiLang
     private
 
     def invert_operator(str)
-      if str[0] == '<'
+      if str == '<>'
+        str
+      elsif str[0] == '<'
         str.sub('<', '>')
       elsif str[0] == '>'
         str.sub('>', '<')
@@ -654,7 +658,7 @@ module DakiLang
     end
 
     def parser_error(msg, detail = nil)
-      raise ParserError.new([msg, detail].compact.join(': '))
+      raise ParserError.new(["Syntax error at #{msg}", detail].compact.join(': '))
     end
   end
 end

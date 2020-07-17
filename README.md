@@ -48,7 +48,7 @@ Option | Description
 -v, --version | Print out the program name and version, and exit
 -c, --consult | Read file with path F and interpret each line
 -i, --interactive | Activate interactive mode after finishing consulting all files
--d, --debug | Activate debug mode, which shows extra output and disables some performance improvements
+-d, --debug | Activate debug mode, which shows the output of the output of clause parsing and a trace of the query solver
 -t, --time | Changes the default query timeout time; N is a floating point value in seconds
 --disable-colors | Disable the use of colors in the interpreter's output
 

@@ -836,7 +836,7 @@ module DakiLang
           solution_set.each.with_index do |solution, idx|
             puts "  Solution #{idx + 1}"
             solution.each do |head1|
-              puts "    #{head1[1] ? '*' : ''}#{head1[0].to_s(true)}."
+              puts "    #{head1[1] ? '*' : ''}#{head1[0].to_s(true)}"
             end
           end
         end
@@ -928,6 +928,8 @@ module DakiLang
         solution_set = solution_set.compact
 
         if matching_clauses.any?
+          pruned_clauses = []
+
           matching_clauses.each.with_index do |clause, matching_clause_idx|
             new_solution = deep_clone(first_solution)
 
@@ -956,7 +958,7 @@ module DakiLang
               new_solution[first_solution_clause_idx][1] = false
             end
 
-            # Truncate solution to first clause and clauses still to be resolved (it not debugging)
+            # Truncate solution to first clause and clauses still to be resolved
             new_solution = new_solution.select.with_index do |rule, idx|
               memoized_func = @to_memo[@table_name].include?(rule[0].arity_name)
 
@@ -976,7 +978,11 @@ module DakiLang
                 root[rule[0].arg_list.last] = true
               end
 
-              @debug || kept
+              if @debug && !kept
+                pruned_clauses.push(rule[0].to_s)
+              end
+
+              kept
             end
 
             new_solution = unique_var_names(new_solution)
@@ -988,6 +994,13 @@ module DakiLang
               solution_set_hashes.add(new_solution_hash)
 
               solution_set.push(new_solution)
+            end
+          end
+
+          if @debug && pruned_clauses.any?
+            puts '*** pruned'
+            pruned_clauses.sort.uniq.each do |pruned_clause|
+              puts "    #{pruned_clause}"
             end
           end
         end
