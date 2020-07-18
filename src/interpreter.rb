@@ -21,7 +21,7 @@ module DakiLang
     include Tokenizer
     include OperatorClauses
 
-    VERSION = '0.30'
+    VERSION = '0.31'
 
     OPERATOR_CLAUSES = [
       # Arithmetic
