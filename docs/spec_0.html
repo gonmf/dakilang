@@ -53,9 +53,9 @@
 
       <p>Daki is a small computer programming language influenced by Prolog and Datalog. It is a declarative, logic, typed language based on Horn clauses, aimed at solving problems via deduction.</p>
 
-      <p>To execute a Daki program you must use a Daki compiler or interpreter. You can find on GitHub <a href="https://github.com/gonmf/dakilang" target="_blank" rel="noreferrer noopener">the reference interpreter for Spec 0 (external)</a>.</p>
+      <p>To execute a Daki program you must use a Daki compiler or interpreter. You can find on GitHub <a href="https://github.com/gonmf/dakilang" target="_blank" rel="noreferrer noopener">the reference interpreter for Spec 0</a> (external link).</p>
 
-      <p>Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences to both. It is also a work in progress. For this reason I have compiled the following short language definition, with examples.</p>
+      <p>Regardless of your familiarity with Prolog or Datalog, Daki language has significant differences to both. It is also a work in progress. For this reason the following short language definition has been compiled, with examples.</p>
 
       <h2>Contents</h2>
 
@@ -553,7 +553,7 @@
         <dd>Unifies with the integer number of milliseconds since the UNIX epoch; the input is used to enforce order of execution</dd>
       </dl>
 
-      <p>Operator clauses cannot be overwritten or retracted with clauses with the same name and arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.</p>
+      <p>Operator clauses cannot be overwritten or retracted with clauses with the same name, regardless of arity. They also only unify with some data types - for instance an arithmetic clause will not unify with string arguments. Illegal arguments, like trying to divide by 0, also do not unify.</p>
 
       <p>Let's now go back to how to implement a program that returns the value of the Fibonacci sequence at position N. At first glance, the solution in Daki would be:</p>
 
@@ -605,7 +605,7 @@
         <dd>Tests if the data type of the variable is the constant value (from <code>'integer'</code>, <code>'float'</code>, <code>'string'</code> or <code>'list'</code>)</dd>
       </dl>
 
-      <p>Clause conditions are exclusively between a variable and a constant value, and different data type never unify, except if they are both numeric. This contrasts with the usual clause matching rules that do not unify integer with floating point literals. The comparison operators use alphabetical order for strings.</p>
+      <p>Clause conditions are exclusively between a variable and a constant value, and different data types never unify, except if they are both numeric. This contrasts with the usual clause matching rules that do not unify integer with floating point literals. The comparison operators use alphabetical order for strings.</p>
 
       <p>Also note that you can mix multiple conditions. A variable must match all conditions for the clause to be expanded:</p>
 
@@ -755,9 +755,9 @@
         <dd>Bitwise complement</dd>
       </dl>
 
-      <p>Notice the bitwise complement operator is the only one with a single operand. It is used as, for example "<code>~123</code>", so you may need to surround it with parenthesis if in the middle of a longer expression.</p>
+      <p>Notice the bitwise complement operator is the only one with a single operand. It is used as, for example, "<code>~123</code>", so you will need to surround it with parenthesis if in the middle of a longer expression.</p>
 
-      <p>In practice, inline operations are expanded into using the <code>eval</code> operator clause with an intermediate variable for the output. You can see this seamless expansions by using the command <code>listing</code>.</p>
+      <p>In practice, inline operations are expanded into using the <code>eval</code> operator clause with an intermediate variable for the output. You can see this seamless expansion by using the command <code>listing</code>.</p>
 
       <pre>
   > sum_of_powers(X, Y, Res) :- set((X * X) + (Y * Y), Res).
