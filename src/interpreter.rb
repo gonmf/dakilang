@@ -25,9 +25,9 @@ module DakiLang
 
     OPERATOR_CLAUSES = [
       # Arithmetic
-      ['add',        3, true], # Variable arity
+      ['add',        3,     -1], # Variable arity
       ['sub',        3],
-      ['mul',        3, true], # Variable arity
+      ['mul',        3,     -1], # Variable arity
       ['div',        3],
       ['mod',        3],
       ['pow',        3],
@@ -38,12 +38,12 @@ module DakiLang
       ['floor',      2],
       ['ceil',       2],
       ['abs',        2],
-      ['eval',       3, true], # Variable arity
+      ['eval',       3,     -1], # Variable arity
       # Equality and comparison
       ['eql',        3],
       ['neq',        3],
-      ['max',        2, true], # Variable arity
-      ['min',        2, true], # Variable arity
+      ['max',        2,     -1], # Variable arity
+      ['min',        2,     -1], # Variable arity
       ['gt',         3],
       ['lt',         3],
       ['gte',        3],
@@ -60,7 +60,7 @@ module DakiLang
       ['split',      3],
       # Strings and Lists
       ['len',        2],
-      ['concat',     3, true], # Variable arity
+      ['concat',     3,     -1], # Variable arity
       ['slice',      4],
       ['index',      4],
       # Lists
@@ -79,82 +79,22 @@ module DakiLang
       ['set',        2],
       ['rand',       1],
       ['type',       2],
-      ['print',      2],
-      ['print',      3],
-      ['time',       1],
-      ['time',       2]
+      ['print',      2,      3],
+      ['time',       1,      2]
     ].freeze
 
-    COMPATIBLE_CONDITIONS = {
-      '<' => {
-        'string' => {
-          'string' => true, 'list' => false, 'integer' => false, 'float' => false
-        },
-        'list' => {
-          'string' => false, 'list' => true, 'integer' => false, 'float' => false
-        },
-        'integer' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        },
-        'float' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        }
+    TYPE_COND_COMPAT = {
+      'string' => {
+        'string' => true, 'list' => false, 'integer' => false, 'float' => false
       },
-      '<=' => {
-        'string' => {
-          'string' => true, 'list' => false, 'integer' => false, 'float' => false
-        },
-        'list' => {
-          'string' => false, 'list' => true, 'integer' => false, 'float' => false
-        },
-        'integer' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        },
-        'float' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        }
+      'list' => {
+        'string' => false, 'list' => true, 'integer' => false, 'float' => false
       },
-      '>' => {
-        'string' => {
-          'string' => true, 'list' => false, 'integer' => false, 'float' => false
-        },
-        'list' => {
-          'string' => false, 'list' => true, 'integer' => false, 'float' => false
-        },
-        'integer' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        },
-        'float' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        }
+      'integer' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
       },
-      '>=' => {
-        'string' => {
-          'string' => true, 'list' => false, 'integer' => false, 'float' => false
-        },
-        'list' => {
-          'string' => false, 'list' => true, 'integer' => false, 'float' => false
-        },
-        'integer' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        },
-        'float' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        }
-      },
-      '!=' => {
-        'string' => {
-          'string' => true, 'list' => false, 'integer' => false, 'float' => false
-        },
-        'list' => {
-          'string' => false, 'list' => true, 'integer' => false, 'float' => false
-        },
-        'integer' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        },
-        'float' => {
-          'string' => false, 'list' => false, 'integer' => true, 'float' => true
-        }
+      'float' => {
+        'string' => false, 'list' => false, 'integer' => true, 'float' => true
       }
     }.freeze
 
@@ -232,37 +172,28 @@ module DakiLang
           else
             return
           end
-        end
-
-        if down_line == 'select_table' || down_line.start_with?('select_table ')
+        elsif down_line == 'select_table' || down_line.start_with?('select_table ')
           select_table(line.split(' ')[1], true)
           next
-        end
-        if down_line.start_with?('add_memo ')
+        elsif down_line.start_with?('add_memo ')
           add_memo(line.split(' ')[1])
           next
-        end
-        if down_line.start_with?('rem_memo ')
+        elsif down_line.start_with?('rem_memo ')
           rem_memo(line.split(' ')[1])
           next
-        end
-        if down_line == 'list_memo'
+        elsif down_line == 'list_memo'
           list_memo
           next
-        end
-        if down_line == 'clear_memo'
+        elsif down_line == 'clear_memo'
           clear_memo
           next
-        end
-        if down_line == 'listing'
+        elsif down_line == 'listing'
           table_listing
           next
-        end
-        if down_line.start_with?('consult ')
+        elsif down_line.start_with?('consult ')
           consult_file(line.split(' ')[1], consult_chain)
           next
-        end
-        if down_line.start_with?('retract ')
+        elsif down_line.start_with?('retract ')
           retract_rule_by_index(line.split(' ')[1])
           next
         end
@@ -317,7 +248,7 @@ module DakiLang
     def retract_rule_by_full_match(tokens)
       head, last_idx = build_fact(tokens)
 
-      if head && @operator_clauses.include?(head.arity_name)
+      if head && oper_clause_matches?(head.name, head.arity)
         puts red('Built-in operator clause cannot be removed')
         return
       end
@@ -368,15 +299,15 @@ module DakiLang
           printed = Set.new
 
           head.arg_list.each.with_index do |arg, idx|
-            if !arg.const?
-              printed_any = true
-              value = solution.arg_list[idx]
-              text = "#{arg.name} = #{value}"
+            next if arg.const?
 
-              if !printed.include?(text)
-                printed.add(text)
-                puts green(text)
-              end
+            printed_any = true
+            value = solution.arg_list[idx]
+            text = "#{arg.name} = #{value}"
+
+            if !printed.include?(text)
+              printed.add(text)
+              puts green(text)
             end
           end
 
@@ -404,7 +335,7 @@ module DakiLang
     def add_rule(tokens, warn_if_exists)
       head, last_idx = build_fact(tokens)
 
-      if head && @operator_clauses.include?(head.arity_name)
+      if head && @operator_clauses[head.name]
         puts red('Built-in operator clause already exists')
         puts
         return
@@ -466,7 +397,7 @@ module DakiLang
         puts red('Clause name is invalid')
       elsif @to_memo[@table_name].include?(name)
         puts red('Clause is already being memoized')
-      elsif @operator_clauses.include?(name)
+      elsif @operator_clauses[n]
         puts red('Cannot memoize built-in operator clause')
       else
         @to_memo[@table_name].add(name)
@@ -508,19 +439,28 @@ module DakiLang
     end
 
     def init_oper_clauses
-      @operator_clauses = Set.new
+      @operator_clauses = {}
 
       OPERATOR_CLAUSES.each do |clause|
-        name, arity, variable_arity = clause
+        name, min_arity, max_arity = clause
 
-        if variable_arity
-          (arity..Tokenizer::MAX_FUNC_ARITY).each do |alt_arity|
-            @operator_clauses.add("#{name}/#{alt_arity}")
-          end
-        else
-          @operator_clauses.add("#{name}/#{arity}")
-        end
+        max_arity = if max_arity == -1
+                      2_147_483_647
+                    elsif max_arity
+                      max_arity
+                    else
+                      min_arity
+                    end
+
+        @operator_clauses[name] = { min_arity: min_arity, max_arity: max_arity }
       end
+    end
+
+    def oper_clause_matches?(name, arity)
+      clause = @operator_clauses[name]
+      return false if clause.nil?
+
+      clause[:min_arity] <= arity && arity <= clause[:max_arity]
     end
 
     def select_table(name, output)
@@ -640,7 +580,7 @@ module DakiLang
                 return false
               end
             else
-              if !COMPATIBLE_CONDITIONS[var3.condition][const.type][var3.condition_type] || !const.value.send(var3.condition, var3.condition_value)
+              if !TYPE_COND_COMPAT[const.type][var3.condition_type] || !const.value.send(var3.condition, var3.condition_value)
                 return false
               end
             end
@@ -655,7 +595,7 @@ module DakiLang
                 return false
               end
             else
-              if !COMPATIBLE_CONDITIONS[var3.condition][const.type][var3.condition_type] || !const.value.send(var3.condition, var3.condition_value)
+              if !TYPE_COND_COMPAT[const.type][var3.condition_type] || !const.value.send(var3.condition, var3.condition_value)
                 return false
               end
             end
@@ -703,22 +643,10 @@ module DakiLang
       end
     end
 
-    def replace_variable_with_literal(var_name, literal, head)
-      new_literal = Literal.new(literal)
-
+    def replace_variable(var_name, replacement, head)
       head.arg_list.each.with_index do |var1, idx|
         if !var1.const? && var1.name == var_name
-          head.arg_list[idx] = new_literal
-        end
-      end
-    end
-
-    def replace_variable_with_variable(var_name, new_var_name, head)
-      new_var = Variable.new(new_var_name)
-
-      head.arg_list.each.with_index do |var1, idx|
-        if !var1.const? && var1.name == var_name
-          head.arg_list[idx] = new_var
+          head.arg_list[idx] = replacement
         end
       end
     end
@@ -764,18 +692,18 @@ module DakiLang
           if !var2.const?
             # Replace variable in solution
             solution.each do |arr|
-              replace_variable_with_literal(var2.name, var1.value, arr[0])
+              replace_variable(var2.name, Literal.new(var1.value), arr[0])
             end
           end
         elsif var2.const?
           # Replace variable in new_clauses
           new_clauses.each do |clause|
-            replace_variable_with_literal(var1.name, var2.value, clause)
+            replace_variable(var1.name, Literal.new(var2.value), clause)
           end
         else
           # Replace variable in new_clauses
           new_clauses.each do |clause|
-            replace_variable_with_variable(var1.name, var2.name, clause)
+            replace_variable(var1.name, Variable.new(var2.name), clause)
           end
         end
       end
@@ -869,7 +797,7 @@ module DakiLang
         first_solution.each.with_index do |solution_clause, idx|
           next if solution_clause[1]
 
-          if @operator_clauses.include?(solution_clause[0].arity_name)
+          if oper_clause_matches?(solution_clause[0].name, solution_clause[0].arity)
             built_in_response = clause_match_built_in_eval(solution_clause[0])
             if built_in_response
               first_solution_clause_by_builtin_idx = idx
@@ -940,7 +868,7 @@ module DakiLang
             new_clauses.each.with_index do |line, idx|
               next if idx == 0
 
-              if @operator_clauses.include?(line.arity_name) || @table[@table_name].any? { |table_entry| table_entry[0].arity_name == line.arity_name }
+              if oper_clause_matches?(line.name, line.arity) || @table[@table_name].any? { |table_entry| table_entry[0].arity_name == line.arity_name }
                 new_solution.push([line, false])
               else
                 impossible_solution = true

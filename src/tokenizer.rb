@@ -2,8 +2,6 @@
 
 module DakiLang
   module Tokenizer
-    MAX_FUNC_ARITY = 20
-
     HEX_CHARS = (('0'..'9').to_a + ('a'..'f').to_a).freeze
     OCTAL = ('0'..'7').to_a.freeze
     NUMERIC = ('0'..'9').to_a.freeze
@@ -529,22 +527,6 @@ module DakiLang
         end
 
         token_set[token_set_idx] = new_tokens.compact
-      end
-
-      # Validate maximum number of variables in a clause
-      token_set.each do |tokens|
-        vars_in_same_clause = 0
-        tokens.each.with_index do |token, idx|
-          if token[0] == 'var'
-            vars_in_same_clause += 1
-
-            if vars_in_same_clause > MAX_FUNC_ARITY
-              parser_error(text, "Too many arguments in a single clause (max is #{MAX_FUNC_ARITY}): this is an interpreter-specific setting")
-            end
-          elsif token[0] == 'args_start'
-            vars_in_same_clause = 0
-          end
-        end
       end
 
       token_set

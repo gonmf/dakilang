@@ -4,15 +4,16 @@ require_relative 'variable'
 
 module DakiLang
   class Fact
-    attr_reader :name, :arg_list
+    attr_reader :name, :arity, :arg_list
 
     def initialize(name, arg_list)
       @name = name
+      @arity = arg_list.count
       @arg_list = arg_list
     end
 
     def arity_name
-      @arity_name ||= "#{name}/#{arg_list.count}"
+      @arity_name ||= "#{name}/#{arity}"
     end
 
     def to_s(debug = false)
@@ -23,6 +24,7 @@ module DakiLang
       other.is_a?(Fact) && name == other.name && hash == other.hash
     end
 
+    # A fact can be modified in it's variables; that's why we don't remember the hash value
     def hash
       vari = 0
 
