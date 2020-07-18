@@ -210,11 +210,11 @@ module DakiLang
             when 'clause_finish'
               add_rule(tokens, token_set.count == 1)
             when 'short_query_finish'
-              execute_query(token_set.first, true)
+              execute_query(tokens, true)
             when 'full_query_finish'
-              execute_query(token_set.first, false)
+              execute_query(tokens, false)
             when 'retract_finish'
-              retract_rule_by_full_match(token_set.first)
+              retract_rule_by_full_match(tokens)
               puts
             end
           end
