@@ -155,9 +155,9 @@ module DakiLang
     end
 
     def debug_parser(text)
-      clause_set = parser(text)
+      instruction_type, clause_set = parser(text)
 
-      clause_set && clause_to_s(clause_set)
+      clause_set && clause_to_s([instruction_type, clause_set])
     rescue ParserError => e
       e.to_s
     end
@@ -208,21 +208,21 @@ module DakiLang
         end
 
         begin
-          clause_set = parser(line)
+          instruction_type, clause_set = parser(line)
           next unless clause_set
 
-          puts clause_to_s(clause_set) if @debug
+          puts clause_to_s([instruction_type, clause_set]) if @debug
 
           clause_set.each do |clause|
-            case clause[0]
+            case instruction_type
             when 'clause'
-              add_rule(clause.slice(1..clause.count), clause_set.count == 1)
+              add_rule(clause, clause_set.count == 1)
             when 'short_query'
-              execute_query(clause.slice(1..clause.count), true)
+              execute_query(clause, true)
             when 'full_query'
-              execute_query(clause.slice(1..clause.count), false)
+              execute_query(clause, false)
             when 'retract'
-              retract_rule_by_full_match(clause.slice(1..clause.count))
+              retract_rule_by_full_match(clause)
               puts
             end
           end
@@ -253,9 +253,7 @@ module DakiLang
       puts
     end
 
-    def retract_rule_by_full_match(tokens)
-      facts = tokens.map { |fact| Fact.new(fact[0], fact[1]) }
-
+    def retract_rule_by_full_match(facts)
       head = facts[0]
 
       if head && oper_clause_matches?(head.name, head.arity)
@@ -289,8 +287,8 @@ module DakiLang
       puts red('Clause not found')
     end
 
-    def execute_query(tokens, stop_early)
-      head = Fact.new(tokens[0][0], tokens[0][1])
+    def execute_query(facts, stop_early)
+      head = facts.first
 
       solutions = search(head, stop_early)
 
@@ -336,9 +334,7 @@ module DakiLang
       color_output ? "\e[31m#{str}\e[0m" : str
     end
 
-    def add_rule(tokens, warn_if_exists)
-      facts = tokens.map { |fact| Fact.new(fact[0], fact[1]) }
-
+    def add_rule(facts, warn_if_exists)
       head = facts[0]
 
       if head && oper_clause_matches?(head.name, head.arity)

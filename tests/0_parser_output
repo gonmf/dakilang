@@ -1,9 +1,9 @@
-((clause (abc ((var A) (var B0)))))
+(clause (((abc ((var A) (var B0))))))
 Syntax error at abc(_a).: illegal character in variable name
-((clause (abc ((var a_)))))
+(clause (((abc ((var a_))))))
 Syntax error at abc(3a).: illegal numeric format at 3a
 Syntax error at abc(A, 123, 12.3, "123", \'123\', 0>vic, vic <> 0.3, vic > "my_str").: unexpected end of string
-((clause (fib ((var Pos <= 2) (var Res))) (sub ((var Pos) (integer 1) (var N1))) (sub ((var Pos) (integer 2) (var N2))) (fib ((var N1) (var X1))) (fib ((var N2) (var X2))) (add ((var X1) (var X2) (var Res)))))
+(clause (((fib ((var Pos <= 2) (var Res))) (sub ((var Pos) (integer 1) (var N1))) (sub ((var Pos) (integer 2) (var N2))) (fib ((var N1) (var X1))) (fib ((var N2) (var X2))) (add ((var X1) (var X2) (var Res))))))
 Syntax error at parent("victor", \'john\').: unexpected end of string
 Syntax error at parent("victor",\'john\').: unexpected end of string
 Syntax error at parent("victor",\'john\') :- par(X); ; par(Y).: unexpected end of string
@@ -14,11 +14,11 @@ Syntax error at parent("victor",\'john\') :- par(X), , par(Y).: unexpected end o
 Syntax error at parent("victor",\'john\') :- par(X) ,, par(Y).: unexpected end of string
 Syntax error at parent("victor",\'john\') :- par(X) , ,par(Y).: unexpected end of string
 Syntax error at parent("victor",\'john\') :- par(X),  ,par(Y).: unexpected end of string
-((clause (grandparent ((var X) (var Y))) (parent ((var X) (var Z))) (parent ((var Z) (var Y)))))
-((clause (grandparent ((var X) (var Y))) (parent ((var X) (var Z)))) (clause (grandparent ((var X) (var Y))) (parent ((var Z) (var Y)))))
+(clause (((grandparent ((var X) (var Y))) (parent ((var X) (var Z))) (parent ((var Z) (var Y))))))
+(clause (((grandparent ((var X) (var Y))) (parent ((var X) (var Z)))) ((grandparent ((var X) (var Y))) (parent ((var Z) (var Y))))))
 Syntax error at not_found(\'true\')?: unexpected end of string
 Syntax error at not_found(\'\')?: unexpected end of string
-((retract (natural_except_five ((integer 5)))))
+(retract (((natural_except_five ((integer 5))))))
 Syntax error at natural_except_five().: unexpected end of empty argument list
 Syntax error at natural_except_five()~: unexpected end of empty argument list
 Syntax error at natural_except_five()?: unexpected end of empty argument list
@@ -28,28 +28,28 @@ Syntax error at natural_except_five() :- amep(); bla(X)~: unexpected end of empt
 Syntax error at natural_except_five() :- amep(); bla(X)?: unexpected end of empty argument list
 Syntax error at natural_except_five() :- amep(); bla(X): unexpected end of empty argument list
 Syntax error at is_string(X: \'string\').: unexpected end of string
-((full_query (is_string ((string '1')))))
-((full_query (div ((integer 43) (float 0.32) (var a_b)))))
+(full_query (((is_string ((string '1'))))))
+(full_query (((div ((integer 43) (float 0.32) (var a_b))))))
 Syntax error at div(00_43, 0.32, a_b)?: illegal character in variable name
 Syntax error at div(43, ., a_b)?: unexpected ? character
 Syntax error at div(43, a_b,)?: unexpected dangling comma at end of argument list
 Syntax error at div(43, a_b, )?: unexpected dangling comma at end of argument list
 Syntax error at div(, 43, a_b)?: invalid , at argument list start
 Syntax error at div(, 43, a_b, )?: invalid , at argument list start
-((clause (xpto ((var N <> 2) (var N <> 3))) (eql ((var N) (var N) (var X)))))
+(clause (((xpto ((var N <> 2) (var N <> 3))) (eql ((var N) (var N) (var X))))))
 Syntax error at xpto(N << 2, N <> 3) :- eql(N, N, X).: unknown clause condition operator
 Syntax error at xpto(N < 2, N <> 3) :- eql.: unterminated text
 Syntax error at xpto :- eql(N, N, X).: clause without arguments list
 Syntax error at xpto(N <> 2, N <> 3) :- eql(N, N, X)?: unexpected ? character for rule with tail
-((clause (number ((integer 121)))))
-((clause (number ((integer 122)))))
+(clause (((number ((integer 121))))))
+(clause (((number ((integer 122))))))
 Syntax error at number(019).: illegal numeric format at 019
-((clause (number ((integer 123)))))
+(clause (((number ((integer 123))))))
 Syntax error at number(0b1111x011).: illegal numeric format at 0b1111x011
 Syntax error at number(0b1112011).: illegal numeric format at 0b1112011
-((clause (number ((integer 124)))))
+(clause (((number ((integer 124))))))
 Syntax error at number(0x7xc).: illegal numeric format at 0x7xc
-((clause (number ((integer 7) (var g)))))
+(clause (((number ((integer 7) (var g))))))
 Syntax error at number([1,2,"3", \'4\', [-1, 56]]).: unexpected end of string
 Syntax error at number([1,2,"3", \'4\', [-1, 56, variable]]).: unexpected end of string
 Syntax error at number([1,2,"3", \'4\', [-1, 56, \'const\',]]).: unexpected end of string
@@ -63,11 +63,11 @@ Syntax error at number(X, B); numb(O) :- val(Y, B, X).: invalid ; character befo
 Syntax error at number(X, B) :- (val(Y, B, X), val(B, X, Y).: unexpected start of argument list
 Syntax error at number(X, B) :- val(Y, B, X), val(B, X, Y); val(Y, B, X), val(B, X, Y).: mixing of ; and & logical operators
 Syntax error at number(X, B) :- val(Y, B, X), val(B, X, Y)).: unexpected end of empty argument list
-((clause (test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $1))) (at ((var B) (var A) (var B) (var $1)))))
-((clause (test ((var A) (var B))) (eval ((var A) (string '($0*2)+1') (var $1))) (at ((var B) (var A) (var B) (var $1)))))
-((clause (test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $1))) (at ((var B) (var A) (var $1) (var A)))))
-((clause (test ((var A) (var B))) (eval ((var A) (string '($0*2)+1') (var $1))) (at ((var B) (var A) (var $1) (var A)))))
-((clause (test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $1))) (at ((var $1) (var A)))))
-((clause (test ((var A) (var B))) (eval ((var A) (string '($0*2)+1') (var $1))) (at ((var $1) (var A)))))
-((clause (hello ((string '1234567890!\'"#$%&/()=?*+@€£‰¶÷[]≠§±')))))
-((clause (hello ((var X <> 123)))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $1))) (at ((var B) (var A) (var B) (var $1))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '($0*2)+1') (var $1))) (at ((var B) (var A) (var B) (var $1))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $1))) (at ((var B) (var A) (var $1) (var A))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '($0*2)+1') (var $1))) (at ((var B) (var A) (var $1) (var A))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $1))) (at ((var $1) (var A))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '($0*2)+1') (var $1))) (at ((var $1) (var A))))))
+(clause (((hello ((string '1234567890!\'"#$%&/()=?*+@€£‰¶÷[]≠§±'))))))
+(clause (((hello ((var X <> 123))))))
