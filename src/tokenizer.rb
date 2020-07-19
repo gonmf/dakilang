@@ -529,12 +529,7 @@ module DakiLang
         token_set[token_set_idx] = new_tokens.compact
       end
 
-      if token_set.flatten.any?
-        # Transform from old token format to new format
-        token_set.map { |tokens| convert_tokens_format(tokens) }
-      else
-        nil
-      end
+      token_set
     end
 
     private

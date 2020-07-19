@@ -19,6 +19,7 @@ end
 module DakiLang
   class Interpreter
     include Tokenizer
+    include Parser
     include OperatorClauses
 
     VERSION = '0.31'
@@ -146,7 +147,17 @@ module DakiLang
     def debug_tokenizer(text)
       token_set = tokenizer(text)
 
-      token_set && clause_to_s(token_set)
+      token_set.map do |tokens|
+        tokens.map { |token| token[1] ? "#{token[0]}(#{token[1].to_s})" : token[0] }.join(' | ')
+      end.join(' OR ')
+    rescue ParserError => e
+      e.to_s
+    end
+
+    def debug_parser(text)
+      clause_set = parser(text)
+
+      clause_set && clause_to_s(clause_set)
     rescue ParserError => e
       e.to_s
     end
@@ -197,21 +208,21 @@ module DakiLang
         end
 
         begin
-          token_set = tokenizer(line)
-          next unless token_set
+          clause_set = parser(line)
+          next unless clause_set
 
-          puts clause_to_s(tokens) if @debug
+          puts clause_to_s(clause_set) if @debug
 
-          token_set.each do |tokens|
-            case tokens[0]
+          clause_set.each do |clause|
+            case clause[0]
             when 'clause'
-              add_rule(tokens.slice(1..tokens.count), token_set.count == 1)
+              add_rule(clause.slice(1..clause.count), clause_set.count == 1)
             when 'short_query'
-              execute_query(tokens.slice(1..tokens.count), true)
+              execute_query(clause.slice(1..clause.count), true)
             when 'full_query'
-              execute_query(tokens.slice(1..tokens.count), false)
+              execute_query(clause.slice(1..clause.count), false)
             when 'retract'
-              retract_rule_by_full_match(tokens.slice(1..tokens.count))
+              retract_rule_by_full_match(clause.slice(1..clause.count))
               puts
             end
           end
@@ -224,18 +235,6 @@ module DakiLang
             exit(1)
           end
         end
-      end
-    end
-
-    def clause_to_s(obj)
-      if obj.is_a?(Array)
-        "(#{obj.map { |o| clause_to_s(o) }.join(' ')})"
-      elsif obj.is_a?(Variable)
-        "(var #{obj.to_s})"
-      elsif obj.is_a?(Literal)
-        "(#{obj.type} #{obj.to_s})"
-      else
-        obj.to_s
       end
     end
 
