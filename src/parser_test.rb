@@ -4,11 +4,11 @@ require_relative 'interpreter'
 
 interpreter = DakiLang::Interpreter.new
 
-expected = File.read('tests/parser_test_output').split("\n").map(&:strip)
+expected = File.read('tests/0_parser_output').split("\n").map(&:strip)
 
 failed = false
 
-File.foreach('tests/parser_test_input').with_index do |line, idx|
+File.foreach('tests/0_parser_input').with_index do |line, idx|
   line = line.strip
   next if line.empty?
 

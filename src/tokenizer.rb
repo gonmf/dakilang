@@ -529,10 +529,51 @@ module DakiLang
         token_set[token_set_idx] = new_tokens.compact
       end
 
-      token_set
+      if token_set.flatten.any?
+        # Transform from old token format to new format
+        token_set.map { |tokens| convert_tokens_format(tokens) }
+      else
+        nil
+      end
     end
 
     private
+
+    def convert_tokens_format(tokens)
+      ret = []
+
+      ret.push(tokens.last[0].sub('_finish', ''))
+
+      last_idx = 0
+
+      loop do
+        fact, last_idx = convert_fact_format(tokens, last_idx)
+        break unless last_idx
+
+        ret.push(fact)
+      end
+
+      ret
+    end
+
+    def convert_fact_format(tokens, idx)
+      name = nil
+      arg_list = []
+
+      while tokens[idx] do
+        if tokens[idx][0] == 'args_start'
+          name = tokens[idx - 1][1]
+        elsif name
+          break if tokens[idx][0] == 'args_end'
+
+          arg_list.push(tokens[idx][1])
+        end
+
+        idx += 1
+      end
+
+      name && arg_list.any? ? [[name, arg_list], idx] : nil
+    end
 
     def invert_operator(str)
       if str == '<>'
