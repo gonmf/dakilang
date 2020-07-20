@@ -18,7 +18,6 @@ end
 
 module DakiLang
   class Interpreter
-    include Tokenizer
     include Parser
     include OperatorClauses
 
@@ -142,16 +141,6 @@ module DakiLang
           puts
         end
       end
-    end
-
-    def debug_tokenizer(text)
-      token_set = tokenizer(text)
-
-      token_set.map do |tokens|
-        tokens.map { |token| token[1] ? "#{token[0]}(#{token[1].to_s})" : token[0] }.join(' | ')
-      end.join(' OR ')
-    rescue ParserError => e
-      e.to_s
     end
 
     def debug_parser(text)

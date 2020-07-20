@@ -2,10 +2,18 @@
 
 module DakiLang
   module Parser
-    # TODO: support subset of ruby and C escaped characters and unicode
+    INLINE_OPERATORS = ['-', '+', '-', '*', '/', '%', '&', '|', '^', '~', '(', ')'].freeze
+    HEX_CHARS = (('0'..'9').to_a + ('a'..'f').to_a).freeze
+    OCTAL = ('0'..'7').to_a.freeze
+    NUMERIC = ('0'..'9').to_a.freeze
+    NUMERIC_ALLOWED_CHARS = (['-', '.', 'b', 'x'] + ('0'..'9').to_a + ('a'..'f').to_a + ('A'..'F').to_a).freeze
+
+    NAME_ALLOWED_FIRST_CHARS = (('a'..'z').to_a + ('A'..'Z').to_a).freeze
+    NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
+
     STRING_ESCAPED_CHARACTERS = {
       '\'' => '\'',
-      '\"' => '"',
+      '"' => '"',
       'n' => "\n",
       'r' => "\r",
       't' => "\t",
@@ -16,26 +24,29 @@ module DakiLang
       '\\' => '\\'
     }.freeze
 
-    def parse(text)
-      text.strip!
+    def parser(text)
+      orig_text = text
+      @parser_var_gen_idx = 0
 
+      text = text.strip
+
+      text, lists_table = extract_lists(text)
       text, strings_table = extract_strings(text)
 
-      text = text.split('#').first.strip
-      return nil if text == ''
+      text = text.split('#').first&.strip
+      return nil if text.nil? || text == ''
 
       text, instruction_type = extract_type_of_instruction(text)
 
-      text.tr!(" \t", '')
+      text = text.tr(" \t", '')
 
-      text, lists_table = extract_lists(text)
-
-      facts, logical_oper = text.include?(':-') ? parse_facts(text) : [[text], 'and']
+      facts, logical_oper = parse_facts(text)
 
       head, *body = facts
+      parser_error('Query clause must not have a tail') if body.any? && instruction_type.include?('_query')
 
-      head = parse_head_fact(head)
-      body = body.map { |fact| parse_body_fact(fact) }
+      head = parse_head_fact(head, strings_table, lists_table)
+      body = body.map { |fact| parse_body_fact(fact, strings_table, lists_table) }.flatten
 
       if logical_oper == 'and'
         [instruction_type, [[head] + body]]
@@ -44,35 +55,15 @@ module DakiLang
       end
     end
 
-    def parser(text)
-      # TODO: to continue
-      new_token_set = parse(text.dup) rescue nil # TODO: remove dup
-
-      # TODO: to replace
-      token_set = tokenizer(text)
-
-      token_set = if token_set.flatten.any?
-                    token_set = token_set.map { |tokens| parse_tokens(tokens) }
-
-                    [token_set.first.first, token_set.map { |tokens| tokens.slice(1, tokens.count) }]
-                  else
-                    nil
-                  end
-
-      binding.pry rescue nil
-
-      # TODO: simplify this
-      token_set
-    end
-
     def clause_to_s(obj)
-      if obj.is_a?(Array)
+      case obj
+      when Array
         "(#{obj.map { |o| clause_to_s(o) }.join(' ')})"
-      elsif obj.is_a?(Fact)
+      when Fact
         "(#{obj.name} #{clause_to_s(obj.arg_list)})"
-      elsif obj.is_a?(Variable)
+      when Variable
         "(var #{obj.to_s})"
-      elsif obj.is_a?(Literal)
+      when Literal
         "(#{obj.type} #{obj.to_s})"
       else
         obj.to_s
@@ -81,28 +72,272 @@ module DakiLang
 
     private
 
-    def parse_head_fact(text)
-      name = extract_fact_name(text)
+    def splitter(str, arrs)
+      parts = [" #{str} "]
 
-      args_list = extract_args_list(text.slice(name.size + 1, text.size - name.size - 2))
+      arrs.each do |c|
+        parts = parts.map { |s| s == c ? s : s.split(c).map { |v| [c, " #{v} "] }.flatten.slice(1..-1) }.flatten.compact
+      end
 
-      # TODO: clause conditions and with inverse order
-
-      args_list = args_list.map { |arg| Tokenizer::NAME_ALLOWED_FIRST_CHARS.include?(arg[0]) ? Variable.new(arg) : Literal.new(arg) }
-
-      Fact.new(name, args_list)
+      parts.map { |s| s.strip }.select { |s| s.size > 0 }
     end
 
-    def parse_body_fact(text)
+    def invert_operator(str)
+      if str == '<>'
+        str
+      elsif str[0] == '<'
+        str.sub('<', '>')
+      elsif str[0] == '>'
+        str.sub('>', '<')
+      else
+        str
+      end
+    end
+
+    def parse_argument(arg, strings_table, lists_table)
+      if arg.start_with?('$L')
+        list_id = arg.slice(2..-1).to_i
+
+        parse_list(lists_table[list_id])
+      elsif arg.start_with?('$S')
+        string_id = arg.slice(2..-1).to_i
+
+        strings_table[string_id]
+      else
+        parse_numeric(arg)
+      end
+    end
+
+    def parse_list(text)
+      recursive_parse_list(text.chars.slice(1..-1), 0).first
+    end
+
+    def recursive_parse_list(chars, idx)
+      ret = []
+
+      c = nil
+      prev_c = nil
+      string_delimiter = nil
+      string_mode = false
+      string = ''
+
+      while chars[idx] do
+        prev_c = c
+        c = chars[idx]
+
+        if string_mode
+          if c == string_delimiter
+            ret.push(string)
+            string = ''
+            string_mode = false
+          else
+            string += c
+          end
+
+          idx += 1
+          next
+        elsif c == '\'' || c == '"'
+          unexpected_char(c) if string.strip.size > 0
+
+          unexpected_char(string.strip[0]) if string.strip.size > 0
+
+          string = ''
+          string_delimiter = c
+          string_mode = true
+          idx += 1
+          next
+        end
+
+        if c == '['
+          sub_list, idx = recursive_parse_list(chars, idx + 1)
+
+          ret.push(sub_list)
+          next
+        end
+
+        if c == ']'
+          if string.strip.size > 0
+            ret.push(parse_numeric(string.strip))
+            string = ''
+          end
+
+          return [ret, idx + 1]
+        end
+
+        if c == ','
+          unexpected_char(',') if prev_c == ','
+
+          if string.strip.size > 0
+            ret.push(parse_numeric(string.strip))
+            string = ''
+          end
+
+          idx += 1
+          next
+        end
+
+        string += c
+        idx += 1
+      end
+
+      parser_error('Unterminated list')
+    end
+
+    def parse_numeric(text)
+      if text.start_with?('.')
+        text = "0#{text}"
+      end
+
+      orig_text = text
+
+      text = text.slice(1, text.size) if text[0] == '-'
+
+      unexpected_char('-') if text.size == 0
+
+      if text.include?('.') # Floating point
+        integer, decimal, err = text.split('.')
+        unexpected_char('.') if !decimal || err
+
+        if all_chars?(integer, NUMERIC) && all_chars?(decimal, NUMERIC)
+          orig_text.to_f
+        else
+          unexpected_char((integer + decimal).chars.find { |c| !NUMERIC.include?(c) })
+        end
+      elsif text.start_with?('0x') # Hexadecimal
+        rest = text.slice(2, text.size)
+
+        if rest.size == 0
+          parser_error('Unterminated integer in hexadecimal format')
+        elsif all_chars?(rest.downcase, HEX_CHARS)
+          orig_text.to_i(16)
+        else
+          unexpected_char(rest.chars.find { |c| !HEX_CHARS.include?(c) })
+        end
+      elsif text.start_with?('0b') # Binary
+        rest = text.slice(2, text.size)
+
+        if rest.size == 0
+          parser_error('Unterminated integer in binary format')
+        elsif all_chars?(rest, ['0', '1'])
+          orig_text.to_i(2)
+        else
+          unexpected_char(rest.chars.find { |c| !['0', '1'].include?(c) })
+        end
+      elsif text[0] == '0' # Octal
+        if all_chars?(text, OCTAL)
+          orig_text.to_i(8)
+        else
+          unexpected_char(text.chars.find { |c| !OCTAL.include?(c) })
+        end
+      elsif all_chars?(text, NUMERIC)
+        orig_text.to_i # Decimal
+      else
+        unexpected_char(text.chars.find { |c| !NUMERIC.include?(c) })
+      end
+    end
+
+    def parse_head_fact(text, strings_table, lists_table)
       name = extract_fact_name(text)
 
-      args_list = extract_args_list(text.slice(name.size + 1, text.size - name.size - 2))
+      arg_list = extract_arg_list(text.slice(name.size + 1, text.size - name.size - 2))
 
-      # TODO: inline operations
+      arg_list = arg_list.map do |arg|
+        operator = ['>=', '<=', '=', '<>', '>', '<', ':'].find { |o| arg.include?(o) }
+        if operator
+          op_index = arg.index(operator)
+          var = arg.slice(0, op_index)
+          const = arg.slice(op_index + operator.size, arg.size)
 
-      args_list = args_list.map { |arg| Tokenizer::NAME_ALLOWED_FIRST_CHARS.include?(arg[0]) ? Variable.new(arg) : Literal.new(arg) }
+          is_var1 = NAME_ALLOWED_FIRST_CHARS.any? { |c| var.start_with?(c) }
+          is_var2 = NAME_ALLOWED_FIRST_CHARS.any? { |c| const.start_with?(c) }
+          parser_error('Invalid clause condition - must be between a variable and a literal') if is_var1 == is_var2
 
-      Fact.new(name, args_list)
+          if is_var2
+            tmp = var
+            var = const
+            const = tmp
+            operator = invert_operator(operator)
+          end
+
+          const = parse_argument(const, strings_table, lists_table)
+
+          if operator == ':' && !['integer', 'float', 'string', 'list'].include?(const)
+            parser_error('Invalid argument for : operator')
+          end
+
+          Variable.new(var, operator, const.class.to_s.downcase, const)
+        elsif NAME_ALLOWED_FIRST_CHARS.include?(arg[0]) && arg.slice(1..-1).chars.all? { |c| NAME_ALLOWED_REMAINING_CHARS.include?(c) }
+          Variable.new(arg)
+        else
+          Literal.new(parse_argument(arg, strings_table, lists_table))
+        end
+      end
+
+      Fact.new(name, arg_list)
+    end
+
+    def parse_body_fact(text, strings_table, lists_table)
+      name = extract_fact_name(text)
+
+      arg_list = extract_arg_list(text.slice(name.size + 1, text.size - name.size - 2))
+
+      added_facts = []
+
+      arg_list = arg_list.map do |arg|
+        if NAME_ALLOWED_FIRST_CHARS.include?(arg[0]) && arg.slice(1..-1).chars.all? { |c| NAME_ALLOWED_REMAINING_CHARS.include?(c) }
+          Variable.new(arg)
+        else
+          literal_value = parse_argument(arg, strings_table, lists_table) rescue nil
+
+          if literal_value
+            Literal.new(literal_value)
+          else
+            var_names = []
+
+            equ = arg
+            parts = splitter(arg, INLINE_OPERATORS + [' '])
+
+            parts.each.with_index do |part, part_id|
+              next if INLINE_OPERATORS.include?(part)
+
+              chrs = part.chars
+              if NAME_ALLOWED_FIRST_CHARS.include?(chrs.first) && chrs.slice(1, chrs.count).all? { |c| NAME_ALLOWED_REMAINING_CHARS.include?(c) }
+                unless var_names.include?(part)
+                  var_names.push(part)
+                end
+              elsif (NUMERIC + ['-', '.']).include?(chrs[0])
+                number = parse_numeric(part)
+
+                if number.nil?
+                  parser_error('Illegal character in variable name')
+                end
+
+                parts[part_id] = number.to_s
+              else
+                parser_error('Illegal character in variable name')
+              end
+            end
+
+            equ = parts.join('')
+
+            var_names = var_names.sort_by { |name| -name.size }
+            var_names.each.with_index do |var_name, idx2|
+              equ = equ.gsub(var_name, "$#{idx2}")
+            end
+
+            new_var_name = "$#{@parser_var_gen_idx.to_s(16)}"
+            @parser_var_gen_idx += 1
+            new_fact = Fact.new('eval', var_names.map { |n| Variable.new(n) } + [Literal.new(equ), Variable.new(new_var_name)])
+            added_facts.push(new_fact)
+
+            Variable.new(new_var_name)
+          end
+        end
+      end
+
+      added_facts.push(Fact.new(name, arg_list))
+
+      added_facts
     end
 
     def extract_fact_name(text)
@@ -111,37 +346,39 @@ module DakiLang
 
       text_chars.each.with_index do |c, idx|
         if idx == 0
-          if Tokenizer::NAME_ALLOWED_FIRST_CHARS.include?(c)
+          if NAME_ALLOWED_FIRST_CHARS.include?(c)
             name = c
             next
           else
-            raise "Unexpected #{c} character"
+            unexpected_char(c)
           end
-        elsif Tokenizer::NAME_ALLOWED_REMAINING_CHARS.include?(c)
+        elsif NAME_ALLOWED_REMAINING_CHARS.include?(c)
           name += c
           next
         elsif c == '('
           break
         else
-          raise "Unexpected #{c} character"
+          unexpected_char(c)
         end
       end
 
       name
     end
 
-    def extract_args_list(text)
+    def extract_arg_list(text)
+      parser_error('Invalid fact without arguments') if text.nil?
+
       chars = text.chars
-      args_list = []
+      arg_list = []
       string = ''
 
       depth = 0
       chars.each.with_index do |c, idx|
         if depth == 0 && c == ','
-          string.strip!
-          raise "Unexpected #{c} character" if string == ''
+          string = string.strip
+          unexpected_char(c) if string == ''
 
-          args_list.push(string)
+          arg_list.push(string)
           string = ''
           next
         end
@@ -151,64 +388,83 @@ module DakiLang
         if c == '('
           depth += 1
         elsif c == ')'
-          raise 'Unexpected ) character' if depth == 0
+          unexpected_char(')') if depth == 0
 
           depth -= 1
         end
       end
 
-      string.strip!
-      raise 'Unexpected end of arguments list' if string == ''
+      string = string.strip
+      parser_error('Unexpected end of arguments list') if string == ''
 
-      args_list.push(string)
+      arg_list.push(string)
 
-      args_list
+      arg_list
     end
 
     def parse_facts(text)
-      text.sub!(':-', ',')
+      text = text.sub(':-', "\r")
 
       chars = text.chars
       facts = []
       string = ''
       logical_oper = nil
+      sep_found = false
 
       depth = 0
       chars.each.with_index do |c, idx|
-        if depth == 0 && logical_oper.nil? && [',', ';'].include?(c)
-          logical_oper = c
-
-          string.strip!
-          raise "Unexpected #{c} character" if string == ''
-
-          facts.push(string)
-          string = ''
-          next
-        end
-
-        if depth == 0 && [',', ';'].include?(c)
-          raise "Unexpected #{c} character" if c != logical_oper
-
-          string.strip!
-          raise "Unexpected #{c} character" if string == ''
-
-          facts.push(string)
-          string = ''
-          next
-        end
-
-        string += c
-
         if c == '('
           depth += 1
         elsif c == ')'
-          raise 'Unexpected ) character' if depth == 0
+          unexpected_char(')') if depth == 0
 
           depth -= 1
         end
+
+        if c == "\r"
+          sep_found = true
+
+          string = string.strip
+          unexpected_char(c) if string == ''
+
+          facts.push(string)
+          string = ''
+          next
+        end
+
+        if sep_found
+          if depth == 0 && logical_oper.nil? && [',', ';'].include?(c)
+            logical_oper = c
+
+            string = string.strip
+            unexpected_char(c) if string == ''
+
+            facts.push(string)
+            string = ''
+            next
+          end
+
+          if depth == 0 && [',', ';'].include?(c)
+            unexpected_char(c) if c != logical_oper
+
+            string = string.strip
+            unexpected_char(c) if string == ''
+
+            facts.push(string)
+            string = ''
+            next
+          end
+        else
+          if depth == 0 && logical_oper.nil? && [',', ';'].include?(c)
+            unexpected_char(c)
+          end
+        end
+
+        string += c
       end
 
-      raise 'Unexpected end of clause' if string == ''
+      parser_error('Unexpected end of clause') if string == ''
+
       facts.push(string)
 
       [facts, logical_oper == ';' ? 'or' : 'and']
@@ -225,7 +481,7 @@ module DakiLang
                     when '~'
                       'retract'
                     else
-                      raise 'Unterminated instruction'
+                      parser_error('Unterminated instruction')
                     end
 
       [text.chop, instruction]
@@ -236,8 +492,34 @@ module DakiLang
       chars = text.chars
       depth = 0
       string = ''
+      string_mode = false
+      string_delimiter = nil
+      escaped = false
 
       chars.each.with_index do |c, idx|
+        if string_mode
+          if escaped
+            escaped = false
+          elsif c == '\\'
+            escaped = true
+          elsif c == string_delimiter
+            string_mode = false
+          end
+
+          string += c
+          next
+        elsif c == '\'' || c == '"'
+          string_delimiter = c
+          string_mode = true
+
+          string += c
+          next
+        end
+
+        if c == '\\'
+          unexpected_char('\\')
+        end
+
         if c == '['
           if depth == 0
             string = ''
@@ -249,13 +531,13 @@ module DakiLang
         end
 
         if c == ']'
-          raise 'Bad list format' if depth == 0
+          parser_error('Bad list format') if depth == 0
 
           string += c
           depth -= 1
 
           if depth == 0
-            text.sub!(string, "$L#{lists_table.count}$")
+            text = text.sub(string, "$L#{lists_table.count}")
 
             lists_table.push(string)
           end
@@ -268,7 +550,7 @@ module DakiLang
         end
       end
 
-      raise 'Unterminated array' if depth > 0
+      parser_error('Unterminated array') if depth > 0
 
       [text, lists_table]
     end
@@ -286,15 +568,15 @@ module DakiLang
       chars.each.with_index do |c, idx|
         if in_string
           if escape_mode
-            if STRING_ESCAPED_CHARACTERS.include?(c) || string_delimiter == c
+            if STRING_ESCAPED_CHARACTERS[c]
               string += STRING_ESCAPED_CHARACTERS[c]
               orig_string += c
-              next
             else
               string += '\\'
             end
 
             escape_mode = false
+            next
           elsif c == '\\'
             escape_mode = true
             orig_string += c
@@ -302,7 +584,7 @@ module DakiLang
           end
 
           if c == string_delimiter
-            text.sub!("#{string_delimiter}#{orig_string}#{string_delimiter}", "$S#{strings_table.count}$")
+            text = text.sub("#{string_delimiter}#{orig_string}#{string_delimiter}", "$S#{strings_table.count}")
             strings_table.push(string)
 
             in_string = false
@@ -316,54 +598,32 @@ module DakiLang
           in_string = true
           string = ''
           orig_string = ''
+        elsif c == '\\'
+          unexpected_char('\\')
         end
       end
 
-      raise 'Unterminated string' if in_string
+      parser_error('Unterminated string') if in_string
 
       [text, strings_table]
     end
 
-    def parse_tokens(tokens)
-      ret = []
-
-      ret.push(tokens.last[0].sub('_finish', ''))
-
-      last_idx = 0
-
-      loop do
-        fact, last_idx = parse_fact_tokens(tokens, last_idx)
-        break unless last_idx
-
-        ret.push(fact)
+    def unexpected_char(char)
+      if char == ' '
+        char = 'space'
+      elsif char == "\n"
+        char = 'new line'
+      elsif char == "\t"
+        char = 'tab'
+      elsif char == "\r"
+        char = 'carriage return'
       end
 
-      facts = []
-
-      ret.slice(1, ret.count).each do |part|
-        facts.push(Fact.new(part[0], part[1]))
-      end
-
-      [ret.first] + facts
+      parser_error("Unexpected #{char} character")
     end
 
-    def parse_fact_tokens(tokens, idx)
-      name = nil
-      arg_list = []
-
-      while tokens[idx] do
-        if tokens[idx][0] == 'args_start'
-          name = tokens[idx - 1][1]
-        elsif name
-          break if tokens[idx][0] == 'args_end'
-
-          arg_list.push(tokens[idx][1])
-        end
-
-        idx += 1
-      end
-
-      name && arg_list.any? ? [[name, arg_list], idx] : nil
+    def parser_error(msg)
+      raise ParserError.new(msg)
     end
   end
 end
