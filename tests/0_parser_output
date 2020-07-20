@@ -84,3 +84,7 @@ Unexpected ( character
 (clause (((abc ((string ''))))))
 (clause (((abc ((list ['']))))))
 (clause (((abc ((list ['', '', '']))))))
+(clause (((a ((var A <> 'asd') (var B <> ["as", 123, []]) (var C > 'x'))))))
+Unexpected < character
+(clause (((a ((var A) (var B))) (eval ((var A) (string '($0*3+5)') (var $0))) (eval ((var B) (string '~$0') (var $1))) (b ((var $0) (var $1))))))
+Unexpected ( character

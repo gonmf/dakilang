@@ -284,6 +284,12 @@ module DakiLang
       added_facts = []
 
       arg_list = arg_list.map do |arg|
+
+        operator = ['>=', '<=', '=', '<>', '>', '<', ':'].find { |o| arg.include?(o) }
+        if operator
+          unexpected_char(operator[0])
+        end
+
         if NAME_ALLOWED_FIRST_CHARS.include?(arg[0]) && arg.slice(1..-1).chars.all? { |c| NAME_ALLOWED_REMAINING_CHARS.include?(c) }
           Variable.new(arg)
         else
