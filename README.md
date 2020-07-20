@@ -70,5 +70,4 @@ Other, parser specific tests for this interpreter, are ran with:
 
 ## Future work
 
-- Tokenizer code is still very confusing
 - Explore the variable unification of list elements (head\|tail)

@@ -1,0 +1,86 @@
+(clause (((abc ((var A) (var B0))))))
+Unexpected _ character
+(clause (((abc ((var a_))))))
+Unexpected a character
+Unexpected \ character
+(clause (((fib ((var Pos <= 2) (var Res))) (sub ((var Pos) (integer 1) (var N1))) (sub ((var Pos) (integer 2) (var N2))) (fib ((var N1) (var X1))) (fib ((var N2) (var X2))) (add ((var X1) (var X2) (var Res))))))
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+(clause (((grandparent ((var X) (var Y))) (parent ((var X) (var Z))) (parent ((var Z) (var Y))))))
+(clause (((grandparent ((var X) (var Y))) (parent ((var X) (var Z)))) ((grandparent ((var X) (var Y))) (parent ((var Z) (var Y))))))
+Unexpected \ character
+Unexpected \ character
+(retract (((natural_except_five ((integer 5))))))
+Unexpected end of arguments list
+Unexpected end of arguments list
+Unexpected end of arguments list
+Unterminated instruction
+Unexpected end of arguments list
+Unexpected end of arguments list
+Query clause must not have a tail
+Unterminated instruction
+Unexpected \ character
+(full_query (((is_string ((string '1'))))))
+(full_query (((div ((integer 43) (float 0.32) (var a_b))))))
+Unexpected _ character
+Unexpected . character
+Unexpected end of arguments list
+Unexpected end of arguments list
+Unexpected , character
+Unexpected , character
+(clause (((xpto ((var N <> 2) (var N <> 3))) (eql ((var N) (var N) (var X))))))
+Unexpected < character
+Invalid fact without arguments
+Invalid fact without arguments
+Query clause must not have a tail
+(clause (((number ((integer 121))))))
+(clause (((number ((integer 122))))))
+Unexpected 9 character
+(clause (((number ((integer 123))))))
+Unexpected x character
+Unexpected 2 character
+(clause (((number ((integer 124))))))
+Unexpected x character
+Unexpected g character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Unexpected \ character
+Invalid clause condition - must be between a variable and a literal
+Invalid clause condition - must be between a variable and a literal
+Unexpected , character
+Unexpected ; character
+Unexpected ( character
+Unexpected ; character
+Unexpected ) character
+(clause (((test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $0))) (at ((var B) (var A) (var B) (var $0))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '($0*2)+1') (var $0))) (at ((var B) (var A) (var B) (var $0))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $0))) (at ((var B) (var A) (var $0) (var A))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '($0*2)+1') (var $0))) (at ((var B) (var A) (var $0) (var A))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $0))) (at ((var $0) (var A))))))
+(clause (((test ((var A) (var B))) (eval ((var A) (string '($0*2)+1') (var $0))) (at ((var $0) (var A))))))
+(clause (((hello ((string '1234567890!\'"#$%&/()=?*+@€£‰¶÷[]≠§±'))))))
+(clause (((hello ((var X <> 123))))))
+Unterminated instruction
+Unexpected . character
+Unexpected space character
+(clause (((abc ((var A) (list [1.2, 0.12, 120.0, 120, 120, 120, 120]))))))
+(clause (((dea_fg ((list [1, 3, 4, [[]]]))))))
+(clause (((dea_fg ((list [1, 3, 4, [[]]]) (string ' v  v') (string 'as') (integer 0))))))
+Unexpected ( character
+(clause (((dea_fg ((list [1, 3, 4, [[]]]) (string ' v  v') (string 'as') (integer 0))) (pl ((list []) (string ' o') (integer 8)))) ((dea_fg ((list [1, 3, 4, [[]]]) (string ' v  v') (string 'as') (integer 0))) (pk ((var X))))))
+(clause (((a ((list ['f', '', [8], [['ol']]]))) (sa ((list ['f', '', [8], [['ol']]]))))))
+(retract (((s ((string '\\') (string '\"') (list ['\\\\', '\\"']))) (s ((string '\\') (string '\"') (list ['\\\\', '\\"']))))))
+(clause (((abc ((string ''))))))
+(clause (((abc ((list ['']))))))
+(clause (((abc ((list ['', '', '']))))))

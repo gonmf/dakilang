@@ -4,27 +4,25 @@ require_relative 'interpreter'
 
 interpreter = DakiLang::Interpreter.new
 
-expected = File.read('tests/parser_test_output').split("\n").map(&:strip)
-
 failed = false
+expected = File.read('tests/0_parser_output').split("\n").map(&:strip)
 
-File.foreach('tests/parser_test_input').with_index do |line, idx|
+File.foreach('tests/0_parser_input').with_index do |line, idx|
   line = line.strip
   next if line.empty?
 
-  parsed = interpreter.debug_tokenizer(line)&.tr("\n\r", '')&.tr("\t", ' ')&.strip
+  parsed = interpreter.debug_parser(line)&.tr("\n\r", '')&.tr("\t", ' ')&.strip
   # puts parsed
 
   if parsed != expected[idx]
     failed = true
-    puts "Mismatch on line #{idx + 1}\n  #{parsed}\n  #{expected[idx] || 'N/A'}"
-    puts
+    puts "  Mismatch on line #{idx + 1}\n    Input: #{line}\n    #{parsed}\n    #{expected[idx] || 'N/A'}"
   end
 end
 
 if failed
-  puts 'Parser tests failed'
+  puts 'Failed'
   exit(1)
 else
-  puts 'Parser tests passed'
+  puts 'Passed'
 end

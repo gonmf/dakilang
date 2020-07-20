@@ -22,9 +22,9 @@ Res = 127
 
 >
 > listing
-0: number(N, 'float', Res) :- eval(N, '$0+3.14', $1), set($1, Res).
-1: number(N, 'decimal', Res) :- eval(N, '$0+119', $1), set($1, Res).
-2: number(N, 'octal', Res) :- eval(N, '$0+120', $1), set($1, Res).
-3: number(N, 'hexadecimal', Res) :- eval(N, '$0+121', $1), set($1, Res).
-4: number(N, 'binary', Res) :- eval(N, '$0+122', $1), set($1, Res).
+0: number(N, 'float', Res) :- eval(N, '$0+3.14', $0), set($0, Res).
+1: number(N, 'decimal', Res) :- eval(N, '$0+119', $0), set($0, Res).
+2: number(N, 'octal', Res) :- eval(N, '$0+120', $0), set($0, Res).
+3: number(N, 'hexadecimal', Res) :- eval(N, '$0+121', $0), set($0, Res).
+4: number(N, 'binary', Res) :- eval(N, '$0+122', $0), set($0, Res).
 

@@ -18,7 +18,7 @@ end
 
 module DakiLang
   class Interpreter
-    include Tokenizer
+    include Parser
     include OperatorClauses
 
     VERSION = '0.31'
@@ -143,12 +143,10 @@ module DakiLang
       end
     end
 
-    def debug_tokenizer(text)
-      token_set = tokenizer(text)
+    def debug_parser(text)
+      instruction_type, clause_set = parser(text)
 
-      token_set.map do |tokens|
-        tokens.map { |token| token[1] ? "#{token[0]}(#{token[1].to_s})" : token[0] }.join(' | ')
-      end.join(' OR ')
+      clause_set && clause_to_s([instruction_type, clause_set])
     rescue ParserError => e
       e.to_s
     end
@@ -199,22 +197,21 @@ module DakiLang
         end
 
         begin
-          token_set = tokenizer(line)
+          instruction_type, clause_set = parser(line)
+          next unless clause_set
 
-          next if token_set.flatten.empty?
+          puts clause_to_s([instruction_type, clause_set]) if @debug
 
-          token_set.each do |tokens|
-            puts tokens.map { |a| a.join(':') }.join(', ') if @debug
-
-            case tokens.last.first
-            when 'clause_finish'
-              add_rule(tokens, token_set.count == 1)
-            when 'short_query_finish'
-              execute_query(tokens, true)
-            when 'full_query_finish'
-              execute_query(tokens, false)
-            when 'retract_finish'
-              retract_rule_by_full_match(tokens)
+          clause_set.each do |clause|
+            case instruction_type
+            when 'clause'
+              add_rule(clause, clause_set.count == 1)
+            when 'short_query'
+              execute_query(clause, true)
+            when 'full_query'
+              execute_query(clause, false)
+            when 'retract'
+              retract_rule_by_full_match(clause)
               puts
             end
           end
@@ -245,27 +242,21 @@ module DakiLang
       puts
     end
 
-    def retract_rule_by_full_match(tokens)
-      head, last_idx = build_fact(tokens)
+    def retract_rule_by_full_match(facts)
+      head = facts[0]
 
       if head && oper_clause_matches?(head.name, head.arity)
         puts red('Built-in operator clause cannot be removed')
         return
       end
 
-      arr1 = [head].compact
-      while last_idx != -1
-        body, last_idx = build_fact(tokens, last_idx)
-        arr1.push(body) if body
-      end
-
       @table[@table_name].each.with_index do |rule, idx|
         arr2 = [rule[0]] + rule[1]
 
-        next if arr1.count != arr2.count
+        next if facts.count != arr2.count
 
         are_equal = true
-        arr1.each.with_index do |head1, i|
+        facts.each.with_index do |head1, i|
           head2 = arr2[i]
 
           unless head1.eql?(head2)
@@ -285,8 +276,8 @@ module DakiLang
       puts red('Clause not found')
     end
 
-    def execute_query(tokens, stop_early)
-      head, = build_fact(tokens)
+    def execute_query(facts, stop_early)
+      head = facts.first
 
       solutions = search(head, stop_early)
 
@@ -332,60 +323,18 @@ module DakiLang
       color_output ? "\e[31m#{str}\e[0m" : str
     end
 
-    def add_rule(tokens, warn_if_exists)
-      head, last_idx = build_fact(tokens)
+    def add_rule(facts, warn_if_exists)
+      head = facts[0]
 
-      if head && @operator_clauses[head.name]
+      if head && oper_clause_matches?(head.name, head.arity)
         puts red('Built-in operator clause already exists')
         puts
         return
       end
 
-      bodies = []
-      while last_idx != -1
-        body, last_idx = build_fact(tokens, last_idx)
-        bodies.push(body) if body
-      end
+      body = facts.slice(1..facts.count)
 
-      table_add_clause(head, bodies, warn_if_exists)
-    end
-
-    def build_fact(tokens, start_index = 0)
-      name = nil
-      arguments = []
-      end_index = -1
-
-      start_found = false
-      tokens.each.with_index do |token, idx|
-        next if idx < start_index
-
-        if start_found
-          if token[0] == 'args_end'
-            end_index = idx
-            break
-          end
-
-          arguments.push(token[1])
-        else
-          if token[0] == 'args_start'
-            name = tokens[idx - 1]
-
-            if name[0] != 'name'
-              raise 'Unexpected error 1'
-            end
-
-            start_found = true
-          end
-
-          next
-        end
-      end
-
-      if name && arguments.any?
-        [Fact.new(name[1], arguments), end_index]
-      else
-        [nil, -1]
-      end
+      table_add_clause(head, body, warn_if_exists)
     end
 
     def add_memo(name)
@@ -397,7 +346,7 @@ module DakiLang
         puts red('Clause name is invalid')
       elsif @to_memo[@table_name].include?(name)
         puts red('Clause is already being memoized')
-      elsif @operator_clauses[n]
+      elsif oper_clause_matches?(n, arity)
         puts red('Cannot memoize built-in operator clause')
       else
         @to_memo[@table_name].add(name)

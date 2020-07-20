@@ -17,5 +17,5 @@ Res = 12
 > listing
 0: test1(X, Res) :- eval(X, '($0 - 2) + 43 * (3 + $0)', Res).
 1: test11(X, Y, Res) :- eval(X, Y, '$0 * ($1 + 2)', Res).
-2: test12(X, Y, Res) :- eval(X, Y, '$0*($1+2)', $1), set($1, Res).
+2: test12(X, Y, Res) :- eval(X, Y, '$0*($1+2)', $0), set($0, Res).
 
