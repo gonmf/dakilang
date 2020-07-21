@@ -80,7 +80,7 @@ Unexpected space character
 Unexpected ( character
 (clause (((dea_fg ((list [1, 3, 4, [[]]]) (string ' v  v') (string 'as') (integer 0))) (pl ((list []) (string ' o') (integer 8)))) ((dea_fg ((list [1, 3, 4, [[]]]) (string ' v  v') (string 'as') (integer 0))) (pk ((var X))))))
 (clause (((a ((list ['f', '', [8], [['ol']]]))) (sa ((list ['f', '', [8], [['ol']]]))))))
-(retract (((s ((string '\\') (string '\"') (list ['\\\\', '\\"']))) (s ((string '\\') (string '\"') (list ['\\\\', '\\"']))))))
+(retract (((s ((string '\\') (string '\"') (list ['\\', '\"']))) (s ((string '\\') (string '\"') (list ['\\', '\"']))))))
 (clause (((abc ((string ''))))))
 (clause (((abc ((list ['']))))))
 (clause (((abc ((list ['', '', '']))))))
@@ -88,3 +88,5 @@ Unexpected ( character
 Unexpected < character
 (clause (((a ((var A) (var B))) (eval ((var A) (string '($0*3+5)') (var $0))) (eval ((var B) (string '~$0') (var $1))) (b ((var $0) (var $1))))))
 Unexpected ( character
+(clause (((a ((string '\\'" ') (list ['\\'" ']) (string '\\'" ') (list ['\\'" ']))))))
+(clause (((a ((string '\\'" ') (list ['\\'" ']) (string '\\'" ') (list ['\\'" ']))) (a ((string '\\'" ') (list ['\\'" ']) (string '\\'" ') (list ['\\'" ']))))))

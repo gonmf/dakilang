@@ -178,7 +178,9 @@
   4: value(123).
       </pre>
 
-      <p>String literals can be enclosed both by the characters "<code>'</code>" and "<code>"</code>", and both of these can be escaped with "<code>\</code>". The character "<code>\</code>" itself is escaped with "<code>\\</code>". You can write "<code>"'"</code>" and "<code>'"'</code>", but need to escape it if the character is used for delimiting the string: "<code>"\""</code>" and "<code>'\''</code>". The character "<code>\</code>" is also used to denote line continuation: when placed at the end of a line, it is discarded and the line is join with the line bellow.</p>
+      <p>String literals can be enclosed both by the characters "<code>'</code>" and "<code>"</code>", and both of these can be escaped with "<code>\</code>". The character "<code>\</code>" itself is escaped with "<code>\\</code>". You can write "<code>"'"</code>" and "<code>'"'</code>", but need to escape it if the character is used for delimiting the string: "<code>"\""</code>" and "<code>'\''</code>". The characters for line feed (<code>\n</code>), carriage return (<code>\r</code>) and horizontal tab (<code>\t</code>) also need to be escaped.</p>
+
+      <p>The character "<code>\</code>" is also used to denote line continuation: when placed at the end of a line, it is discarded and the line is joint with the line bellow.</p>
 
       <p>Variable names and clause names must start with a letter and be composed of letters, algarisms and underscores.</p>
 

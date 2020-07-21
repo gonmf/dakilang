@@ -12,15 +12,11 @@ module DakiLang
     NAME_ALLOWED_REMAINING_CHARS = (['_'] + ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a).freeze
 
     STRING_ESCAPED_CHARACTERS = {
-      '\'' => '\'',
+      "'" => "'",
       '"' => '"',
       'n' => "\n",
       'r' => "\r",
       't' => "\t",
-      'b' => "\b",
-      'f' => "\f",
-      'v' => "\v",
-      '0' => "\0",
       '\\' => '\\'
     }.freeze
 
@@ -118,6 +114,7 @@ module DakiLang
       c = nil
       prev_c = nil
       string_delimiter = nil
+      escape_mode = false
       string_mode = false
       string = ''
 
@@ -126,7 +123,17 @@ module DakiLang
         c = chars[idx]
 
         if string_mode
-          if c == string_delimiter
+          if escape_mode
+            if STRING_ESCAPED_CHARACTERS[c]
+              string += STRING_ESCAPED_CHARACTERS[c]
+            else
+              unexpected_char('\\')
+            end
+
+            escape_mode = false
+          elsif c == '\\'
+            escape_mode = true
+          elsif c == string_delimiter
             ret.push(string)
             string = ''
             string_mode = false
@@ -136,7 +143,7 @@ module DakiLang
 
           idx += 1
           next
-        elsif c == '\'' || c == '"'
+        elsif c == "'" || c == '"'
           unexpected_char(c) if string.strip.size > 0
 
           unexpected_char(string.strip[0]) if string.strip.size > 0
@@ -514,7 +521,7 @@ module DakiLang
 
           string += c
           next
-        elsif c == '\'' || c == '"'
+        elsif c == "'" || c == '"'
           string_delimiter = c
           string_mode = true
 
@@ -576,11 +583,11 @@ module DakiLang
           if escape_mode
             if STRING_ESCAPED_CHARACTERS[c]
               string += STRING_ESCAPED_CHARACTERS[c]
-              orig_string += c
             else
-              string += '\\'
+              unexpected_char('\\')
             end
 
+            orig_string += c
             escape_mode = false
             next
           elsif c == '\\'
@@ -599,7 +606,7 @@ module DakiLang
 
           string += c
           orig_string += c
-        elsif ['"', '\''].include?(c)
+        elsif ['"', "'"].include?(c)
           string_delimiter = c
           in_string = true
           string = ''
