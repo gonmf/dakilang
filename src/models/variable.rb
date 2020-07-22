@@ -15,18 +15,20 @@ module DakiLang
 
     def to_s(debug = false)
       if debug
-        if condition
-          value = condition_value
+        @to_s_debug ||= begin
+          if condition
+            value = condition_value
 
-          if condition_type == 'string'
-            s = rand.to_s
+            if condition_type == 'string'
+              s = rand.to_s
 
-            value = "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
+              value = "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
+            end
+
+            "##{name} #{condition == '!=' ? '<>' : condition} #{value}"
+          else
+            "##{name}"
           end
-
-          "#{debug ? '#' : ''}#{name} #{condition == '!=' ? '<>' : condition} #{value}"
-        else
-          "#{debug ? '#' : ''}#{name}"
         end
       else
         @to_s ||= begin

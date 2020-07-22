@@ -17,7 +17,15 @@ module DakiLang
     end
 
     def to_s(debug = false)
-      "#{name}(#{arg_list.map { |var| var.to_s(debug) }.join(', ')})"
+      if debug
+        @to_s_debug ||= begin
+          "#{name}(#{arg_list.map { |var| var.to_s(true) }.join(', ')})"
+        end
+      else
+        @to_s ||= begin
+          "#{name}(#{arg_list.map { |var| var.to_s(false) }.join(', ')})"
+        end
+      end
     end
 
     def eql?(other)
