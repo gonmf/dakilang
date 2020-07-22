@@ -325,7 +325,7 @@ module DakiLang
       a, = args
 
       if a.is_a?(Integer) && a >= 0
-        a.chr
+        a.chr(Encoding::UTF_8) rescue nil
       end
     rescue StandardError
       nil

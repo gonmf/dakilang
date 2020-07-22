@@ -70,7 +70,5 @@ Other, parser specific tests for this interpreter, are ran with:
 
 ## Future work
 
-- Support for escaping ASCII `\xFF`
-- Unicode support by escaping unicode `\uFFFF` and adding builtins like `ord` and `char`
 - Support parenthesizing clause tails, with mixed _and_ and _or_ relationships
-- Explore the variable unification of list elements (head\|tail)
+- Explore the variable unification of list elements \(head\|tail\)

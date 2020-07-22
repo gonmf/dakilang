@@ -63,6 +63,9 @@
         <li><a href="#introduction">Introduction</a></li>
         <li><a href="#comments">Comments</a></li>
         <li><a href="#declarations">Declarations</a></li>
+        <ul>
+          <li><a href="#data-types">Data types</a></li>
+        </ul>
         <li><a href="#queries">Queries</a></li>
         <li><a href="#retractions">Retractions</a></li>
         <li><a href="#commands">Environment commands</a></li>
@@ -141,7 +144,10 @@
 
       <p>The elements of clauses always have open brackets and are declared with one or more strings. Those strings can be constants - with a specific data type - or variables.</p>
 
-      <p>The Daki data types are <strong>string</strong> (<code>'daki'</code>), <strong>integer</strong> (<code>42</code>), <strong>float</strong>, for IEEE 754 floating point numbers (<code>3.14</code>) and <strong>list</strong> (<code>['john', 24, ['skiing', 'running']]</code>). This document also uses the term numeric to mean both integer and floating point values. Notice list typed literals do not have to be one dimensional.</p>
+      <a name="data-types"></a>
+      <h3>Data types</h3>
+
+      <p>The Daki data types are <strong>string</strong>, for Unicode strings (<code>'daki'</code>), <strong>integer</strong> (<code>42</code>), <strong>float</strong>, for IEEE 754 floating point numbers (<code>3.14</code>) and <strong>list</strong> (<code>['john', 24, ['skiing', 'running']]</code>). This document also uses the term numeric to mean both integer and floating point values. Notice list typed literals do not have to be one dimensional.</p>
 
       <p>Constant types are not automatically coerced or matched, for example:</p>
 
@@ -178,9 +184,9 @@
   4: value(123).
       </pre>
 
-      <p>String literals can be enclosed both by the characters "<code>'</code>" and "<code>"</code>", and both of these can be escaped with "<code>\</code>". The character "<code>\</code>" itself is escaped with "<code>\\</code>". You can write "<code>"'"</code>" and "<code>'"'</code>", but need to escape it if the character is used for delimiting the string: "<code>"\""</code>" and "<code>'\''</code>". The characters for line feed (<code>\n</code>), carriage return (<code>\r</code>) and horizontal tab (<code>\t</code>) also need to be escaped.</p>
+      <p>String literals are Unicode strings that can be enclosed both by the characters "<code>'</code>" and "<code>"</code>", and both of these can be escaped with "<code>\</code>". The character "<code>\</code>" itself is escaped with "<code>\\</code>". You can write "<code>"'"</code>" and "<code>'"'</code>", but need to escape it if the character is used for delimiting the string: "<code>"\""</code>" and "<code>'\''</code>". The characters for line feed ("<code>\n</code>"), carriage return ("<code>\r</code>") and horizontal tab ("<code>\t</code>") also need to be escaped.</p>
 
-      <p>The character "<code>\</code>" is also used to denote line continuation: when placed at the end of a line, it is discarded and the line is joint with the line bellow.</p>
+      <p>The character "<code>\</code>" is also used to denote line continuation: when placed at the end of a line, it is discarded and the line is joint with the line bellow. You can also specify ASCII characters in hexadecimal using "<code>\xFF</code>" and Unicode using "<code>\uFFFF</code>".</p>
 
       <p>Variable names and clause names must start with a letter and be composed of letters, algarisms and underscores.</p>
 
@@ -460,10 +466,10 @@
         <dd>Unifies with the integer position of String2 if found in String1, or integer literal <code>-1</code>; searching starting from Integer3</dd>
 
         <dt>ord(String, Output).</dt>
-        <dd>Unifies with the numeric ASCII value of the first character in the string input</dd>
+        <dd>Unifies with the numeric Unicode value of the first character in the string input</dd>
 
         <dt>char(Integer, Output).</dt>
-        <dd>Unifies with a string with the ASCII character found for the integer input</dd>
+        <dd>Unifies with a string with the Unicode character found for the integer input</dd>
 
         <dt>split(String1, String2, Output).</dt>
         <dd>Unifies with a list of the separate string characters of String1, separated by String2; if String2 is the empty string (<code>''</code>), every character is separated</dd>

@@ -115,6 +115,7 @@ module DakiLang
       prev_c = nil
       string_delimiter = nil
       escape_mode = false
+      escaped_string = ''
       string_mode = false
       string = ''
 
@@ -123,14 +124,55 @@ module DakiLang
         c = chars[idx]
 
         if string_mode
-          if escape_mode
-            if STRING_ESCAPED_CHARACTERS[c]
+          if escaped_string.size == 4
+            if HEX_CHARS.include?(c.downcase)
+              escaped_string += c.downcase
+              begin
+                string += escaped_string.slice(1..-1).to_i(16).chr(Encoding::UTF_8)
+                escaped_string = ''
+                escape_mode = false
+              rescue
+                unexpected_char(c)
+              end
+            else
+              unexpected_char(c)
+            end
+          elsif escaped_string.size == 3
+            if HEX_CHARS.include?(c.downcase)
+              escaped_string += c.downcase
+            else
+              unexpected_char(c)
+            end
+          elsif escaped_string.size == 2
+            if HEX_CHARS.include?(c.downcase)
+              escaped_string += c.downcase
+              if escaped_string[0] == 'x'
+                begin
+                  string += escaped_string.slice(1..-1).to_i(16).chr
+                  escaped_string = ''
+                  escape_mode = false
+                rescue
+                  unexpected_char(c)
+                end
+              end
+            else
+              unexpected_char(c)
+            end
+          elsif escaped_string.size == 1
+            if HEX_CHARS.include?(c.downcase)
+              escaped_string += c.downcase
+            else
+              unexpected_char(c)
+            end
+          elsif escape_mode
+            if c == 'x' || c == 'u'
+              escaped_string = c
+            elsif STRING_ESCAPED_CHARACTERS[c]
               string += STRING_ESCAPED_CHARACTERS[c]
+              escape_mode = false
             else
               unexpected_char('\\')
             end
-
-            escape_mode = false
           elsif c == '\\'
             escape_mode = true
           elsif c == string_delimiter
@@ -574,38 +616,81 @@ module DakiLang
 
       string_delimiter = nil
       in_string = false
+      escaped_string = ''
       string = ''
       orig_string = ''
       escape_mode = false
 
       chars.each.with_index do |c, idx|
         if in_string
-          if escape_mode
-            if STRING_ESCAPED_CHARACTERS[c]
+          if escaped_string.size == 4
+            if HEX_CHARS.include?(c.downcase)
+              orig_string += c
+              escaped_string += c.downcase
+              begin
+                string += escaped_string.slice(1..-1).to_i(16).chr(Encoding::UTF_8)
+                escaped_string = ''
+                escape_mode = false
+              rescue
+                unexpected_char(c)
+              end
+            else
+              unexpected_char(c)
+            end
+          elsif escaped_string.size == 3
+            if HEX_CHARS.include?(c.downcase)
+              orig_string += c
+              escaped_string += c.downcase
+            else
+              unexpected_char(c)
+            end
+          elsif escaped_string.size == 2
+            if HEX_CHARS.include?(c.downcase)
+              orig_string += c
+              escaped_string += c.downcase
+              if escaped_string[0] == 'x'
+                begin
+                  string += escaped_string.slice(1..-1).to_i(16).chr
+                  escaped_string = ''
+                  escape_mode = false
+                rescue
+                  unexpected_char(c)
+                end
+              end
+            else
+              unexpected_char(c)
+            end
+          elsif escaped_string.size == 1
+            if HEX_CHARS.include?(c.downcase)
+              orig_string += c
+              escaped_string += c.downcase
+            else
+              unexpected_char(c)
+            end
+          elsif escape_mode
+            if c == 'x' || c == 'u'
+              escaped_string = c
+            elsif STRING_ESCAPED_CHARACTERS[c]
               string += STRING_ESCAPED_CHARACTERS[c]
+              escape_mode = false
             else
               unexpected_char('\\')
+              escape_mode = false
             end
 
             orig_string += c
-            escape_mode = false
-            next
           elsif c == '\\'
             escape_mode = true
             orig_string += c
-            next
-          end
-
-          if c == string_delimiter
+          elsif c == string_delimiter
             text = text.sub("#{string_delimiter}#{orig_string}#{string_delimiter}", "$S#{strings_table.count}")
             strings_table.push(string)
 
             in_string = false
-            next
+          else
+            string += c
+            orig_string += c
           end
-
-          string += c
-          orig_string += c
         elsif ['"', "'"].include?(c)
           string_delimiter = c
           in_string = true

@@ -90,3 +90,6 @@ Unexpected < character
 Unexpected ( character
 (clause (((a ((string '\\'" ') (list ['\\'" ']) (string '\\'" ') (list ['\\'" ']))))))
 (clause (((a ((string '\\'" ') (list ['\\'" ']) (string '\\'" ') (list ['\\'" ']))) (a ((string '\\'" ') (list ['\\'" ']) (string '\\'" ') (list ['\\'" ']))))))
+(clause (((a ((list ['ABC', 'A✓C']))))))
+(clause (((a ((string 'ABC') (string 'A✓C'))))))
+(clause (((a ((string 'ABC') (string 'A✓C'))) (a ((list ['ABC', '✓'])))) ((a ((string 'ABC') (string 'A✓C'))) (a ((list ['ABC', '✓']))))))
