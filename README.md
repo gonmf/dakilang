@@ -2,7 +2,7 @@
 
 # Daki language Ruby interpreter
 
-Daki is a small computer programming language influenced by Prolog and Datalog. Please read the [full Daki Language Specification](https://macro.win/dakilang/spec_0.html) first.
+Daki is a small computer programming language influenced by Prolog and Datalog. [Learn more](https://macro.win/dakilang/spec_0.html).
 
 For fast prototyping and iteration, this first interpreter is written in Ruby.
 
@@ -71,4 +71,3 @@ Other, parser specific tests for this interpreter, are ran with:
 ## Future work
 
 - Support parenthesizing clause tails, with mixed _and_ and _or_ relationships
-- Explore the variable unification of list elements \(head\|tail\)
