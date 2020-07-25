@@ -70,4 +70,6 @@ Other, parser specific tests for this interpreter, are ran with:
 
 ## Future work
 
-- Support parenthesizing clause tails, with mixed _and_ and _or_ relationships
+- Warn of non-unification because of missing clause name/arity
+- Mixed _and_ and _or_ relationships in clause tails
+- _Don't care_ variables
