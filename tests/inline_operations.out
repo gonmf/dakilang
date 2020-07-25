@@ -24,5 +24,6 @@ Yes
 > not(X, Y) :- missing_clause(X, Y).
 >
 > not(3, 4)?
+Declaration missing: missing_clause/2
 No
 

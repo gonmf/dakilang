@@ -2,24 +2,29 @@
 >
 > alpha(A, B) :- missing(A, B).
 > alpha(A, B)?
+Declaration missing: missing/2
 No
 
 >
 > beta(X) :- missing(X, X, X).
 > beta(123)?
+Declaration missing: missing/3
 No
 
 >
 > charlie(123)?
+Declaration missing: charlie/1
 No
 
 >
 > delta(1, 2).
 >
 > delta(1)?
+Declaration missing: delta/1
 No
 
 > delta(X)?
+Declaration missing: delta/1
 No
 
 >

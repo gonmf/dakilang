@@ -667,6 +667,7 @@ module DakiLang
       iteration = 0
       solution_set_hashes = Set.new
       time_limit = Time.now + @search_time_limit
+      missing_declarations = Set.new
 
       dummy_head = Fact.new('0', deep_clone(head.arg_list))
       dummy_vars = (0...head.arg_list.size).map { |i| Variable.new(('A'.ord + i).chr) }
@@ -794,6 +795,12 @@ module DakiLang
                 new_solution.push([line, false])
               else
                 impossible_solution = true
+
+                if !missing_declarations.include?(line.arity_name) && !@table[@table_name].map { |entry| entry[0].arity_name }.include?(line.arity_name)
+                  missing_declarations.add(line.arity_name)
+                  puts red("Declaration missing: #{line.arity_name}")
+                end
+
                 break
               end
             end

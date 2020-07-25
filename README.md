@@ -66,5 +66,4 @@ If you find a bug, or the interpreter crashes, please open an issue with the fau
 
 ## Future work
 
-- Warn of non-unification because of missing clause name/arity
 - _Don't care_ variables

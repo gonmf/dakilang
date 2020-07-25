@@ -24,3 +24,46 @@ A = 900
 > abc(123)?
 Yes
 
+>
+> df1(1, 1).
+> df1(X, X)?
+X = 1
+
+>
+> df2(1, 1).
+> df2(X, Y)?
+X = 1
+Y = 1
+
+>
+> df3(1, 2).
+> df3(X, X)?
+No
+
+>
+> df4(1, 2).
+> df4(X, Y)?
+X = 1
+Y = 2
+
+>
+>
+> idf1(A, B) :- df1(A, B).
+> idf2(A, B) :- df2(A, B).
+> idf3(A, B) :- df3(A, B).
+> idf4(A, B) :- df4(A, B).
+>
+> idf1(X, X)?
+X = 1
+
+> idf2(X, Y)?
+X = 1
+Y = 1
+
+> idf3(X, X)?
+No
+
+> idf4(X, Y)?
+X = 1
+Y = 2
+
