@@ -43,7 +43,7 @@ module DakiLang
 
             "#{name} #{condition == '!=' ? '<>' : condition} #{value}"
           else
-            "#{name}"
+            name
           end
         end
       end
