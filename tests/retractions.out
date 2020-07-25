@@ -1,33 +1,42 @@
 >
 > beta(A) :- test(A)~
-Clause not found
+> listing
 
 > beta(A) :- test(A)~
-Clause not found
-
 >
+> listing
+
 > MyRule("john", "mary").
+> listing
+0: MyRule('john', 'mary').
+
 > MyRule("john", "mary")~
-Clause removed
+>
+> listing
+
+> MyRule("john", "mary").
+>
+> listing
+0: MyRule('john', 'mary').
 
 >
 > MyRule("john", "mary").
->
->
-> listing
-0: MyRule('john', 'mary').
-
->
-> retract 1
-Invalid clause index
-
+> MyRule("john", "mary").
 >
 > listing
-0: MyRule('john', 'mary').
+0: MyRule('john', 'mary'). (3)
+
+>
+> retract 0
+>
+> listing
 
 >
 > retract 20
 Invalid clause index
+
+>
+> listing
 
 >
 > retract -20
@@ -35,5 +44,69 @@ Invalid clause index
 
 >
 > listing
-0: MyRule('john', 'mary').
+
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+> listing
+
+>
+> retract 3
+Invalid clause index
+
+> listing
+
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+> listing
+
+>
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+> listing
+0: d(X, Y, X) :- e(X), f(X). (2)
+1: d(X, Y, X) :- e(X), f(Y). (2)
+2: d(X, Y, X) :- e(X), f(Z). (2)
+3: d(X, Y, X) :- e(Y), f(X). (2)
+4: d(X, Y, X) :- e(Y), f(Y). (2)
+5: d(X, Y, X) :- e(Y), f(Z). (2)
+6: d(X, Y, X) :- e(Z), f(X). (2)
+7: d(X, Y, X) :- e(Z), f(Y). (2)
+8: d(X, Y, X) :- e(Z), f(Z). (2)
+
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+> listing
+0: d(X, Y, X) :- e(X), f(X).
+1: d(X, Y, X) :- e(X), f(Y).
+2: d(X, Y, X) :- e(X), f(Z).
+3: d(X, Y, X) :- e(Y), f(X).
+4: d(X, Y, X) :- e(Y), f(Y).
+5: d(X, Y, X) :- e(Y), f(Z).
+6: d(X, Y, X) :- e(Z), f(X).
+7: d(X, Y, X) :- e(Z), f(Y).
+8: d(X, Y, X) :- e(Z), f(Z).
+
+>
+> d(X, Y, X) :- e(Y), f(X)~
+> listing
+0: d(X, Y, X) :- e(X), f(X).
+1: d(X, Y, X) :- e(X), f(Y).
+2: d(X, Y, X) :- e(X), f(Z).
+3: d(X, Y, X) :- e(Y), f(Y).
+4: d(X, Y, X) :- e(Y), f(Z).
+5: d(X, Y, X) :- e(Z), f(X).
+6: d(X, Y, X) :- e(Z), f(Y).
+7: d(X, Y, X) :- e(Z), f(Z).
+
+>
+> retract 4
+> listing
+0: d(X, Y, X) :- e(X), f(X).
+1: d(X, Y, X) :- e(X), f(Y).
+2: d(X, Y, X) :- e(X), f(Z).
+3: d(X, Y, X) :- e(Y), f(Y).
+4: d(X, Y, X) :- e(Z), f(X).
+5: d(X, Y, X) :- e(Z), f(Y).
+6: d(X, Y, X) :- e(Z), f(Z).
 

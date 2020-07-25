@@ -1,15 +1,13 @@
 >
 > other(X) :- abc(X, "gual").
 > other(X) :- abc(X, "guali").
-> other(X) :- abc(X, "gual"). # This instruction will produce a warning
-Clause already exists
-
+> other(X) :- abc(X, "gual").
 >
 > other(X) :- abc(X, "guali"); abc(X, "gual").
 >
 > listing
-0: other(X) :- abc(X, 'gual').
-1: other(X) :- abc(X, 'guali').
+0: other(X) :- abc(X, 'gual'). (3)
+1: other(X) :- abc(X, 'guali'). (2)
 
 >
 > select_table 9
@@ -24,8 +22,8 @@ Table changed to 0
 
 >
 > listing
-0: other(X) :- abc(X, 'gual').
-1: other(X) :- abc(X, 'guali').
+0: other(X) :- abc(X, 'gual'). (3)
+1: other(X) :- abc(X, 'guali'). (2)
 
 >
 > select_table

@@ -33,21 +33,21 @@ module DakiLang
       return nil if text.nil? || text == ''
 
       text, instruction_type = extract_type_of_instruction(text)
-
       text = text.tr(" \t", '')
 
-      facts, logical_oper = parse_facts(text)
+      # Transform AND/OR mixed clauses into exclusive AND clauses
+      head, tails = expand_logical_relations(text, strings_table, lists_table)
 
-      head, *body = facts
-      parser_error('Query clause must not have a tail') if body.any? && instruction_type.include?('_query')
+      parser_error('Query clause must not have a tail') if tails.any? && instruction_type.include?('_query')
 
-      head = parse_head_fact(head, strings_table, lists_table)
-      body = body.map { |fact| parse_body_fact(fact, strings_table, lists_table) }.flatten
+      tails = tails.map do |tail|
+        tail.map { |fact| parse_body_fact(fact, strings_table, lists_table) }.flatten
+      end
 
-      if logical_oper == 'and'
-        [instruction_type, [[head] + body]]
-      else # or
-        [instruction_type, body.map { |body_fact| [head, body_fact] }]
+      if tails.any?
+        [instruction_type, tails.map { |tail| [head] + tail }]
+      else
+        [instruction_type, [[head]]]
       end
     end
 
@@ -67,6 +67,62 @@ module DakiLang
     end
 
     private
+
+    def expand_logical_relations(text, strings_table, lists_table)
+      head, tail = text.split(':-')
+      head = parse_head_fact(head, strings_table, lists_table)
+      return [head, []] unless tail
+
+      tail = parse_relations_tree(tail, '(', ')', [',', ';'])
+
+      tails = recursive_build_and_clauses(tail)
+
+      [head, tails]
+    end
+
+    def recursive_build_and_clauses(oper_w_tail)
+      if oper_w_tail.is_a?(String)
+        return [[oper_w_tail]]
+      end
+
+      operation, *tail = oper_w_tail
+
+      if operation == ',' # and
+
+        tail_and_parts = tail.map { |part| recursive_build_and_clauses(part) }
+        return tail_and_parts.first if tail_and_parts.count == 1
+
+        ret = join_tail_and_parts(tail_and_parts)
+
+        ret
+      else # or
+        ret = []
+
+        tail.each do |part|
+          ret = ret + recursive_build_and_clauses(part)
+        end
+
+        ret
+      end
+    end
+
+    def join_tail_and_parts(parts)
+      start_part = parts[0]
+
+      parts.slice(1..-1).each do |part|
+        expanded = start_part.map { |p| part.map { |p2| p + p2 } }
+
+        start_part = []
+
+        expanded.each do |part|
+          start_part += part
+        end
+
+        start_part
+      end
+
+      start_part
+    end
 
     def splitter(str, arrs)
       parts = [" #{str} "]
@@ -287,9 +343,7 @@ module DakiLang
 
     def parse_head_fact(text, strings_table, lists_table)
       name = extract_fact_name(text)
-
       arg_list = extract_arg_list(text.slice(name.size + 1, text.size - name.size - 2))
-
       arg_list = arg_list.map do |arg|
         operator = ['>=', '<=', '=', '<>', '>', '<', ':'].find { |o| arg.include?(o) }
         if operator
@@ -443,7 +497,7 @@ module DakiLang
         if c == '('
           depth += 1
         elsif c == ')'
-          unexpected_char(')') if depth == 0
+          unexpected_char(chars[idx + 1] || ')') if depth == 0
 
           depth -= 1
         end
@@ -455,74 +509,6 @@ module DakiLang
       arg_list.push(string)
 
       arg_list
-    end
-
-    def parse_facts(text)
-      text = text.sub(':-', "\r")
-
-      chars = text.chars
-      facts = []
-      string = ''
-      logical_oper = nil
-      sep_found = false
-
-      depth = 0
-      chars.each.with_index do |c, idx|
-        if c == '('
-          depth += 1
-        elsif c == ')'
-          unexpected_char(')') if depth == 0
-
-          depth -= 1
-        end
-
-        if c == "\r"
-          sep_found = true
-
-          string = string.strip
-          unexpected_char(c) if string == ''
-
-          facts.push(string)
-          string = ''
-          next
-        end
-
-        if sep_found
-          if depth == 0 && logical_oper.nil? && [',', ';'].include?(c)
-            logical_oper = c
-
-            string = string.strip
-            unexpected_char(c) if string == ''
-
-            facts.push(string)
-            string = ''
-            next
-          end
-
-          if depth == 0 && [',', ';'].include?(c)
-            unexpected_char(c) if c != logical_oper
-
-            string = string.strip
-            unexpected_char(c) if string == ''
-
-            facts.push(string)
-            string = ''
-            next
-          end
-        else
-          if depth == 0 && logical_oper.nil? && [',', ';'].include?(c)
-            unexpected_char(c)
-          end
-        end
-
-        string += c
-      end
-
-      parser_error('Unexpected end of clause') if string == ''
-
-      facts.push(string)
-
-      [facts, logical_oper == ';' ? 'or' : 'and']
     end
 
     def extract_type_of_instruction(text)
@@ -704,6 +690,48 @@ module DakiLang
       parser_error('Unterminated string') if in_string
 
       [text, strings_table]
+    end
+
+    def parse_relations_tree(text, start_character, end_character, separator_characters)
+      chars = text.chars
+      arg_list = [nil]
+      string = ''
+
+      depth = 0
+      chars.each.with_index do |c, idx|
+        if depth == 0 && separator_characters.include?(c)
+          if arg_list[0].nil?
+            arg_list[0] = c
+          elsif arg_list[0] != c
+            unexpected_char(c)
+          end
+
+          string = string.strip
+          unexpected_char(c) if string == ''
+
+          arg_list.push(string.start_with?(start_character) && string.end_with?(end_character) ? parse_relations_tree(string.slice(1..-2), start_character, end_character, separator_characters) : string)
+          string = ''
+          next
+        end
+
+        string += c
+
+        if c == start_character
+          depth += 1
+        elsif c == end_character
+          unexpected_char(end_character) if depth == 0
+
+          depth -= 1
+        end
+      end
+
+      string = string.strip
+      parser_error('Unexpected end of clause') if string == '' || depth > 0
+
+      arg_list[0] ||= separator_characters.first
+      arg_list.push(string.start_with?(start_character) && string.end_with?(end_character) ? parse_relations_tree(string.slice(1..-2), start_character, end_character, separator_characters) : string)
+
+      arg_list
     end
 
     def unexpected_char(char)

@@ -1,21 +1,54 @@
 
 beta(A) :- test(A)~
+listing
 beta(A) :- test(A)~
 
+listing
 MyRule("john", "mary").
+listing
 MyRule("john", "mary")~
 
+listing
 MyRule("john", "mary").
-
 
 listing
 
-retract 1
+MyRule("john", "mary").
+MyRule("john", "mary").
+
+listing
+
+retract 0
 
 listing
 
 retract 20
 
+listing
+
 retract -20
 
+listing
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+listing
+
+retract 3
+listing
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+listing
+
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+listing
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+listing
+
+d(X, Y, X) :- e(Y), f(X)~
+listing
+
+retract 4
 listing

@@ -1,0 +1,44 @@
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+listing
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+listing
+
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+listing
+
+retract 3
+listing
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+listing
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+listing
+
+fib(Pos <= 2, Res) :- sub(Pos, 1, N1), sub(Pos, 2, N2) , fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+listing
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+listing
+
+d(c, Y, c) :- e(c), f(Y).
+
+
+a(X, "ola").
+listing
+select_table 1
+
+a(X, Y) :- ((c(Z))); ((b(X); c(X)), (b(Y); c(Y))).
+listing
+select_table 2
+
+d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+listing
+select_table 3
+
+g(X, Y, X) :- (h(X), h(Y), h(Z)); (i(X), i(Y), i(Z)).
+listing
+

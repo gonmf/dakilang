@@ -16,7 +16,7 @@ File.foreach('tests/0_parser_input').with_index do |line, idx|
 
   if parsed != expected[idx]
     failed = true
-    puts "  Mismatch on line #{idx + 1}\n    Input: #{line}\n    #{parsed}\n    #{expected[idx] || 'N/A'}"
+    puts "  Mismatch on line #{idx + 1}\n    Input: #{line}\n      Got:      #{parsed}\n      Expected: #{expected[idx] || 'N/A'}"
   end
 end
 

@@ -21,8 +21,6 @@ module DakiLang
     include Parser
     include OperatorClauses
 
-    VERSION = '0.32'
-
     OPERATOR_CLAUSES = [
       # Arithmetic
       ['add',        3,     -1], # Variable arity
@@ -202,18 +200,15 @@ module DakiLang
 
           puts clause_to_s([instruction_type, clause_set]) if @debug
 
-          clause_set.each do |clause|
-            case instruction_type
-            when 'clause'
-              add_rule(clause, clause_set.count == 1)
-            when 'short_query'
-              execute_query(clause, true)
-            when 'full_query'
-              execute_query(clause, false)
-            when 'retract'
-              retract_rule_by_full_match(clause)
-              puts
-            end
+          case instruction_type
+          when 'clause'
+            add_rule(clause_set)
+          when 'short_query'
+            execute_query(clause_set.first, true)
+          when 'full_query'
+            execute_query(clause_set.first, false)
+          when 'retract'
+            retract_rule_by_declaration(clause_set)
           end
         rescue ParserError => e
           puts e
@@ -227,6 +222,34 @@ module DakiLang
       end
     end
 
+    def add_rule(clause_set)
+      head = clause_set[0][0]
+
+      if head && oper_clause_matches?(head.name, head.arity)
+        puts red('Built-in operator clause already exists')
+        puts
+        return
+      end
+
+      clause_set.each do |clause|
+        table_add_clause(clause)
+      end
+    end
+
+    def retract_rule_by_declaration(clause_set)
+      head = clause_set[0][0]
+
+      if head && oper_clause_matches?(head.name, head.arity)
+        puts red('Built-in operator clause cannot be removed')
+        puts
+        return
+      end
+
+      clause_set.each do |clause|
+        table_remove_clause(clause)
+      end
+    end
+
     def retract_rule_by_index(idx_str)
       idx = idx_str.to_i
       if idx.to_s != idx_str || idx < 0 || idx >= @table[@table_name].count
@@ -237,43 +260,6 @@ module DakiLang
 
       @table[@table_name][idx] = nil
       @table[@table_name] = @table[@table_name].compact
-
-      puts green('Clause removed')
-      puts
-    end
-
-    def retract_rule_by_full_match(facts)
-      head = facts[0]
-
-      if head && oper_clause_matches?(head.name, head.arity)
-        puts red('Built-in operator clause cannot be removed')
-        return
-      end
-
-      @table[@table_name].each.with_index do |rule, idx|
-        arr2 = [rule[0]] + rule[1]
-
-        next if facts.count != arr2.count
-
-        are_equal = true
-        facts.each.with_index do |head1, i|
-          head2 = arr2[i]
-
-          unless head1.eql?(head2)
-            are_equal = false
-            break
-          end
-        end
-
-        if are_equal
-          @table[@table_name][idx] = nil
-          @table[@table_name] = @table[@table_name].compact
-          puts green('Clause removed')
-          return
-        end
-      end
-
-      puts red('Clause not found')
     end
 
     def execute_query(facts, stop_early)
@@ -321,20 +307,6 @@ module DakiLang
 
     def red(str)
       color_output ? "\e[31m#{str}\e[0m" : str
-    end
-
-    def add_rule(facts, warn_if_exists)
-      head = facts[0]
-
-      if head && oper_clause_matches?(head.name, head.arity)
-        puts red('Built-in operator clause already exists')
-        puts
-        return
-      end
-
-      body = facts.slice(1..facts.count)
-
-      table_add_clause(head, body, warn_if_exists)
     end
 
     def add_memo(name)
@@ -437,7 +409,7 @@ module DakiLang
       end
 
       @table[@table_name].each.with_index do |arr, idx|
-        puts green("#{idx.to_s.rjust(indent)}: #{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}.")
+        puts green("#{idx.to_s.rjust(indent)}: #{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}.#{arr[2] > 1 ? " (#{arr[2]})" : ''}")
       end
 
       puts
@@ -698,7 +670,7 @@ module DakiLang
 
       dummy_head = Fact.new('0', deep_clone(head.arg_list))
       dummy_vars = (0...head.arg_list.size).map { |i| Variable.new(('A'.ord + i).chr) }
-      dummy_clause = [Fact.new(dummy_head.name, dummy_vars), [Fact.new(head.name, dummy_vars)]]
+      dummy_clause = [Fact.new(dummy_head.name, dummy_vars), [Fact.new(head.name, dummy_vars)], 1]
 
       @table[@table_name] = [dummy_clause] + @table[@table_name]
       head = dummy_head
@@ -809,6 +781,7 @@ module DakiLang
 
           matching_clauses.each.with_index do |clause, matching_clause_idx|
             new_solution = deep_clone(first_solution)
+            clause = [clause[0], clause[1]].compact
 
             new_clauses = substitute_variables(new_solution, first_solution_clause[0], deep_clone(clause))
 
@@ -888,26 +861,79 @@ module DakiLang
       @table[@table_name] = @table[@table_name].slice(1, @table[@table_name].size)
     end
 
-    def table_add_clause(head, body, warn_if_exists)
-      if !head
-        puts red('Invalid clause format')
-        return
-      end
-
+    def table_add_clause(clause)
       @table[@table_name].each do |arr|
         table_head = arr[0]
         table_body = arr[1]
 
-        if table_head.hash == head.hash && table_body.map(&:hash).sort == body.map(&:hash).sort
-          if warn_if_exists
-            puts red('Clause already exists')
-            puts
-          end
+        if clauses_are_equal([table_head] + table_body, clause)
+          arr[2] = arr[2] + 1
           return
         end
       end
 
-      @table[@table_name].push([head, body])
+      head, *body = clause
+      @table[@table_name].push([head, body, 1])
+    end
+
+    def table_remove_clause(clause)
+      @table[@table_name].each.with_index do |arr, arr_idx|
+        table_head = arr[0]
+        table_body = arr[1]
+
+        if clauses_are_equal([table_head] + table_body, clause)
+          arr[2] = arr[2] - 1
+
+          if arr[2] == 0
+            @table[@table_name][arr_idx] = nil
+            @table[@table_name] = @table[@table_name].compact
+          end
+
+          return
+        end
+      end
+    end
+
+    def clauses_are_equal(clause1, clause2)
+      return false if clause1.count != clause2.count
+
+      clause1.each.with_index do |fact, idx|
+        fact2 = clause2[idx]
+        return false if fact.name != fact2.name || fact.arg_list.count != fact2.arg_list.count
+      end
+
+      # Check argument order and constants
+      argument_id = 0
+      arg_names = {}
+
+      args1 = clause1.map { |fact| fact.arg_list }.flatten
+      args1 = args1.map.with_index do |arg, idx|
+        next "#{arg.type}:#{arg.hash}" if arg.const?
+
+        if !arg_names[arg]
+          arg_names[arg] = argument_id
+          argument_id += 1
+        end
+
+        args1[idx] = arg_names[arg]
+      end
+
+      argument_id = 0
+      arg_names = {}
+
+      args2 = clause2.map { |fact| fact.arg_list }.flatten
+      args2 = args2.map.with_index do |arg, idx|
+        next "#{arg.type}:#{arg.hash}" if arg.const?
+
+        if !arg_names[arg]
+          arg_names[arg] = argument_id
+          argument_id += 1
+        end
+
+        args2[idx] = arg_names[arg]
+      end
+
+      args1 == args2
     end
   end
 end

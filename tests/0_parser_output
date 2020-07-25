@@ -25,7 +25,7 @@ Unexpected end of arguments list
 Unterminated instruction
 Unexpected end of arguments list
 Unexpected end of arguments list
-Query clause must not have a tail
+Unexpected end of arguments list
 Unterminated instruction
 Unexpected \ character
 (full_query (((is_string ((string '1'))))))
@@ -60,7 +60,7 @@ Invalid clause condition - must be between a variable and a literal
 Invalid clause condition - must be between a variable and a literal
 Unexpected , character
 Unexpected ; character
-Unexpected ( character
+Unexpected end of clause
 Unexpected ; character
 Unexpected ) character
 (clause (((test ((var A) (var B))) (eval ((var A) (string '$0+2') (var $0))) (at ((var B) (var A) (var B) (var $0))))))

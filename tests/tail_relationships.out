@@ -1,0 +1,153 @@
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+> listing
+0: d(X, Y, X) :- e(X), f(X).
+1: d(X, Y, X) :- e(X), f(Y).
+2: d(X, Y, X) :- e(X), f(Z).
+3: d(X, Y, X) :- e(Y), f(X).
+4: d(X, Y, X) :- e(Y), f(Y).
+5: d(X, Y, X) :- e(Y), f(Z).
+6: d(X, Y, X) :- e(Z), f(X).
+7: d(X, Y, X) :- e(Z), f(Y).
+8: d(X, Y, X) :- e(Z), f(Z).
+
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+> listing
+0: d(X, Y, X) :- e(X), f(X). (2)
+1: d(X, Y, X) :- e(X), f(Y). (2)
+2: d(X, Y, X) :- e(X), f(Z). (2)
+3: d(X, Y, X) :- e(Y), f(X). (2)
+4: d(X, Y, X) :- e(Y), f(Y). (2)
+5: d(X, Y, X) :- e(Y), f(Z). (2)
+6: d(X, Y, X) :- e(Z), f(X). (2)
+7: d(X, Y, X) :- e(Z), f(Y). (2)
+8: d(X, Y, X) :- e(Z), f(Z). (2)
+
+>
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+> listing
+0: d(X, Y, X) :- e(X), f(X).
+1: d(X, Y, X) :- e(X), f(Y).
+2: d(X, Y, X) :- e(X), f(Z).
+3: d(X, Y, X) :- e(Y), f(X).
+4: d(X, Y, X) :- e(Y), f(Y).
+5: d(X, Y, X) :- e(Y), f(Z).
+6: d(X, Y, X) :- e(Z), f(X).
+7: d(X, Y, X) :- e(Z), f(Y).
+8: d(X, Y, X) :- e(Z), f(Z).
+
+>
+> retract 3
+> listing
+0: d(X, Y, X) :- e(X), f(X).
+1: d(X, Y, X) :- e(X), f(Y).
+2: d(X, Y, X) :- e(X), f(Z).
+3: d(X, Y, X) :- e(Y), f(Y).
+4: d(X, Y, X) :- e(Y), f(Z).
+5: d(X, Y, X) :- e(Z), f(X).
+6: d(X, Y, X) :- e(Z), f(Y).
+7: d(X, Y, X) :- e(Z), f(Z).
+
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z))~
+> listing
+
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+> listing
+0: d(X, Y, X) :- e(X), f(X).
+1: d(X, Y, X) :- e(X), f(Y).
+2: d(X, Y, X) :- e(X), f(Z).
+3: d(X, Y, X) :- e(Y), f(X).
+4: d(X, Y, X) :- e(Y), f(Y).
+5: d(X, Y, X) :- e(Y), f(Z).
+6: d(X, Y, X) :- e(Z), f(X).
+7: d(X, Y, X) :- e(Z), f(Y).
+8: d(X, Y, X) :- e(Z), f(Z).
+
+>
+> fib(Pos <= 2, Res) :- sub(Pos, 1, N1), sub(Pos, 2, N2) , fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+> listing
+0: d(X, Y, X) :- e(X), f(X).
+1: d(X, Y, X) :- e(X), f(Y).
+2: d(X, Y, X) :- e(X), f(Z).
+3: d(X, Y, X) :- e(Y), f(X).
+4: d(X, Y, X) :- e(Y), f(Y).
+5: d(X, Y, X) :- e(Y), f(Z).
+6: d(X, Y, X) :- e(Z), f(X).
+7: d(X, Y, X) :- e(Z), f(Y).
+8: d(X, Y, X) :- e(Z), f(Z).
+9: fib(Pos <= 2, Res) :- sub(Pos, 1, N1), sub(Pos, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+> listing
+0: d(X, Y, X) :- e(X), f(X). (3)
+1: d(X, Y, X) :- e(X), f(Y). (3)
+2: d(X, Y, X) :- e(X), f(Z). (3)
+3: d(X, Y, X) :- e(Y), f(X). (3)
+4: d(X, Y, X) :- e(Y), f(Y). (3)
+5: d(X, Y, X) :- e(Y), f(Z). (3)
+6: d(X, Y, X) :- e(Z), f(X). (3)
+7: d(X, Y, X) :- e(Z), f(Y). (3)
+8: d(X, Y, X) :- e(Z), f(Z). (3)
+9: fib(Pos <= 2, Res) :- sub(Pos, 1, N1), sub(Pos, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+
+>
+> d(c, Y, c) :- e(c), f(Y).
+>
+>
+> a(X, "ola").
+> listing
+ 0: d(X, Y, X) :- e(X), f(X). (3)
+ 1: d(X, Y, X) :- e(X), f(Y). (4)
+ 2: d(X, Y, X) :- e(X), f(Z). (3)
+ 3: d(X, Y, X) :- e(Y), f(X). (3)
+ 4: d(X, Y, X) :- e(Y), f(Y). (3)
+ 5: d(X, Y, X) :- e(Y), f(Z). (3)
+ 6: d(X, Y, X) :- e(Z), f(X). (3)
+ 7: d(X, Y, X) :- e(Z), f(Y). (3)
+ 8: d(X, Y, X) :- e(Z), f(Z). (3)
+ 9: fib(Pos <= 2, Res) :- sub(Pos, 1, N1), sub(Pos, 2, N2), fib(N1, X1), fib(N2, X2), add(X1, X2, Res).
+10: a(X, 'ola').
+
+> select_table 1
+Table changed to 1
+
+>
+> a(X, Y) :- ((c(Z))); ((b(X); c(X)), (b(Y); c(Y))).
+> listing
+0: a(X, Y) :- c(Z).
+1: a(X, Y) :- b(X), b(Y).
+2: a(X, Y) :- b(X), c(Y).
+3: a(X, Y) :- c(X), b(Y).
+4: a(X, Y) :- c(X), c(Y).
+
+> select_table 2
+Table changed to 2
+
+>
+> d(X, Y, X) :- (e(X); e(Y); e(Z)), (f(X); f(Y); f(Z)).
+> listing
+0: d(X, Y, X) :- e(X), f(X).
+1: d(X, Y, X) :- e(X), f(Y).
+2: d(X, Y, X) :- e(X), f(Z).
+3: d(X, Y, X) :- e(Y), f(X).
+4: d(X, Y, X) :- e(Y), f(Y).
+5: d(X, Y, X) :- e(Y), f(Z).
+6: d(X, Y, X) :- e(Z), f(X).
+7: d(X, Y, X) :- e(Z), f(Y).
+8: d(X, Y, X) :- e(Z), f(Z).
+
+> select_table 3
+Table changed to 3
+
+>
+> g(X, Y, X) :- (h(X), h(Y), h(Z)); (i(X), i(Y), i(Z)).
+> listing
+0: g(X, Y, X) :- h(X), h(Y), h(Z).
+1: g(X, Y, X) :- i(X), i(Y), i(Z).
+
+>
