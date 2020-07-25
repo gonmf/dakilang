@@ -54,19 +54,15 @@ Option | Description
 
 ## Tests
 
-The tests are still under heavy development.
-
-Some tests, interpreter independent, are ran using:
+This interpreter has tests for the interpreter search algorithm itsef, and for the parser:
 
 ```bash
 ./test_interpreter.sh
-```
 
-Other, parser specific tests for this interpreter, are ran with:
-
-```bash
 ./test_parser.sh
 ```
+
+If you find a bug, or the interpreter crashes, please open an issue with the faulty instructions.
 
 ## Future work
 
