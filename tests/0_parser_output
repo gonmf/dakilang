@@ -93,3 +93,21 @@ Unexpected ( character
 (clause (((a ((list ['ABC', 'A✓C']))))))
 (clause (((a ((string 'ABC') (string 'A✓C'))))))
 (clause (((a ((string 'ABC') (string 'A✓C'))) (a ((list ['ABC', '✓'])))) ((a ((string 'ABC') (string 'A✓C'))) (a ((list ['ABC', '✓']))))))
+Unexpected _ character
+Unexpected _ character
+(short_query (((a ((var _) (string 'agdf g') (var A) (list [123]))))))
+(full_query (((a ((var _) (string 'agdf g') (var A) (list [123]))))))
+Unexpected _ character
+Query clause must not have a tail
+Query clause must not have a tail
+Unexpected _ character
+Unexpected _ character
+Query clause must not have a tail
+Unexpected _ character
+Query clause must not have a tail
+Unexpected _ character
+Unexpected _ character
+Unexpected _ character
+(full_query (((a ((var _))))))
+(full_query (((a ((var _) (var _))))))
+(full_query (((a ((var _) (var _) (var _) (var _))))))

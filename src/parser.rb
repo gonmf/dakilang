@@ -424,13 +424,9 @@ module DakiLang
               elsif (NUMERIC + ['-', '.']).include?(chrs[0])
                 number = parse_numeric(part)
 
-                if number.nil?
-                  parser_error('Illegal character in variable name')
-                end
-
                 parts[part_id] = number.to_s
               else
-                parser_error('Illegal character in variable name')
+                unexpected_char(chrs[0])
               end
             end
 
