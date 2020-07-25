@@ -1,0 +1,10 @@
+
+type('fruit', 'apple', 120).
+type('fruit', 'banana', 90).
+
+type('fruit', 'apple', _)?
+
+type('fruit', Name, _)?
+
+type(_, _, _)?
+

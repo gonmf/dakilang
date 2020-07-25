@@ -1,0 +1,18 @@
+>
+> type('fruit', 'apple', 120).
+> type('fruit', 'banana', 90).
+>
+> type('fruit', 'apple', _)?
+Yes
+
+>
+> type('fruit', Name, _)?
+Name = 'apple'
+
+Name = 'banana'
+
+>
+> type(_, _, _)?
+Yes
+
+>

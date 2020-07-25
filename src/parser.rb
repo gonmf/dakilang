@@ -33,12 +33,13 @@ module DakiLang
       return nil if text.nil? || text == ''
 
       text, instruction_type = extract_type_of_instruction(text)
+      is_query = instruction_type.include?('_query')
       text = text.tr(" \t", '')
 
       # Transform AND/OR mixed clauses into exclusive AND clauses
-      head, tails = expand_logical_relations(text, strings_table, lists_table)
+      head, tails = expand_logical_relations(text, strings_table, lists_table, is_query)
 
-      parser_error('Query clause must not have a tail') if tails.any? && instruction_type.include?('_query')
+      parser_error('Query clause must not have a tail') if tails.any? && is_query
 
       tails = tails.map do |tail|
         tail.map { |fact| parse_body_fact(fact, strings_table, lists_table) }.flatten
@@ -68,9 +69,9 @@ module DakiLang
 
     private
 
-    def expand_logical_relations(text, strings_table, lists_table)
+    def expand_logical_relations(text, strings_table, lists_table, is_query)
       head, tail = text.split(':-')
-      head = parse_head_fact(head, strings_table, lists_table)
+      head = parse_head_fact(head, strings_table, lists_table, is_query)
       return [head, []] unless tail
 
       tail = parse_relations_tree(tail, '(', ')', [',', ';'])
@@ -341,7 +342,7 @@ module DakiLang
       end
     end
 
-    def parse_head_fact(text, strings_table, lists_table)
+    def parse_head_fact(text, strings_table, lists_table, is_query)
       name = extract_fact_name(text)
       arg_list = extract_arg_list(text.slice(name.size + 1, text.size - name.size - 2))
       arg_list = arg_list.map do |arg|
@@ -371,6 +372,12 @@ module DakiLang
           Variable.new(var, operator, const.class.to_s.downcase, const)
         elsif NAME_ALLOWED_FIRST_CHARS.include?(arg[0]) && arg.slice(1..-1).chars.all? { |c| NAME_ALLOWED_REMAINING_CHARS.include?(c) }
           Variable.new(arg)
+        elsif arg == '_'
+          unexpected_char('_') unless is_query
+
+          new_var_name = "_#{@parser_var_gen_idx.to_s(16)}"
+          @parser_var_gen_idx += 1
+          Variable.new(new_var_name)
         else
           Literal.new(parse_argument(arg, strings_table, lists_table))
         end

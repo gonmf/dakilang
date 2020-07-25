@@ -276,7 +276,7 @@ module DakiLang
           printed = Set.new
 
           head.arg_list.each.with_index do |arg, idx|
-            next if arg.const?
+            next if arg.const? || arg.name[0] == '_'
 
             printed_any = true
             value = solution.arg_list[idx]
