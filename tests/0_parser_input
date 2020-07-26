@@ -111,3 +111,30 @@ a(_,_,_,_).
 a(_)?
 a(_,_)?
 a(_,_,_,_)?
+print('Hello World \u{1F30E}', _)!
+print('Hello World \u{1F30E', _)!
+print('Hello World \u1F30E}', _)!
+print('Hello World \u{1f30e}', _)!
+print('Hello World \u2764', _)!
+print('Hello World \u276', _)!
+print('Hello World \u1F30E', _)!
+print('Hello World \u2764\uFE0F', _)!
+print('Hello World \u64\uFE0F', _)!
+print('Hello World \u{1F30E}?', _)!
+print('Hello World \u{1F30E?', _)!
+print('Hello World \u1F30E}?', _)!
+print('Hello World \u{1f30e}?', _)!
+print('Hello World \u2764?', _)!
+print('Hello World \u276?', _)!
+print('Hello World \u1F30E?', _)!
+print('Hello World \u2764\uFE0F?', _)!
+print(["\u64\uFE0F"], _)!
+print(["\u{1F30E}"], _)!
+print(["\u{1F30E"], _)!
+print(["\u1F30E}"], _)!
+print(["\u{1f30e}"], _)!
+print(["\u2764"], _)!
+print(["\u276"], _)!
+print(["\u1F30E"], _)!
+print(["\u2764\uFE0F"], _)!
+print(["\u64\uFE0F"], _)!

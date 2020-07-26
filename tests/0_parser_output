@@ -111,3 +111,30 @@ Unexpected _ character
 (full_query (((a ((var _))))))
 (full_query (((a ((var _) (var _))))))
 (full_query (((a ((var _) (var _) (var _) (var _))))))
+(short_query (((print ((string 'Hello World 🌎') (var _))))))
+Unexpected ' character
+(short_query (((print ((string 'Hello World ἰE}') (var _))))))
+(short_query (((print ((string 'Hello World 🌎') (var _))))))
+(short_query (((print ((string 'Hello World ❤') (var _))))))
+Unexpected ' character
+(short_query (((print ((string 'Hello World ἰE') (var _))))))
+(short_query (((print ((string 'Hello World ❤️') (var _))))))
+Unexpected \ character
+(short_query (((print ((string 'Hello World 🌎?') (var _))))))
+Unexpected ? character
+(short_query (((print ((string 'Hello World ἰE}?') (var _))))))
+(short_query (((print ((string 'Hello World 🌎?') (var _))))))
+(short_query (((print ((string 'Hello World ❤?') (var _))))))
+Unexpected ? character
+(short_query (((print ((string 'Hello World ἰE?') (var _))))))
+(short_query (((print ((string 'Hello World ❤️?') (var _))))))
+Unexpected \ character
+(short_query (((print ((list ['🌎']) (var _))))))
+Unexpected " character
+(short_query (((print ((list ['ἰE}']) (var _))))))
+(short_query (((print ((list ['🌎']) (var _))))))
+(short_query (((print ((list ['❤']) (var _))))))
+Unexpected " character
+(short_query (((print ((list ['ἰE']) (var _))))))
+(short_query (((print ((list ['❤️']) (var _))))))
+Unexpected \ character

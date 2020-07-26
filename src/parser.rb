@@ -172,6 +172,7 @@ module DakiLang
       prev_c = nil
       string_delimiter = nil
       escape_mode = false
+      multi_point_escaped = false
       escaped_string = ''
       string_mode = false
       string = ''
@@ -181,7 +182,19 @@ module DakiLang
         c = chars[idx]
 
         if string_mode
-          if escaped_string.size == 4
+          if multi_point_escaped
+            if c == '}'
+              unexpected_char('}') if escaped_string.size == ''
+              chr = escaped_string.to_i(16).chr(Encoding::UTF_8) rescue nil
+              parser_error('UTF-8 encoding error') if chr.nil?
+              string += chr
+              multi_point_escaped = false
+            elsif HEX_CHARS.include?(c.downcase)
+              escaped_string += c
+            else
+              unexpected_char(c)
+            end
+          elsif escaped_string.size == 4
             if HEX_CHARS.include?(c.downcase)
               escaped_string += c.downcase
               begin
@@ -216,7 +229,11 @@ module DakiLang
               unexpected_char(c)
             end
           elsif escaped_string.size == 1
-            if HEX_CHARS.include?(c.downcase)
+            if escaped_string == 'u' && c == '{'
+              multi_point_escaped = true
+              escape_mode = false
+              escaped_string = ''
+            elsif HEX_CHARS.include?(c.downcase)
               escaped_string += c.downcase
             else
               unexpected_char(c)
@@ -609,10 +626,24 @@ module DakiLang
       string = ''
       orig_string = ''
       escape_mode = false
+      multi_point_escaped = false
 
       chars.each.with_index do |c, idx|
         if in_string
-          if escaped_string.size == 4
+          if multi_point_escaped
+            orig_string += c
+            if c == '}'
+              unexpected_char('}') if escaped_string.size == ''
+              chr = escaped_string.to_i(16).chr(Encoding::UTF_8) rescue nil
+              parser_error('UTF-8 encoding error') if chr.nil?
+              string += chr
+              multi_point_escaped = false
+            elsif HEX_CHARS.include?(c.downcase)
+              escaped_string += c
+            else
+              unexpected_char(c)
+            end
+          elsif escaped_string.size == 4
             if HEX_CHARS.include?(c.downcase)
               orig_string += c
               escaped_string += c.downcase
@@ -650,8 +681,12 @@ module DakiLang
               unexpected_char(c)
             end
           elsif escaped_string.size == 1
-            if HEX_CHARS.include?(c.downcase)
-              orig_string += c
+            orig_string += c
+            if escaped_string == 'u' && c == '{'
+              multi_point_escaped = true
+              escape_mode = false
+              escaped_string = ''
+            elsif HEX_CHARS.include?(c.downcase)
               escaped_string += c.downcase
             else
               unexpected_char(c)

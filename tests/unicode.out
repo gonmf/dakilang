@@ -16,3 +16,16 @@ Y = 'B'
 > c('😇', Y)?
 Y = 128519
 
+>
+> print('Hello World \u{1F30E}', _)!
+Hello World 🌎
+Yes
+
+> print('Hello World \u2764', _)!
+Hello World ❤
+Yes
+
+> print('Hello World \u2764\uFE0F', _)!
+Hello World ❤️
+Yes
+
