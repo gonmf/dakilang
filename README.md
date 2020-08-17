@@ -65,7 +65,7 @@ If you find a bug, or the interpreter crashes, please open an issue with the fau
 
 ---
 
-Copyright (c) 2020 Gonçalo Mendes
+Copyright (c) 2020 Gonçalo Mendes Ferreira
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
 with or without fee is hereby granted, provided that the above copyright notice
