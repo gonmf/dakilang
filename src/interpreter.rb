@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 begin
+  require 'readline'
+
   # Just for development
-  require 'rb-readline'
   require 'pry'
 rescue Exception
 end
@@ -115,10 +116,13 @@ module DakiLang
       @interactive = true
 
       loop do
-        print '> '
-        input = STDIN.gets.chomp
+        Readline
+        line = Readline.readline('> ')&.strip
+        exit(0) if line.nil?
 
-        run_commands([input], [])
+        Readline::HISTORY.push(line) if line.size > 0
+
+        run_commands([line], [])
       end
     end
 
