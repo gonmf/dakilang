@@ -646,12 +646,14 @@ module DakiLang
           arguments = arguments.slice(1, arguments.count)
 
           if arguments.any?
-            return [var, memoed_fact(memo[var], arguments)]
+            m = memoed_fact(memo[var], arguments)
+
+            [var, m] if m
           else
             [var]
           end
         else
-          return nil
+          nil
         end
       else
         arguments = arguments.slice(1, arguments.count)
@@ -662,7 +664,7 @@ module DakiLang
           return [value, se] if se
         end
 
-        return nil
+        nil
       end
     end
 
