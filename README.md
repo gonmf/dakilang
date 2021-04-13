@@ -63,6 +63,22 @@ This interpreter has tests for the interpreter search algorithm itsef, and for t
 
 If you find a bug, or the interpreter crashes, please open an issue with the faulty instructions.
 
+## Debugging
+
+To debug the interpreter itself, first make sure the Ruby gem `pry` is installed system-wide:
+
+```bash
+gem install pry
+```
+
+Then plant a `binding.pry` instruction where you need a breakpoint, and start the interpreter from inside the src/ folder:
+
+```bash
+cd src
+
+ruby dakilang.rb -c ../program_to_debug.dl
+```
+
 ---
 
 Copyright (c) 2020 Gonçalo Mendes Ferreira
