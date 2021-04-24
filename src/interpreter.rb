@@ -162,9 +162,12 @@ module DakiLang
 
     def run_commands(lines, consult_chain)
       lines.each do |line|
-        puts "> #{line}".strip unless @interactive
+        safe_ln = line.gsub("\0", '')
+        puts "> #{safe_ln}".strip unless @interactive
 
-        down_line = line.split('#').first.to_s.strip.downcase
+        next if safe_ln == ''
+
+        down_line = safe_ln.split('#').first.to_s.strip.downcase
 
         if down_line == 'quit'
           if @interactive
@@ -173,13 +176,13 @@ module DakiLang
             return
           end
         elsif down_line == 'select_table' || down_line.start_with?('select_table ')
-          select_table(line.split(' ')[1], true)
+          select_table(safe_ln.split(' ')[1], true)
           next
         elsif down_line.start_with?('add_memo ')
-          add_memo(line.split(' ')[1])
+          add_memo(safe_ln.split(' ')[1])
           next
         elsif down_line.start_with?('rem_memo ')
-          rem_memo(line.split(' ')[1])
+          rem_memo(safe_ln.split(' ')[1])
           next
         elsif down_line == 'list_memo'
           list_memo
@@ -191,10 +194,10 @@ module DakiLang
           table_listing
           next
         elsif down_line.start_with?('consult ')
-          consult_file(line.split(' ')[1], consult_chain)
+          consult_file(safe_ln.split(' ')[1], consult_chain)
           next
         elsif down_line.start_with?('retract ')
-          retract_rule_by_index(line.split(' ')[1])
+          retract_rule_by_index(safe_ln.split(' ')[1])
           next
         end
 
@@ -440,28 +443,17 @@ module DakiLang
       ret = []
 
       remainder = ''
-      in_continuation = false
 
       File.foreach(name) do |line|
-        line = line.to_s.strip
+        line = line.to_s.chomp("\n")
         if line.size == 0
           ret.push('')
           remainder = ''
-          in_continuation = false
           next
         end
 
-        if in_continuation
-          tmp_line, comment = line.split('#')
-          # Line continuation into commented line
-          if line == '#' || tmp_line.strip == '' && !comment.nil?
-            next
-          end
-        end
-
         if line.end_with?('\\')
-          in_continuation = true
-          remainder += " #{line.chomp('\\')}"
+          remainder += " #{line.chomp('\\')}\0"
           next
         end
 

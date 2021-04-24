@@ -29,8 +29,8 @@ module DakiLang
       text, lists_table = extract_lists(text)
       text, strings_table = extract_strings(text)
 
-      text = text.split('#').first&.strip
-      return nil if text.nil? || text == ''
+      text = drop_comment_portion(text)
+      return nil if text.nil?
 
       text, instruction_type = extract_type_of_instruction(text)
       is_query = instruction_type.include?('_query')
@@ -778,6 +778,28 @@ module DakiLang
       arg_list.push(string.start_with?(start_character) && string.end_with?(end_character) ? parse_relations_tree(string.slice(1..-2), start_character, end_character, separator_characters) : string)
 
       arg_list
+    end
+
+    # Only drop text from # to \0 if it exists
+    def drop_comment_portion(text)
+      if text.include?('#')
+        if text.include?("\0")
+          idx1 = text.index('#')
+          idx2 = text.index("\0", idx1)
+          text = text.slice(0, idx1) + text.slice(idx2, text.size)
+
+          if text.include?('#')
+            drop_comment_portion(text)
+          else
+            text.gsub("\0", '')
+          end
+        else
+          text = text.split('#').first&.strip
+          text == '' ? nil : text
+        end
+      else
+        text.gsub("\0", '')
+      end
     end
 
     def unexpected_char(char)

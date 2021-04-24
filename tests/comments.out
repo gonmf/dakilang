@@ -1,0 +1,9 @@
+> # Some tests with comments
+> # Bellow
+>
+> mammal(A) :- # Not a perfect definition    blood(A, 'warm'),    (hasHair(A); hashFur(A)),    # laysEggs(A), Not all of them lay legs!   producesMilk(A).
+>
+> listing
+0: mammal(A) :- blood(A, 'warm'), hasHair(A), producesMilk(A).
+1: mammal(A) :- blood(A, 'warm'), hashFur(A), producesMilk(A).
+
