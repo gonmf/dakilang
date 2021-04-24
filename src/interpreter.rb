@@ -842,7 +842,7 @@ module DakiLang
               end
 
               if @debug && !kept
-                pruned_clauses.push(rule[0].to_s)
+                pruned_clauses.push(rule[0].to_s(@debug))
               end
 
               kept
@@ -862,8 +862,8 @@ module DakiLang
 
           if @debug && pruned_clauses.any?
             puts '*** pruned'
-            pruned_clauses.sort.uniq.each do |pruned_clause|
-              puts "    #{pruned_clause}"
+            pruned_clauses.uniq.each do |pruned_clause|
+              puts "      #{pruned_clause}"
             end
           end
         end

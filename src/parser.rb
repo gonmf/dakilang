@@ -147,7 +147,7 @@ module DakiLang
       end
     end
 
-    def parse_argument(arg, strings_table, lists_table)
+    def parse_argument(arg, strings_table, lists_table, ignore_numeric_error = false)
       if arg.start_with?('$L')
         list_id = arg.slice(2..-1).to_i
 
@@ -157,7 +157,11 @@ module DakiLang
 
         strings_table[string_id]
       else
-        parse_numeric(arg)
+        if ignore_numeric_error
+          parse_numeric(arg) rescue nil
+        else
+          parse_numeric(arg)
+        end
       end
     end
 
@@ -324,7 +328,8 @@ module DakiLang
         if all_chars?(integer, NUMERIC) && all_chars?(decimal, NUMERIC)
           orig_text.to_f
         else
-          unexpected_char((integer + decimal).chars.find { |c| !NUMERIC.include?(c) })
+          c = (integer + decimal).chars.find { |ch| !NUMERIC.include?(ch) }
+          unexpected_char(c)
         end
       elsif text.start_with?('0x') # Hexadecimal
         rest = text.slice(2, text.size)
@@ -334,7 +339,8 @@ module DakiLang
         elsif all_chars?(rest.downcase, HEX_CHARS)
           orig_text.to_i(16)
         else
-          unexpected_char(rest.chars.find { |c| !HEX_CHARS.include?(c) })
+          c = rest.chars.find { |ch| !HEX_CHARS.include?(ch) }
+          unexpected_char(c)
         end
       elsif text.start_with?('0b') # Binary
         rest = text.slice(2, text.size)
@@ -344,18 +350,21 @@ module DakiLang
         elsif all_chars?(rest, ['0', '1'])
           orig_text.to_i(2)
         else
-          unexpected_char(rest.chars.find { |c| !['0', '1'].include?(c) })
+          c = rest.chars.find { |ch| !['0', '1'].include?(ch) }
+          unexpected_char(c)
         end
       elsif text[0] == '0' # Octal
         if all_chars?(text, OCTAL)
           orig_text.to_i(8)
         else
-          unexpected_char(text.chars.find { |c| !OCTAL.include?(c) })
+          c = text.chars.find { |ch| !OCTAL.include?(ch) }
+          unexpected_char(c)
         end
       elsif all_chars?(text, NUMERIC)
         orig_text.to_i # Decimal
       else
-        unexpected_char(text.chars.find { |c| !NUMERIC.include?(c) })
+        c = text.chars.find { |ch| !NUMERIC.include?(ch) }
+        unexpected_char(c)
       end
     end
 
@@ -411,7 +420,6 @@ module DakiLang
       added_facts = []
 
       arg_list = arg_list.map do |arg|
-
         operator = ['>=', '<=', '=', '<>', '>', '<', ':'].find { |o| arg.include?(o) }
         if operator
           unexpected_char(operator[0])
@@ -420,7 +428,7 @@ module DakiLang
         if NAME_ALLOWED_FIRST_CHARS.include?(arg[0]) && arg.slice(1..-1).chars.all? { |c| NAME_ALLOWED_REMAINING_CHARS.include?(c) }
           Variable.new(arg)
         else
-          literal_value = parse_argument(arg, strings_table, lists_table) rescue nil
+          literal_value = parse_argument(arg, strings_table, lists_table, true)
 
           if literal_value
             Literal.new(literal_value)
