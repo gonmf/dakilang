@@ -440,16 +440,27 @@ module DakiLang
       ret = []
 
       remainder = ''
+      in_continuation = false
 
       File.foreach(name) do |line|
         line = line.to_s.strip
         if line.size == 0
           ret.push('')
           remainder = ''
+          in_continuation = false
           next
         end
 
+        if in_continuation
+          tmp_line, comment = line.split('#')
+          # Line continuation into commented line
+          if line == '#' || tmp_line.strip == '' && !comment.nil?
+            next
+          end
+        end
+
         if line.end_with?('\\')
+          in_continuation = true
           remainder += " #{line.chomp('\\')}"
           next
         end
