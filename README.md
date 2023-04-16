@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/gonmf/dakilang.svg?branch=master)](https://travis-ci.org/gonmf/dakilang)
-
 # Daki language Ruby interpreter
 
 Daki is a small computer programming language influenced by Prolog and Datalog. [Read all about it.](https://macro.win/dakilang.html)
