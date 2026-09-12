@@ -30,6 +30,13 @@ module DakiLang
       ['div',        3],
       ['mod',        3],
       ['pow',        3],
+      # Bitwise
+      ['bit_and',    3],
+      ['bit_or',     3],
+      ['bit_xor',    3],
+      ['bit_neg',    2],
+      ['bit_shift_left',  3],
+      ['bit_shift_right', 3],
       ['sqrt',       2],
       ['log',        3],
       ['round',      3],
@@ -37,7 +44,7 @@ module DakiLang
       ['floor',      2],
       ['ceil',       2],
       ['abs',        2],
-      ['eval',       3,     -1], # Variable arity
+      ['eval',       2,     -1], # Variable arity
       # Equality and comparison
       ['eql',        3],
       ['neq',        3],
@@ -162,7 +169,8 @@ module DakiLang
 
     def run_commands(lines, consult_chain)
       lines.each do |line|
-        safe_ln = line.gsub("\0", '')
+        # Line continuation markers stand for a line break; echo them as a space
+        safe_ln = line.gsub("\0", ' ')
         puts "> #{safe_ln}".strip unless @interactive
 
         next if safe_ln == ''
@@ -325,7 +333,7 @@ module DakiLang
         puts red('Clause name is invalid')
       elsif @to_memo[@table_name].include?(name)
         puts red('Clause is already being memoized')
-      elsif oper_clause_matches?(n, arity)
+      elsif oper_clause_matches?(n, arity.to_i)
         puts red('Cannot memoize built-in operator clause')
       else
         @to_memo[@table_name].add(name)
@@ -336,7 +344,9 @@ module DakiLang
     end
 
     def rem_memo(name)
-      if !name && name.size == 0
+      name = name.to_s
+
+      if name.size == 0
         puts red('Clause name is invalid')
       elsif @to_memo[@table_name].include?(name)
         @to_memo[@table_name].delete(name)
@@ -380,6 +390,13 @@ module DakiLang
                       min_arity
                     end
 
+        # A name may be declared once per signature; widen to cover all of them
+        existing = @operator_clauses[name]
+        if existing
+          min_arity = [existing[:min_arity], min_arity].min
+          max_arity = [existing[:max_arity], max_arity].max
+        end
+
         @operator_clauses[name] = { min_arity: min_arity, max_arity: max_arity }
       end
     end
@@ -408,12 +425,7 @@ module DakiLang
     end
 
     def table_listing
-      indent = 1
-      count = @table[@table_name].count
-      while count > 10
-        count /= 10
-        indent += 1
-      end
+      indent = [@table[@table_name].count - 1, 0].max.to_s.size
 
       @table[@table_name].each.with_index do |arr, idx|
         puts green("#{idx.to_s.rjust(indent)}: #{arr[0]}#{arr[1].any? ? " :- #{arr[1].join(', ')}" : ''}.#{arr[2] > 1 ? " (#{arr[2]})" : ''}")
@@ -453,7 +465,7 @@ module DakiLang
         end
 
         if line.end_with?('\\')
-          remainder += " #{line.chomp('\\')}\0"
+          remainder += "#{line.chomp('\\')}\0"
           next
         end
 
@@ -462,6 +474,9 @@ module DakiLang
         ret.push(line.strip)
         remainder = ''
       end
+
+      # A trailing line continuation has no following line to join; keep what it gathered
+      ret.push(remainder.strip) if remainder.strip.size > 0
 
       ret
     rescue StandardError

@@ -2,6 +2,12 @@
 
 module DakiLang
   module OperatorClauses
+    # Binary inline operators. These have no intrinsic priority between them; an
+    # expression is resolved sequentially, and parenthesis enforce an evaluation order
+    EXPR_BINARY_OPERATORS = ['+', '-', '*', '/', '%', '&', '|', '^'].freeze
+
+    EXPR_OPERATORS = (EXPR_BINARY_OPERATORS + ['~']).freeze
+
     # Arithmetic operator clauses
     def oper_add(args)
       if args.all? { |a| numeric?(a) }
@@ -22,7 +28,7 @@ module DakiLang
         res = 1
 
         args.each do |arg|
-          res += arg
+          res *= arg
         end
 
         res
@@ -187,7 +193,7 @@ module DakiLang
     def oper_eql(args)
       a, b = args
 
-      if a == b
+      if comparable_types?(args) && a == b
         'Yes'
       end
     end
@@ -195,41 +201,33 @@ module DakiLang
     def oper_neq(args)
       a, b = args
 
-      if a != b
+      if comparable_types?(args) && a != b
         'Yes'
       end
     end
 
     def oper_gt(args)
-      a, b = args
+      cmp = compare(args)
 
-      if ((a.is_a?(String) == b.is_a?(String)) || (numeric?(a) && numeric?(b))) && a > b
-        'Yes'
-      end
+      'Yes' if cmp && cmp > 0
     end
 
     def oper_lt(args)
-      a, b = args
+      cmp = compare(args)
 
-      if ((a.is_a?(String) == b.is_a?(String)) || (numeric?(a) && numeric?(b))) && a < b
-        'Yes'
-      end
+      'Yes' if cmp && cmp < 0
     end
 
     def oper_gte(args)
-      a, b = args
+      cmp = compare(args)
 
-      if ((a.is_a?(String) == b.is_a?(String)) || (numeric?(a) && numeric?(b))) && a >= b
-        'Yes'
-      end
+      'Yes' if cmp && cmp >= 0
     end
 
     def oper_lte(args)
-      a, b = args
+      cmp = compare(args)
 
-      if ((a.is_a?(String) == b.is_a?(String)) || (numeric?(a) && numeric?(b))) && a <= b
-        'Yes'
-      end
+      'Yes' if cmp && cmp <= 0
     end
 
     # Type casting operator clauses
@@ -294,7 +292,7 @@ module DakiLang
       a, b, c = args
 
       if (a.is_a?(String) || a.is_a?(Array)) && b.is_a?(Integer) && c.is_a?(Integer) && b >= 0 && c >= b
-        a.slice(b, c - 2)
+        a.slice(b, c - b)
       end
     end
 
@@ -415,8 +413,13 @@ module DakiLang
     def oper_sum(args)
       a, = args
 
-      if a.is_a?(Array)
-        a.sum
+      return nil unless a.is_a?(Array) && similar_types?(a)
+
+      # Strings concatenate like join/3 and lists like concat/3, so each needs its own zero
+      case a.first
+      when String then a.sum('')
+      when Array  then a.sum([])
+      else a.sum
       end
     rescue StandardError
       nil
@@ -505,6 +508,32 @@ module DakiLang
       obj.is_a?(Integer) || obj.is_a?(Float)
     end
 
+    # Equality is only defined between two numeric values or two strings
+    def comparable_types?(args)
+      return false unless args.count == 2
+
+      a, b = args
+
+      (numeric?(a) && numeric?(b)) || (a.is_a?(String) && b.is_a?(String))
+    end
+
+    # nil when the two values are not of comparable types, or cannot be ordered
+    def compare(args)
+      return nil unless args.count == 2
+
+      a, b = args
+
+      # Ordering is not available for list types
+      return nil if a.is_a?(Array) || b.is_a?(Array)
+
+      return a <=> b if numeric?(a) && numeric?(b)
+
+      # If any of the inputs is a string, string comparison is used instead of numeric
+      return a.to_s <=> b.to_s if a.is_a?(String) || b.is_a?(String)
+
+      nil
+    end
+
     def similar_types?(args)
       a = args.first
 
@@ -517,121 +546,86 @@ module DakiLang
       str.include?('.') ? str.to_f : str.to_i
     end
 
-    def sub_exp(str)
-      depth = 0
-
-      str.chars.each.with_index do |c, i|
-        if c == ')'
-          if depth == 0
-            return str.slice(0, i)
-          elsif depth > 0
-            depth -= 1
-          else
-            break
-          end
-        elsif c == '('
-          depth += 1
-        end
-      end
-
-      nil
+    def expr_number?(token)
+      token.count('.') < 2 && token.chars.any? { |c| c >= '0' && c <= '9' }
     end
 
-    def expr_eval(str)
-      string = ''
-      value = nil
-      op = nil
+    def expr_tokens(str)
+      tokens = []
+      number = ''
 
-      str.chars.each.with_index do |c, i|
-        if c == '('
-          exp = sub_exp(str.slice(i + 1, str.size))
-          return nil unless exp
-
-          val = expr_eval(exp)
-          return nil unless val
-
-          new_exp = str.sub("(#{exp})", val.to_s)
-
-          return expr_eval(new_exp)
-        end
-
-        if c == ')'
-          return nil
-        end
-
-        if c == '~'
-          if value || op || string.size > 0
-            return nil
-          end
-
-          op = '~'
+      str.chars.each do |c|
+        if (c >= '0' && c <= '9') || c == '.'
+          number += c
           next
         end
 
-        if ['+', '-', '*', '/', '%', '&', '|', '^'].include?(c)
-          if c == '-' && value && op && string == ''
-            string += '-'
-            next
-          end
-          if ['+', '-'].include?(c) && value.nil? && string == ''
-            value = 0
-            op = '-'
-            next
-          end
+        return nil unless EXPR_OPERATORS.include?(c) || c == '(' || c == ')'
 
-          if !value && string.size > 0
-            if op == '~'
-              begin
-                value = expr_val(string).send('~')
-              rescue StandardError
-                return nil
-              end
-            else
-              value = expr_val(string)
-            end
-
-            op = c
-            string = ''
-            next
-          elsif value && string.size > 0
-            begin
-              value = value.send(op, expr_val(string))
-            rescue StandardError
-              return nil
-            end
-
-            op = c
-            string = ''
-            next
-          else
-            next
-          end
+        if number.size > 0
+          tokens.push(number)
+          number = ''
         end
 
-        string += c
+        tokens.push(c)
       end
 
-      if string.size > 0
-        if op == '~'
-          return nil if value
+      tokens.push(number) if number.size > 0
 
-          begin
-            value = expr_val(string).send('~')
-          rescue StandardError
-            return nil
-          end
-        elsif op && value
-          begin
-            value = value.send(op, expr_val(string))
-          rescue StandardError
-            return nil
-          end
-        elsif !op && !value
-          value = expr_val(string)
+      tokens
+    end
+
+    def expr_eval(str)
+      tokens = expr_tokens(str)
+      return nil unless tokens
+
+      value, idx = expr_parse(tokens, 0)
+
+      value if idx == tokens.size
+    end
+
+    # Operators are applied in the order they are written, left to right
+    def expr_parse(tokens, idx)
+      value, idx = expr_parse_unary(tokens, idx)
+      return [nil, idx] if value.nil?
+
+      while EXPR_BINARY_OPERATORS.include?(tokens[idx])
+        op = tokens[idx]
+
+        other, idx = expr_parse_unary(tokens, idx + 1)
+        return [nil, idx] if other.nil?
+
+        begin
+          value = value.send(op, other)
+        rescue StandardError
+          return [nil, idx]
         end
       end
 
-      value
+      [value, idx]
+    end
+
+    def expr_parse_unary(tokens, idx)
+      token = tokens[idx]
+
+      case token
+      when '('
+        value, idx = expr_parse(tokens, idx + 1)
+        return [nil, idx] if value.nil? || tokens[idx] != ')'
+
+        [value, idx + 1]
+      when '~', '-', '+'
+        value, idx = expr_parse_unary(tokens, idx + 1)
+        return [nil, idx] if value.nil?
+
+        begin
+          [token == '+' ? value : value.send(token == '~' ? '~' : '-@'), idx]
+        rescue StandardError
+          [nil, idx]
+        end
+      else
+        token && expr_number?(token) ? [expr_val(token), idx + 1] : [nil, idx]
+      end
     end
   end
 end

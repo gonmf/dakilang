@@ -2,7 +2,7 @@
 
 module DakiLang
   module Parser
-    INLINE_OPERATORS = ['-', '+', '-', '*', '/', '%', '&', '|', '^', '~', '(', ')'].freeze
+    INLINE_OPERATORS = ['-', '+', '*', '/', '%', '&', '|', '^', '~', '(', ')'].freeze
     HEX_CHARS = (('0'..'9').to_a + ('a'..'f').to_a).freeze
     OCTAL = ('0'..'7').to_a.freeze
     NUMERIC = ('0'..'9').to_a.freeze
@@ -26,11 +26,11 @@ module DakiLang
 
       text = text.strip
 
-      text, lists_table = extract_lists(text)
-      text, strings_table = extract_strings(text)
-
       text = drop_comment_portion(text)
       return nil if text.nil?
+
+      text, lists_table = extract_lists(text)
+      text, strings_table = extract_strings(text)
 
       text, instruction_type = extract_type_of_instruction(text)
       is_query = instruction_type.include?('_query')
@@ -188,7 +188,7 @@ module DakiLang
         if string_mode
           if multi_point_escaped
             if c == '}'
-              unexpected_char('}') if escaped_string.size == ''
+              unexpected_char('}') if escaped_string.size == 0
               chr = escaped_string.to_i(16).chr(Encoding::UTF_8) rescue nil
               parser_error('UTF-8 encoding error') if chr.nil?
               string += chr
@@ -265,8 +265,6 @@ module DakiLang
           next
         elsif c == "'" || c == '"'
           unexpected_char(c) if string.strip.size > 0
-
-          unexpected_char(string.strip[0]) if string.strip.size > 0
 
           string = ''
           string_delimiter = c
@@ -395,7 +393,9 @@ module DakiLang
             parser_error('Invalid argument for : operator')
           end
 
-          Variable.new(var, operator, const.class.to_s.downcase, const)
+          condition_type = const.is_a?(Array) ? 'list' : const.class.to_s.downcase
+
+          Variable.new(var, operator, condition_type, const)
         elsif NAME_ALLOWED_FIRST_CHARS.include?(arg[0]) && arg.slice(1..-1).chars.all? { |c| NAME_ALLOWED_REMAINING_CHARS.include?(c) }
           Variable.new(arg)
         elsif arg == '_'
@@ -641,7 +641,7 @@ module DakiLang
           if multi_point_escaped
             orig_string += c
             if c == '}'
-              unexpected_char('}') if escaped_string.size == ''
+              unexpected_char('}') if escaped_string.size == 0
               chr = escaped_string.to_i(16).chr(Encoding::UTF_8) rescue nil
               parser_error('UTF-8 encoding error') if chr.nil?
               string += chr
@@ -780,26 +780,40 @@ module DakiLang
       arg_list
     end
 
-    # Only drop text from # to \0 if it exists
+    # Drops each comment - from a "#" outside a string literal up to the "\0" marking the end
+    # of that source line, or the end of the text - along with every "\0" line continuation
+    # marker, including the ones inside string literals
     def drop_comment_portion(text)
-      if text.include?('#')
-        if text.include?("\0")
-          idx1 = text.index('#')
-          idx2 = text.index("\0", idx1)
-          text = text.slice(0, idx1) + text.slice(idx2, text.size)
+      ret = ''
+      string_delimiter = nil
+      escape_mode = false
+      idx = 0
 
-          if text.include?('#')
-            drop_comment_portion(text)
-          else
-            text.gsub("\0", '')
+      while idx < text.size
+        c = text[idx]
+
+        if string_delimiter
+          if escape_mode
+            escape_mode = false
+          elsif c == '\\'
+            escape_mode = true
+          elsif c == string_delimiter
+            string_delimiter = nil
           end
-        else
-          text = text.split('#').first&.strip
-          text == '' ? nil : text
+        elsif c == "'" || c == '"'
+          string_delimiter = c
+        elsif c == '#'
+          idx = text.index("\0", idx) || text.size
+          next
         end
-      else
-        text.gsub("\0", '')
+
+        # A join outside a string separates tokens; inside one it joins the text directly
+        ret += c == "\0" ? (string_delimiter ? '' : ' ') : c
+        idx += 1
       end
+
+      ret = ret.strip
+      ret == '' ? nil : ret
     end
 
     def unexpected_char(char)

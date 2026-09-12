@@ -35,7 +35,7 @@ Res = 0
 >
 > test8(X, Res) :- eval(X, "$0 + ~1 - 4", Res).
 > test8(3, Res)?
-No
+Res = -3
 
 >
 > test9(X, Res) :- eval(X, "$0 ~1 - 3 * 5", Res).

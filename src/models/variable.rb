@@ -4,11 +4,15 @@ require_relative 'atom'
 
 module DakiLang
   class Variable < Atom
+    # Daki condition operators and their Ruby method equivalents
+    CONDITION_ALIASES = { '<>' => '!=', '=' => '==' }.freeze
+    CONDITION_DISPLAY = CONDITION_ALIASES.invert.freeze
+
     attr_reader :name, :condition, :condition_type, :condition_value
 
     def initialize(name, condition = nil, condition_type = nil, condition_value = nil)
       @name = name
-      @condition = condition == '<>' ? '!=' : condition
+      @condition = CONDITION_ALIASES.fetch(condition, condition)
       @condition_type = condition_type
       @condition_value = condition_value
     end
@@ -25,7 +29,7 @@ module DakiLang
               value = "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
             end
 
-            "##{name} #{condition == '!=' ? '<>' : condition} #{value}"
+            "##{name} #{condition_to_s} #{value}"
           else
             "##{name}"
           end
@@ -41,12 +45,16 @@ module DakiLang
               value = "'#{value.gsub('\'', "\\ #{s}'")}'".gsub(" #{s}", '')
             end
 
-            "#{name} #{condition == '!=' ? '<>' : condition} #{value}"
+            "#{name} #{condition_to_s} #{value}"
           else
             name[0] == '_' ? '_' : name
           end
         end
       end
+    end
+
+    def condition_to_s
+      CONDITION_DISPLAY.fetch(condition, condition)
     end
 
     def const?
